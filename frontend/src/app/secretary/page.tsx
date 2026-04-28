@@ -654,8 +654,14 @@ function KanbanBoard({
                           <div className="font-medium text-gray-900 truncate">
                             {lead.full_name || lead.phone}
                           </div>
-                          <div className="text-xs text-gray-500 truncate">
-                            {lead.phone}
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-[10px] font-mono text-gray-400">
+                              {lead.code}
+                            </span>
+                            <span className="text-[10px] text-gray-400">·</span>
+                            <span className="text-xs text-gray-500 truncate">
+                              {lead.phone}
+                            </span>
                           </div>
                         </div>
                         {lead.is_overdue && (

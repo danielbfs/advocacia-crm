@@ -229,6 +229,43 @@ async def toggle_lead_conversation_control(
     return {"ok": True, "control": control}
 
 
+@router.get("/ai-pricing")
+async def get_lead_pricing(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    from app.modules.admin.models import SystemConfig
+    result = await db.execute(
+        select(SystemConfig).where(SystemConfig.key == "lead_pricing")
+    )
+    row = result.scalar_one_or_none()
+    if row and row.value:
+        return row.value
+    return {"items": [], "currency": "BRL", "notes": ""}
+
+
+@router.put("/ai-pricing")
+async def update_lead_pricing(
+    body: dict,
+    current_user: User = Depends(require_role("admin")),
+    db: AsyncSession = Depends(get_db),
+):
+    from app.modules.admin.models import SystemConfig
+    result = await db.execute(
+        select(SystemConfig).where(SystemConfig.key == "lead_pricing")
+    )
+    row = result.scalar_one_or_none()
+    if row:
+        row.value = body
+        row.updated_by = current_user.id
+        row.updated_at = datetime.now(timezone.utc)
+    else:
+        row = SystemConfig(key="lead_pricing", value=body, updated_by=current_user.id)
+        db.add(row)
+    await db.commit()
+    return body
+
+
 @router.get("/ai-supervisor-queue", response_model=list[SupervisorQuerySchema])
 async def get_supervisor_queue(
     current_user: User = Depends(get_current_user),

@@ -45,8 +45,68 @@ export interface AssignedUserSummary {
   full_name: string;
 }
 
+// --- Lead AI Agent ---
+
+export interface LeadAgentConfig {
+  status: string;
+  is_active: boolean;
+  system_prompt: string | null;
+  auto_send_on_enter: boolean;
+  initial_message: string | null;
+  inactivity_hours: number;
+  max_inactivity_followups: number;
+  inactivity_followup_message: string | null;
+  auto_lost_after_hours: number;
+}
+
+export interface LeadMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  sent_at: string;
+}
+
+export interface SupervisorQuery {
+  id: string;
+  question: string;
+  context_summary: string | null;
+  answer: string | null;
+  status: "pending" | "answered" | "timeout";
+  asked_at: string;
+  answered_at: string | null;
+}
+
+export interface LeadConversation {
+  id: string;
+  lead_id: string;
+  channel: string;
+  channel_chat_id: string;
+  control: "ai" | "awaiting_supervisor" | "human";
+  status: "active" | "closed";
+  inactivity_followups_sent: number;
+  last_message_at: string | null;
+  started_at: string;
+  messages: LeadMessage[];
+  supervisor_queries: SupervisorQuery[];
+}
+
+export interface PricingItem {
+  specialty: string;
+  service: string;
+  price: number;
+  notes?: string;
+}
+
+export interface SupervisorConfig {
+  supervisor_whatsapp: string;
+  awaiting_message: string;
+  timeout_hours: number;
+  on_timeout: "escalate_human" | "close_ai";
+}
+
 export interface Lead {
   id: string;
+  code: string;
   full_name: string | null;
   phone: string;
   email: string | null;

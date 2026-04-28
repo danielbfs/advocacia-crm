@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { href: "/admin/doctors", label: "Médicos / Agendas" },
   { href: "/admin/specialties", label: "Especialidades" },
   { href: "/admin/chatbot", label: "Chatbot / IA" },
+  { href: "/admin/ia-comercial", label: "IA Comercial" },
   { href: "/admin/whatsapp", label: "WhatsApp" },
   { href: "/admin/follow-ups", label: "Follow-ups" },
   { href: "/admin/users", label: "Usuários" },
