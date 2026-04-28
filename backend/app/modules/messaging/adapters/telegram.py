@@ -12,10 +12,14 @@ class TelegramAdapter(AbstractMessagingAdapter):
         self.api_url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}"
 
     async def send_message(self, chat_id: str, text: str) -> bool:
-        """Send a text message via Telegram Bot API."""
+        ok, _ = await self.send_message_tracked(chat_id, text)
+        return ok
+
+    async def send_message_tracked(self, chat_id: str, text: str) -> tuple[bool, str | None]:
+        """Send a message and return (success, message_id). Telegram IDs are integers."""
         if not settings.TELEGRAM_BOT_TOKEN:
             logger.warning("TELEGRAM_BOT_TOKEN not configured, skipping send")
-            return False
+            return False, None
 
         async with httpx.AsyncClient(timeout=10) as client:
             resp = await client.post(
@@ -28,8 +32,12 @@ class TelegramAdapter(AbstractMessagingAdapter):
             )
             if resp.status_code != 200:
                 logger.error("Telegram send failed: %s %s", resp.status_code, resp.text)
-                return False
-            return True
+                return False, None
+            try:
+                msg_id = str(resp.json().get("result", {}).get("message_id", ""))
+            except Exception:
+                msg_id = None
+            return True, msg_id
 
     def parse_webhook(self, payload: dict) -> IncomingMessage | None:
         """Parse a Telegram webhook update into a normalized IncomingMessage."""

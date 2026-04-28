@@ -13,6 +13,7 @@ celery_app = Celery(
     include=[
         "app.modules.followup.tasks",
         "app.modules.leads.sla",
+        "app.modules.leads.ai_tasks",
     ],
 )
 
@@ -48,5 +49,17 @@ celery_app.conf.beat_schedule = {
         "task": "app.modules.followup.tasks.process_pending_followups",
         "schedule": crontab(minute="*/2"),
         "options": {"queue": "followup"},
+    },
+    # Verifica inatividade nos leads com IA ativa a cada 30 minutos
+    "check-lead-inactivity": {
+        "task": "app.modules.leads.ai_tasks.check_lead_inactivity",
+        "schedule": crontab(minute="*/30"),
+        "options": {"queue": "leads"},
+    },
+    # Verifica consultas ao supervisor sem resposta a cada hora
+    "check-supervisor-timeouts": {
+        "task": "app.modules.leads.ai_tasks.check_supervisor_timeouts",
+        "schedule": crontab(minute="0"),
+        "options": {"queue": "leads"},
     },
 }

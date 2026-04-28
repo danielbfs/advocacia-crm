@@ -520,7 +520,11 @@ async def _create_lead(
 
     full_name = args.get("patient_name") or patient.full_name
 
+    from app.modules.leads.service import _generate_lead_code
+    code = await _generate_lead_code(db)
+
     lead = Lead(
+        code=code,
         phone=phone,
         full_name=full_name,
         channel=channel,

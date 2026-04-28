@@ -2,7 +2,7 @@
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import select, func, case, and_, or_
+from sqlalchemy import select, func, case, and_, or_, extract
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -63,6 +63,18 @@ async def get_lead_by_id(db: AsyncSession, lead_id: uuid.UUID) -> Lead | None:
     return result.scalar_one_or_none()
 
 
+async def _generate_lead_code(db: AsyncSession) -> str:
+    """Generate unique code in format L-{year}-{sequence:05d}."""
+    year = datetime.now(timezone.utc).year
+    count_result = await db.execute(
+        select(func.count()).select_from(Lead).where(
+            extract("year", Lead.created_at) == year
+        )
+    )
+    count = count_result.scalar() or 0
+    return f"L-{year}-{count + 1:05d}"
+
+
 async def create_lead(
     db: AsyncSession,
     phone: str,
@@ -80,8 +92,10 @@ async def create_lead(
     assigned_to: uuid.UUID | None = None,
 ) -> Lead:
     sla_deadline = datetime.now(timezone.utc) + timedelta(hours=settings.CLINIC_SLA_HOURS)
+    code = await _generate_lead_code(db)
 
     lead = Lead(
+        code=code,
         full_name=full_name,
         phone=phone,
         email=email,

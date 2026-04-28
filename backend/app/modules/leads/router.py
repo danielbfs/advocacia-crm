@@ -67,6 +67,16 @@ from app.modules.leads.service import (
 router = APIRouter()
 
 
+def _maybe_dispatch_proactive(lead) -> None:
+    """Dispatch the proactive AI message task if the lead's channel supports it."""
+    try:
+        from app.modules.leads.ai_tasks import send_lead_proactive_message
+        if lead.channel in ("whatsapp", "telegram"):
+            send_lead_proactive_message.delay(str(lead.id))
+    except Exception:
+        pass  # Non-critical: proactive message failure must not break lead creation
+
+
 # --- CRUD ---
 
 @router.get("/", response_model=list[LeadResponse])
@@ -99,7 +109,7 @@ async def create_new_lead(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    return await create_lead(
+    lead = await create_lead(
         db,
         phone=body.phone,
         full_name=body.full_name,
@@ -115,6 +125,8 @@ async def create_new_lead(
         quote_value=body.quote_value,
         assigned_to=body.assigned_to,
     )
+    _maybe_dispatch_proactive(lead)
+    return lead
 
 
 @router.get("/{lead_id}", response_model=LeadResponse)
@@ -441,7 +453,7 @@ async def inbound_lead_webhook(
         elif "facebook" in source_lower or "meta" in source_lower or "instagram" in source_lower:
             channel = "meta_ads"
 
-    return await create_lead(
+    lead = await create_lead(
         db,
         phone=body.phone,
         full_name=body.name,
@@ -454,6 +466,8 @@ async def inbound_lead_webhook(
         utm_term=body.utm_term,
         description=body.message,
     )
+    _maybe_dispatch_proactive(lead)
+    return lead
 
 
 # --- Reports ---
@@ -546,7 +560,7 @@ async def export_leads_csv(
     buffer = io.StringIO()
     writer = csv.writer(buffer)
     writer.writerow([
-        "id", "nome", "telefone", "email", "canal",
+        "id", "codigo", "nome", "telefone", "email", "canal",
         "status", "lost_reason", "valor_orcamento",
         "utm_source", "utm_campaign", "responsavel_id",
         "sla_deadline", "contacted_at", "is_overdue",
@@ -555,6 +569,7 @@ async def export_leads_csv(
     for l in leads:
         writer.writerow([
             str(l.id),
+            l.code,
             l.full_name or "",
             l.phone,
             l.email or "",

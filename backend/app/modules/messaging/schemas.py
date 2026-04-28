@@ -10,6 +10,10 @@ class IncomingMessage(BaseModel):
     channel_chat_id: str  # chat ID in the channel
     user_name: str | None = None
     text: str
+    # ID of this incoming message in the channel (used for reply correlation)
+    raw_message_id: str | None = None
+    # ID of the message being quoted/replied to (supervisor reply tracking)
+    quoted_message_id: str | None = None
 
 
 class OutgoingMessage(BaseModel):

@@ -46,6 +46,7 @@ class AssignedUserSummary(BaseModel):
 
 class LeadResponse(BaseModel):
     id: uuid.UUID
+    code: str
     full_name: str | None
     phone: str
     email: str | None
