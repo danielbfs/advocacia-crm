@@ -275,7 +275,7 @@ function ConversaTab({
 
 // --- Main page ---
 
-export default function LeadDetailPage() {
+export default function LeadDetailPage({ backPath = "/secretary" }: { backPath?: string }) {
   const { id } = useParams();
   const router = useRouter();
   const { user } = useAuth();
@@ -463,7 +463,7 @@ export default function LeadDetailPage() {
     <main className="p-8 max-w-4xl">
       {/* Back */}
       <button
-        onClick={() => router.push("/secretary")}
+        onClick={() => router.push(backPath)}
         className="text-sm text-blue-600 hover:underline mb-4 block"
       >
         &larr; Voltar para Leads

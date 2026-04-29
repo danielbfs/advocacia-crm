@@ -9,6 +9,7 @@ import { useTier } from "@/lib/tier";
 const NAV_ITEMS = [
   { href: "/admin", label: "Painel" },
   { href: "/admin/doctors", label: "Médicos / Agendas", advancedOnly: true },
+  { href: "/admin/leads", label: "Leads" },
   { href: "/admin/specialties", label: "Especialidades" },
   { href: "/admin/chatbot", label: "Chatbot / IA" },
   { href: "/admin/ia-comercial", label: "IA Comercial", advancedOnly: true },

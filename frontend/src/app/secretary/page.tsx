@@ -86,7 +86,7 @@ function relativeDate(iso: string | null): string {
   return new Date(iso).toLocaleDateString("pt-BR");
 }
 
-export default function LeadsPage() {
+export default function LeadsPage({ basePath = "/secretary/leads" }: { basePath?: string }) {
   const router = useRouter();
   const { user } = useAuth();
 
@@ -466,7 +466,7 @@ export default function LeadsPage() {
           onDragOver={onDragOver}
           onDrop={onDrop}
           onDragEnd={onDragEnd}
-          onCardClick={(l) => router.push(`/secretary/leads/${l.id}`)}
+          onCardClick={(l) => router.push(`${basePath}/${l.id}`)}
           onAssignMe={quickAssignMe}
           currentUserId={user?.id || null}
           statusLabel={statusLabel}
@@ -478,7 +478,7 @@ export default function LeadsPage() {
           onToggle={toggleSelected}
           onSelectAll={() => selectAll(leads)}
           statusLabel={statusLabel}
-          onClick={(l) => router.push(`/secretary/leads/${l.id}`)}
+          onClick={(l) => router.push(`${basePath}/${l.id}`)}
         />
       )}
 
