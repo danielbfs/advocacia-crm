@@ -122,3 +122,81 @@ async def cancel_followups_for_appointment(
         await db.commit()
 
     return len(jobs)
+
+
+async def schedule_event_followups(
+    db: AsyncSession,
+    trigger_event: str,
+    base_time: datetime | None = None,
+    patient_id: uuid.UUID | None = None,
+    lead_id: uuid.UUID | None = None,
+    appointment_id: uuid.UUID | None = None,
+) -> list[FollowupJob]:
+    """Create follow-up jobs based on a generic event and active rules."""
+    result = await db.execute(
+        select(FollowupRule).where(
+            and_(
+                FollowupRule.is_active == True,
+                FollowupRule.trigger_event == trigger_event,
+            )
+        )
+    )
+    rules = list(result.scalars().all())
+
+    jobs = []
+    now = datetime.now(timezone.utc)
+    base_t = base_time or now
+
+    for rule in rules:
+        scheduled_for = base_t + timedelta(minutes=rule.offset_minutes)
+        if scheduled_for <= now:
+            continue
+
+        job = FollowupJob(
+            rule_id=rule.id,
+            patient_id=patient_id,
+            lead_id=lead_id,
+            appointment_id=appointment_id,
+            scheduled_for=scheduled_for,
+            status="pending",
+        )
+        db.add(job)
+        jobs.append(job)
+
+    if jobs:
+        await db.commit()
+        for job in jobs:
+            await db.refresh(job)
+
+    return jobs
+
+
+async def cancel_event_followups(
+    db: AsyncSession,
+    trigger_event: str,
+    patient_id: uuid.UUID | None = None,
+    lead_id: uuid.UUID | None = None,
+) -> int:
+    """Cancel pending follow-ups for a specific event and user."""
+    query = select(FollowupJob).join(FollowupJob.rule).where(
+        and_(
+            FollowupRule.trigger_event == trigger_event,
+            FollowupJob.status == "pending",
+        )
+    )
+    
+    if patient_id:
+        query = query.where(FollowupJob.patient_id == patient_id)
+    if lead_id:
+        query = query.where(FollowupJob.lead_id == lead_id)
+        
+    result = await db.execute(query)
+    jobs = list(result.scalars().all())
+
+    for job in jobs:
+        job.status = "cancelled"
+
+    if jobs:
+        await db.commit()
+
+    return len(jobs)

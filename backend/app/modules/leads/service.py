@@ -13,6 +13,7 @@ from app.modules.leads.pipeline import (
     STATUS_LABELS,
     validate_transition,
 )
+from app.modules.followup.service import schedule_event_followups, cancel_event_followups
 
 
 # --- CRUD ---
@@ -142,6 +143,7 @@ async def mark_lost(db: AsyncSession, lead: Lead, lost_reason: str) -> Lead:
     lead.lost_reason = lost_reason
     await db.commit()
     await db.refresh(lead)
+    await schedule_event_followups(db, "lead_lost", lead_id=lead.id)
     return lead
 
 
@@ -159,6 +161,10 @@ async def convert_lead(
         lead.contacted_at = datetime.now(timezone.utc)
     await db.commit()
     await db.refresh(lead)
+    await cancel_event_followups(db, "inactivity", lead_id=lead.id)
+    await schedule_event_followups(
+        db, "lead_converted", lead_id=lead.id, patient_id=converted_patient_id, appointment_id=appointment_id
+    )
     return lead
 
 
@@ -193,9 +199,11 @@ async def transition_status(
     lead.status = to_status
     if to_status == "perdido":
         lead.lost_reason = lost_reason
+        await schedule_event_followups(db, "lead_lost", lead_id=lead.id)
     elif from_status == "perdido":
         # Reabertura: limpa motivo
         lead.lost_reason = None
+        await cancel_event_followups(db, "lead_lost", lead_id=lead.id)
 
     # Quando avança para qualquer estado pós-novo, registra contato
     if to_status not in {"novo", "perdido"} and lead.contacted_at is None:

@@ -27,6 +27,7 @@ async def _send_followup(task, job_id: str):
     from app.database import AsyncSessionLocal
     from app.modules.followup.models import FollowupJob
     from app.modules.crm.models import Patient
+    from app.modules.leads.models import Lead
     from app.modules.scheduling.models import Appointment
     from app.modules.messaging.gateway import send_message
     from app.config import settings
@@ -48,32 +49,39 @@ async def _send_followup(task, job_id: str):
             logger.info("Job %s already processed (status=%s)", job_id, job.status)
             return
 
-        # Load patient
-        patient = await db.get(Patient, job.patient_id)
-        if not patient:
+        # Load target (Patient or Lead)
+        target = None
+        if job.patient_id:
+            target = await db.get(Patient, job.patient_id)
+        elif job.lead_id:
+            target = await db.get(Lead, job.lead_id)
+
+        if not target:
             job.status = "failed"
-            job.error_message = "Patient not found"
+            job.error_message = "Patient or Lead not found"
             job.executed_at = datetime.now(timezone.utc)
             await db.commit()
             return
 
         # Load appointment with doctor and specialty relationships
-        appt_result = await db.execute(
-            select(Appointment)
-            .options(
-                joinedload(Appointment.doctor),
-                joinedload(Appointment.specialty),
+        appointment = None
+        if job.appointment_id:
+            appt_result = await db.execute(
+                select(Appointment)
+                .options(
+                    joinedload(Appointment.doctor),
+                    joinedload(Appointment.specialty),
+                )
+                .where(Appointment.id == job.appointment_id)
             )
-            .where(Appointment.id == job.appointment_id)
-        )
-        appointment = appt_result.scalar_one_or_none()
+            appointment = appt_result.scalar_one_or_none()
 
         # Render template — replace all supported variables
         rule = job.rule
         message = rule.message_template
         clinic_tz = ZoneInfo(settings.CLINIC_TIMEZONE)
 
-        message = message.replace("{patient_name}", patient.full_name or patient.phone)
+        message = message.replace("{patient_name}", target.full_name or target.phone)
 
         if appointment:
             appt_local = appointment.starts_at.astimezone(clinic_tz)
@@ -95,8 +103,13 @@ async def _send_followup(task, job_id: str):
                 message = message.replace(var, "")
 
         # Determine channel
-        channel = rule.channel or patient.channel
-        chat_id = patient.channel_id
+        channel = rule.channel or target.channel
+        
+        chat_id = None
+        if hasattr(target, "channel_id") and target.channel_id:
+            chat_id = target.channel_id
+        else:
+            chat_id = target.phone
 
         if not chat_id:
             job.status = "failed"

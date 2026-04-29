@@ -35,11 +35,14 @@ class FollowupJob(Base):
     rule_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("followup_rules.id"), nullable=False
     )
-    appointment_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("appointments.id"), nullable=False
+    appointment_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("appointments.id"), nullable=True
     )
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
+    patient_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=True
+    )
+    lead_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("leads.id"), nullable=True
     )
     scheduled_for: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     status: Mapped[str] = mapped_column(String(20), default="pending")
@@ -50,3 +53,4 @@ class FollowupJob(Base):
     rule = relationship("FollowupRule", lazy="joined")
     appointment = relationship("Appointment", lazy="joined")
     patient = relationship("Patient", lazy="joined")
+    lead = relationship("Lead", lazy="joined")

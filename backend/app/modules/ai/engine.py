@@ -13,6 +13,7 @@ from app.modules.ai.prompts import build_system_prompt
 from app.modules.ai.session import load_session, save_session
 from app.modules.ai.tools import TOOL_DEFINITIONS, execute_tool
 from app.modules.crm.models import Patient
+from app.modules.followup.service import schedule_event_followups, cancel_event_followups
 from app.modules.scheduling.models import Doctor
 
 logger = logging.getLogger(__name__)
@@ -63,6 +64,9 @@ async def process_message(
     user_text: str,
 ) -> str:
     """Process an incoming patient message and return the AI response."""
+    # Cancela mensagens de inatividade pendentes já que o usuário respondeu
+    await cancel_event_followups(db, "inactivity", patient_id=patient.id)
+
     if not settings.OPENAI_API_KEY and not settings.LOCAL_LLM_BASE_URL:
         # Also check DB config
         ai_config = await load_ai_config(db)
@@ -184,6 +188,9 @@ async def process_message(
     # Save updated history (keep only user/assistant messages for storage)
     session_messages = _extract_storable_messages(history, user_text, response_text)
     await save_session(patient.id, session_messages)
+
+    # Agenda follow-ups de inatividade caso o paciente pare de responder
+    await schedule_event_followups(db, "inactivity", patient_id=patient.id)
 
     return response_text
 
