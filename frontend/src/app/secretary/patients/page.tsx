@@ -22,7 +22,7 @@ const STATUS_LABELS: Record<string, string> = {
   no_show: "Não compareceu",
 };
 
-export default function PatientsPage() {
+export default function PatientsPage({ basePath = "/secretary/patients" }: { basePath?: string }) {
   const router = useRouter();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
@@ -100,7 +100,7 @@ export default function PatientsPage() {
                 <tr
                   key={p.id}
                   className="hover:bg-gray-50 cursor-pointer"
-                  onClick={() => router.push(`/secretary/patients/${p.id}`)}
+                  onClick={() => router.push(`${basePath}/${p.id}`)}
                 >
                   <td className="px-4 py-3 font-medium text-gray-900">{p.full_name || "—"}</td>
                   <td className="px-4 py-3 text-gray-500">{p.phone}</td>
@@ -117,7 +117,7 @@ export default function PatientsPage() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        router.push(`/secretary/patients/${p.id}`);
+                        router.push(`${basePath}/${p.id}`);
                       }}
                       className="text-xs text-blue-600 hover:underline"
                     >

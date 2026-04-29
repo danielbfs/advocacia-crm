@@ -6,17 +6,27 @@ import { AuthGuard } from "@/components/auth-guard";
 import { AppHeader } from "@/components/app-header";
 import { useTier } from "@/lib/tier";
 
-const NAV_ITEMS = [
+type NavItem = 
+  | { href: string; label: string; advancedOnly?: boolean; heading?: never }
+  | { heading: string; href?: never; label?: never; advancedOnly?: boolean };
+
+const NAV_ITEMS: NavItem[] = [
   { href: "/admin", label: "Painel" },
-  { href: "/admin/doctors", label: "Médicos / Agendas", advancedOnly: true },
+  { href: "/admin/calendar", label: "Agenda da Clínica" },
   { href: "/admin/leads", label: "Leads" },
-  { href: "/admin/specialties", label: "Especialidades" },
   { href: "/admin/chatbot", label: "Chatbot / IA" },
   { href: "/admin/ia-comercial", label: "IA Comercial", advancedOnly: true },
   { href: "/admin/whatsapp", label: "WhatsApp" },
   { href: "/admin/follow-ups", label: "Follow-ups" },
-  { href: "/admin/users", label: "Usuários", advancedOnly: true },
   { href: "/admin/reports", label: "Relatórios" },
+  
+  { heading: "Cadastros" },
+  { href: "/admin/patients", label: "Pacientes" },
+  { href: "/admin/doctors", label: "Médicos / Horários", advancedOnly: true },
+  { href: "/admin/specialties", label: "Especialidades" },
+  { href: "/admin/users", label: "Usuários", advancedOnly: true },
+  
+  { heading: "Sistema" },
   { href: "/admin/setup", label: "Configurações" },
 ];
 
@@ -31,16 +41,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <AuthGuard allowedRoles={["admin"]}>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 flex flex-col">
         {tier !== "basic" && <AppHeader />}
-        <div className="flex">
-          <nav className="w-52 bg-white border-r min-h-[calc(100vh-64px)] p-4 space-y-1">
-            {filteredNavItems.map(({ href, label }) => {
-              const active = href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
+        <div className="flex flex-1">
+          <nav className="w-56 bg-white border-r p-4 space-y-1 overflow-y-auto">
+            {filteredNavItems.map((item, idx) => {
+              if (item.heading) {
+                return (
+                  <div key={`h-${idx}`} className="pt-4 pb-1 px-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                    {item.heading}
+                  </div>
+                );
+              }
+              const { href, label } = item;
+              const active = href === "/admin" ? pathname === "/admin" : pathname.startsWith(href as string);
               return (
                 <Link
                   key={href}
-                  href={href}
+                  href={href as string}
                   className={`block px-3 py-2 rounded-lg text-sm transition-colors ${
                     active
                       ? "bg-blue-50 text-blue-700 font-medium"
@@ -52,9 +70,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               );
             })}
           </nav>
-          <div className="flex-1">{children}</div>
+          <div className="flex-1 overflow-x-hidden">{children}</div>
         </div>
       </div>
     </AuthGuard>
   );
 }
+

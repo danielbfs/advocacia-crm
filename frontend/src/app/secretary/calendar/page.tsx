@@ -98,7 +98,7 @@ function generateMonthGrid(d: Date): (Date | null)[][] {
 
 // ── Component ───────────────────────────────────────────────────────────────
 
-export default function CalendarPage() {
+export default function CalendarPage({ basePath = "/secretary" }: { basePath?: string }) {
   const [view, setView] = useState<ViewMode>("week");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [doctors, setDoctors] = useState<Doctor[]>([]);
@@ -271,7 +271,7 @@ export default function CalendarPage() {
             Ocultar cancelados
           </label>
 
-          <Link href="/secretary/appointments" className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
+          <Link href={`${basePath}/appointments`} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
             Novo Agendamento
           </Link>
         </div>

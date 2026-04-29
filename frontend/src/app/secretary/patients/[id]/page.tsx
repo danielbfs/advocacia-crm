@@ -34,7 +34,7 @@ const STATUS_OPTIONS = [
   { value: "no_show", label: "Não compareceu" },
 ];
 
-export default function PatientDetailPage() {
+export default function PatientDetailPage({ backPath = "/secretary/patients" }: { backPath?: string }) {
   const { id } = useParams();
   const router = useRouter();
   const [patient, setPatient] = useState<Patient | null>(null);
@@ -102,7 +102,7 @@ export default function PatientDetailPage() {
   return (
     <main className="p-8 max-w-3xl">
       <button
-        onClick={() => router.push("/secretary/patients")}
+        onClick={() => router.push(backPath)}
         className="text-sm text-blue-600 hover:underline mb-4 block"
       >
         &larr; Voltar para Pacientes
