@@ -11,6 +11,23 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        primary: {
+          50: '#eff6ff',
+          100: '#dbeafe',
+          500: '#3b82f6',
+          600: '#2563eb', // Blue interactives
+          700: '#1d4ed8',
+        },
+        sidebar: {
+          DEFAULT: '#4A6B8C', // Deep grayish blue
+          hover: '#3a5775',
+          text: '#ffffff',
+          muted: '#cbd5e1',
+        },
+        accent: {
+          500: '#10b981', // Emerald green
+          600: '#059669',
+        }
       },
     },
   },
