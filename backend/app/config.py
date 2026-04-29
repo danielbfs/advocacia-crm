@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     # Ambiente
     ENVIRONMENT: Literal["development", "production"] = "development"
     DOMAIN: str = "localhost"
+    APP_TIER: Literal["basic", "advanced"] = "basic"
 
     # Banco de dados
     DATABASE_URL: str

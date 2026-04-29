@@ -60,3 +60,7 @@ app.include_router(followup_router, prefix="/api/v1/followup", tags=["followup"]
 @app.get("/health")
 async def health_check():
     return {"status": "ok", "version": "0.1.0"}
+
+@app.get("/api/v1/config/tier")
+async def get_app_tier():
+    return {"tier": settings.APP_TIER}

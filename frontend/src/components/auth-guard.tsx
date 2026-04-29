@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
+import { useTier } from "@/lib/tier";
 import type { UserRole } from "@/types";
 
 interface AuthGuardProps {
@@ -11,12 +12,16 @@ interface AuthGuardProps {
 }
 
 export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
-  const { user, isLoading, isAuthenticated, loadUser } = useAuth();
+  const { user, isLoading: isAuthLoading, isAuthenticated, loadUser } = useAuth();
+  const { tier, isLoading: isTierLoading, loadTier } = useTier();
   const router = useRouter();
 
   useEffect(() => {
     loadUser();
-  }, [loadUser]);
+    loadTier();
+  }, [loadUser, loadTier]);
+
+  const isLoading = isAuthLoading || isTierLoading;
 
   useEffect(() => {
     if (isLoading) return;
