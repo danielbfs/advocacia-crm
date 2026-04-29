@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { api } from "@/lib/api";
 
 interface FunnelItem {
@@ -146,11 +147,15 @@ export default function ReportsPage() {
             ) : (
               <div className="space-y-3">
                 {funnel.map((item) => (
-                  <div key={item.status} className="flex items-center gap-3">
-                    <span className="w-36 text-sm text-gray-600 text-right">
+                  <Link
+                    key={item.status}
+                    href={`/admin/leads?status=${item.status}`}
+                    className="flex items-center gap-3 group hover:opacity-80 transition-all cursor-pointer"
+                  >
+                    <span className="w-36 text-sm text-gray-600 text-right group-hover:text-blue-600 font-medium">
                       {STATUS_LABELS[item.status] || item.status}
                     </span>
-                    <div className="flex-1 bg-gray-100 rounded-full h-7 relative overflow-hidden">
+                    <div className="flex-1 bg-gray-100 rounded-full h-7 relative overflow-hidden group-hover:ring-1 group-hover:ring-blue-400">
                       <div
                         className={`h-full rounded-full ${STATUS_COLORS[item.status] || "bg-blue-500"} transition-all`}
                         style={{ width: `${(item.total / maxFunnel) * 100}%` }}
@@ -159,7 +164,7 @@ export default function ReportsPage() {
                         {item.total}
                       </span>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}

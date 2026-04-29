@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import type {
@@ -98,8 +98,9 @@ export function LeadsListView({ basePath = "/secretary/leads" }: { basePath?: st
   const [sla, setSla] = useState<{ total: number; within_sla: number; overdue: number; sla_rate: number } | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const searchParams = useSearchParams();
   // View
-  const [view, setView] = useState<ViewMode>("kanban");
+  const [view, setView] = useState<ViewMode>(searchParams.get("status") ? "list" : "kanban");
 
   // Filters
   const [period, setPeriod] = useState<string>("30d");
@@ -107,6 +108,7 @@ export function LeadsListView({ basePath = "/secretary/leads" }: { basePath?: st
   const [filterChannel, setFilterChannel] = useState<string>("all");
   const [filterOverdue, setFilterOverdue] = useState<boolean>(false);
   const [search, setSearch] = useState<string>("");
+  const [filterStatus, setFilterStatus] = useState<string>(searchParams.get("status") || "all");
   const [debouncedSearch, setDebouncedSearch] = useState<string>("");
 
   // Selection / bulk
@@ -143,13 +145,14 @@ export function LeadsListView({ basePath = "/secretary/leads" }: { basePath?: st
   useEffect(() => {
     fetchLeads();
     fetchMetrics();
-  }, [filterAssigned, filterChannel, filterOverdue, debouncedSearch, period, user?.id]);
+  }, [filterAssigned, filterChannel, filterStatus, filterOverdue, debouncedSearch, period, user?.id]);
 
   async function fetchLeads() {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (filterChannel !== "all") params.set("channel", filterChannel);
+      if (filterStatus !== "all") params.set("status", filterStatus);
       if (filterOverdue) params.set("is_overdue", "true");
       if (filterAssigned === "mine" && user) params.set("assigned_to", user.id);
       else if (filterAssigned !== "all" && filterAssigned !== "unassigned")
@@ -391,6 +394,18 @@ export function LeadsListView({ basePath = "/secretary/leads" }: { basePath?: st
           {CHANNEL_OPTIONS.map((c) => (
             <option key={c.value} value={c.value}>
               {c.label}
+            </option>
+          ))}
+        </select>
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+          className="border rounded-lg px-3 py-1.5"
+        >
+          <option value="all">Todos os status</option>
+          {config && config.statuses.map((s) => (
+            <option key={s} value={s}>
+              {statusLabel(s)}
             </option>
           ))}
         </select>
