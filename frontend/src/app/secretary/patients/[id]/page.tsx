@@ -34,7 +34,11 @@ const STATUS_OPTIONS = [
   { value: "no_show", label: "Não compareceu" },
 ];
 
-export default function PatientDetailPage({ backPath = "/secretary/patients" }: { backPath?: string }) {
+export default function PatientDetailPage() {
+  return <PatientDetailView />;
+}
+
+export function PatientDetailView({ backPath = "/secretary/patients" }: { backPath?: string }) {
   const { id } = useParams();
   const router = useRouter();
   const [patient, setPatient] = useState<Patient | null>(null);
