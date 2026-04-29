@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.modules.leads.models import Lead, LeadInteraction
+from app.modules.followup.models import FollowupJob
 from app.modules.leads.pipeline import (
     InvalidTransitionError,
     REQUIRES_LOST_REASON,
@@ -404,3 +405,41 @@ async def get_timeline(db: AsyncSession, date_from: datetime | None = None) -> l
         {"day": str(row.day.date()), "new_leads": row.new_leads, "converted": row.converted}
         for row in result.all()
     ]
+
+
+async def get_automations_report(db: AsyncSession, date_from: datetime | None = None) -> dict:
+    """Métricas de performance de IA e Follow-ups."""
+    # IA Metrics
+    ai_q = select(func.count()).select_from(Lead).where(Lead.ai_active.isnot(None))
+    ai_conv_q = select(func.count()).select_from(Lead).where(
+        and_(Lead.ai_active.isnot(None), Lead.status == "convertido")
+    )
+    
+    if date_from:
+        ai_q = ai_q.where(Lead.created_at >= date_from)
+        ai_conv_q = ai_conv_q.where(Lead.created_at >= date_from)
+        
+    ai_total = (await db.execute(ai_q)).scalar() or 0
+    ai_converted = (await db.execute(ai_conv_q)).scalar() or 0
+    ai_rate = round(100.0 * ai_converted / ai_total, 1) if ai_total > 0 else 0.0
+
+    # Follow-ups Metrics
+    fu_q = select(func.count()).select_from(FollowupJob)
+    fu_exec_q = select(func.count()).select_from(FollowupJob).where(FollowupJob.status == "executed")
+    
+    if date_from:
+        fu_q = fu_q.where(FollowupJob.scheduled_for >= date_from)
+        fu_exec_q = fu_exec_q.where(FollowupJob.scheduled_for >= date_from)
+        
+    fu_total = (await db.execute(fu_q)).scalar() or 0
+    fu_executed = (await db.execute(fu_exec_q)).scalar() or 0
+    fu_rate = round(100.0 * fu_executed / fu_total, 1) if fu_total > 0 else 0.0
+
+    return {
+        "ai_total": ai_total,
+        "ai_converted": ai_converted,
+        "ai_conversion_rate": ai_rate,
+        "followup_total": fu_total,
+        "followup_executed": fu_executed,
+        "followup_execution_rate": fu_rate,
+    }

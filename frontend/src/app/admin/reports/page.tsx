@@ -23,6 +23,15 @@ interface SLAReport {
   sla_rate: number;
 }
 
+interface AutomationMetrics {
+  ai_total: number;
+  ai_converted: number;
+  ai_conversion_rate: number;
+  followup_total: number;
+  followup_executed: number;
+  followup_execution_rate: number;
+}
+
 interface TimelineItem {
   day: string;
   new_leads: number;
@@ -60,6 +69,7 @@ export default function ReportsPage() {
   const [sources, setSources] = useState<LeadsBySourceItem[]>([]);
   const [sla, setSla] = useState<SLAReport | null>(null);
   const [timeline, setTimeline] = useState<TimelineItem[]>([]);
+  const [automations, setAutomations] = useState<AutomationMetrics | null>(null);
 
   useEffect(() => {
     fetchReports();
@@ -68,16 +78,18 @@ export default function ReportsPage() {
   async function fetchReports() {
     setLoading(true);
     try {
-      const [funnelRes, sourcesRes, slaRes, timelineRes] = await Promise.allSettled([
+      const [funnelRes, sourcesRes, slaRes, timelineRes, autoRes] = await Promise.allSettled([
         api.get(`/leads/reports/funnel?period=${period}`),
         api.get(`/leads/reports/by-source?period=${period}`),
         api.get(`/leads/reports/sla?period=${period}`),
         api.get(`/leads/reports/timeline?period=${period}`),
+        api.get(`/leads/reports/automations?period=${period}`),
       ]);
       if (funnelRes.status === "fulfilled") setFunnel(funnelRes.value.data);
       if (sourcesRes.status === "fulfilled") setSources(sourcesRes.value.data);
       if (slaRes.status === "fulfilled") setSla(slaRes.value.data);
       if (timelineRes.status === "fulfilled") setTimeline(timelineRes.value.data);
+      if (autoRes.status === "fulfilled") setAutomations(autoRes.value.data);
     } finally {
       setLoading(false);
     }
@@ -178,6 +190,51 @@ export default function ReportsPage() {
                 />
               </div>
               <p className="text-xs text-gray-400 mt-1 text-right">{sla.sla_rate.toFixed(1)}% cumprido</p>
+            </div>
+          )}
+
+          {/* Automations Performance */}
+          {automations && (
+            <div className="bg-white border rounded-lg p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Performance das Automações</h2>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="border rounded-lg p-4">
+                  <h3 className="text-sm font-medium text-gray-700 mb-3">Atendimentos por IA</h3>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-2xl font-bold text-gray-900">{automations.ai_total}</span>
+                    <span className="text-sm text-gray-500">Leads no período</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-bold text-green-600">{automations.ai_converted}</span>
+                    <span className="text-sm text-gray-500">Convertidos</span>
+                  </div>
+                  <div className="mt-3 bg-gray-100 rounded-full h-2 overflow-hidden">
+                    <div
+                      className="h-full bg-blue-500 rounded-full"
+                      style={{ width: `${automations.ai_conversion_rate}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1 text-right">{automations.ai_conversion_rate.toFixed(1)}% de conversão</p>
+                </div>
+                <div className="border rounded-lg p-4">
+                  <h3 className="text-sm font-medium text-gray-700 mb-3">Rotinas de Follow-up</h3>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-2xl font-bold text-gray-900">{automations.followup_total}</span>
+                    <span className="text-sm text-gray-500">Agendados no período</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-bold text-blue-600">{automations.followup_executed}</span>
+                    <span className="text-sm text-gray-500">Executados c/ sucesso</span>
+                  </div>
+                  <div className="mt-3 bg-gray-100 rounded-full h-2 overflow-hidden">
+                    <div
+                      className="h-full bg-indigo-500 rounded-full"
+                      style={{ width: `${automations.followup_execution_rate}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1 text-right">{automations.followup_execution_rate.toFixed(1)}% de execução</p>
+                </div>
+              </div>
             </div>
           )}
 

@@ -62,6 +62,7 @@ from app.modules.leads.service import (
     mark_lost,
     transition_status,
     update_lead,
+    get_automations_report,
 )
 
 router = APIRouter()
@@ -526,6 +527,15 @@ async def report_pipeline(
     db: AsyncSession = Depends(get_db),
 ):
     return await get_pipeline_report(db, date_from=_parse_period(period))
+
+
+@router.get("/reports/automations")
+async def report_automations(
+    period: str = Query("30d"),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    return await get_automations_report(db, date_from=_parse_period(period))
 
 
 @router.get("/export.csv")
