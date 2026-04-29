@@ -1,5 +1,5 @@
-import LeadsPage from "@/app/secretary/page";
+import { LeadsListView } from "@/app/secretary/LeadsListView";
 
 export default function AdminLeadsPage() {
-  return <LeadsPage basePath="/admin/leads" />;
+  return <LeadsListView basePath="/admin/leads" />;
 }

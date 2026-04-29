@@ -1,5 +1,5 @@
-import LeadDetailPage from "@/app/secretary/leads/[id]/page";
+import { LeadDetailView } from "@/app/secretary/leads/[id]/LeadDetailView";
 
 export default function AdminLeadDetailPage() {
-  return <LeadDetailPage backPath="/admin/leads" />;
+  return <LeadDetailView backPath="/admin/leads" />;
 }

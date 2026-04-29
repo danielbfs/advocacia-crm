@@ -1,5 +1,5 @@
-import CalendarPage from "@/app/secretary/calendar/page";
+import { CalendarView } from "@/app/secretary/calendar/CalendarView";
 
 export default function AdminCalendarPage() {
-  return <CalendarPage basePath="/admin" />;
+  return <CalendarView basePath="/admin" />;
 }
