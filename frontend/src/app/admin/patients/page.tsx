@@ -1,5 +1,5 @@
-import PatientsPage from "@/app/secretary/patients/page";
+import { PatientListView } from "@/app/secretary/patients/PatientListView";
 
 export default function AdminPatientsPage() {
-  return <PatientsPage basePath="/admin/patients" />;
+  return <PatientListView basePath="/admin/patients" />;
 }
