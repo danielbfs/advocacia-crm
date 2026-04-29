@@ -62,4 +62,10 @@ celery_app.conf.beat_schedule = {
         "schedule": crontab(minute="0"),
         "options": {"queue": "leads"},
     },
+    # Processa mensagens outbound agendadas para leads a cada 2 minutos
+    "process-lead-scheduled-messages": {
+        "task": "app.modules.leads.ai_tasks.process_lead_scheduled_messages",
+        "schedule": crontab(minute="*/2"),
+        "options": {"queue": "leads"},
+    },
 }

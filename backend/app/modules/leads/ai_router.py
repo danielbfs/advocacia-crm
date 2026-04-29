@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.permissions import get_current_user, require_role
 from app.database import get_db
 from app.modules.auth.models import User
-from app.modules.leads.ai_models import LeadAgentConfig, LeadConversation, LeadMessage, SupervisorQuery
+from app.modules.leads.ai_models import LeadAgentConfig, LeadConversation, LeadMessage, SupervisorQuery, LeadOutboundMessage, LeadActivity
 from app.modules.leads.pipeline import LEAD_STATUSES
 
 router = APIRouter()
@@ -276,5 +276,285 @@ async def get_supervisor_queue(
         select(SupervisorQuery)
         .where(SupervisorQuery.status == "pending")
         .order_by(SupervisorQuery.asked_at)
+    )
+    return list(result.scalars().all())
+
+
+# ---------------------------------------------------------------------------
+# AI/Human handling control
+# ---------------------------------------------------------------------------
+
+class HandlingSchema(BaseModel):
+    mode: str  # "ia" | "human"
+
+
+@router.patch("/{lead_id}/ai-handling")
+async def set_lead_handling(
+    lead_id: uuid.UUID,
+    body: HandlingSchema,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Switch lead handling between AI and a human operator."""
+    if body.mode not in ("ia", "human"):
+        raise HTTPException(status_code=400, detail="mode deve ser 'ia' ou 'human'.")
+
+    from app.modules.leads.models import Lead, LeadInteraction
+
+    lead = await db.get(Lead, lead_id)
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead não encontrado.")
+
+    is_ai = body.mode == "ia"
+    lead.ai_active = is_ai
+
+    # If human takes over and lead has no responsible, assign to current user
+    if not is_ai and lead.assigned_to is None:
+        lead.assigned_to = current_user.id
+
+    # Sync conversation control if exists
+    conv_result = await db.execute(
+        select(LeadConversation).where(LeadConversation.lead_id == lead_id)
+    )
+    conv = conv_result.scalar_one_or_none()
+    if conv and conv.status == "active":
+        conv.control = "ai" if is_ai else "human"
+
+    # Audit interaction
+    if is_ai:
+        note = f"[Secretaria] Atendimento devolvido para IA por {current_user.full_name}."
+    else:
+        note = f"[Secretaria] Atendimento assumido por {current_user.full_name}."
+
+    db.add(LeadInteraction(lead_id=lead_id, user_id=current_user.id, type="nota", content=note))
+    await db.commit()
+
+    return {"ok": True, "ai_active": lead.ai_active}
+
+
+# ---------------------------------------------------------------------------
+# Outbound WhatsApp messages
+# ---------------------------------------------------------------------------
+
+class OutboundMessageCreate(BaseModel):
+    message: str
+    scheduled_for: datetime | None = None
+    channel: str = "whatsapp"
+
+
+class OutboundMessageSchema(BaseModel):
+    id: uuid.UUID
+    lead_id: uuid.UUID
+    channel: str
+    message: str
+    scheduled_for: datetime | None
+    status: str
+    sent_at: datetime | None
+    error: str | None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+@router.post("/{lead_id}/send-whatsapp", response_model=OutboundMessageSchema, status_code=201)
+async def send_whatsapp_to_lead(
+    lead_id: uuid.UUID,
+    body: OutboundMessageCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Send or schedule a WhatsApp message to a lead."""
+    from app.modules.leads.models import Lead
+    from app.modules.messaging.gateway import send_message
+
+    lead = await db.get(Lead, lead_id)
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead não encontrado.")
+
+    now = datetime.now(timezone.utc)
+    send_now = body.scheduled_for is None or body.scheduled_for <= now
+
+    msg = LeadOutboundMessage(
+        lead_id=lead_id,
+        created_by=current_user.id,
+        channel=body.channel,
+        message=body.message,
+        scheduled_for=body.scheduled_for,
+        status="pending",
+    )
+    db.add(msg)
+    await db.commit()
+    await db.refresh(msg)
+
+    if send_now:
+        try:
+            ok = await send_message(body.channel, lead.phone, body.message)
+            msg.status = "sent" if ok else "failed"
+            msg.sent_at = datetime.now(timezone.utc)
+            if not ok:
+                msg.error = "send_message retornou False"
+        except Exception as e:
+            msg.status = "failed"
+            msg.error = str(e)[:500]
+        await db.commit()
+        await db.refresh(msg)
+
+    return msg
+
+
+@router.get("/{lead_id}/outbound-messages", response_model=list[OutboundMessageSchema])
+async def list_outbound_messages(
+    lead_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(LeadOutboundMessage)
+        .where(LeadOutboundMessage.lead_id == lead_id)
+        .order_by(LeadOutboundMessage.created_at.desc())
+    )
+    return list(result.scalars().all())
+
+
+@router.delete("/{lead_id}/outbound-messages/{msg_id}", status_code=204)
+async def cancel_outbound_message(
+    lead_id: uuid.UUID,
+    msg_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(LeadOutboundMessage).where(
+            LeadOutboundMessage.id == msg_id,
+            LeadOutboundMessage.lead_id == lead_id,
+            LeadOutboundMessage.status == "pending",
+        )
+    )
+    msg = result.scalar_one_or_none()
+    if not msg:
+        raise HTTPException(status_code=404, detail="Mensagem não encontrada ou já enviada.")
+    msg.status = "cancelled"
+    await db.commit()
+
+
+# ---------------------------------------------------------------------------
+# Lead Activities (reminders)
+# ---------------------------------------------------------------------------
+
+class ActivityCreate(BaseModel):
+    title: str
+    description: str | None = None
+    due_at: datetime | None = None
+    assigned_to: uuid.UUID | None = None
+
+
+class ActivityUpdate(BaseModel):
+    title: str | None = None
+    description: str | None = None
+    due_at: datetime | None = None
+    assigned_to: uuid.UUID | None = None
+    status: str | None = None  # "done" | "cancelled"
+
+
+class ActivitySchema(BaseModel):
+    id: uuid.UUID
+    lead_id: uuid.UUID
+    created_by: uuid.UUID | None
+    assigned_to: uuid.UUID | None
+    title: str
+    description: str | None
+    due_at: datetime | None
+    status: str
+    completed_at: datetime | None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+@router.get("/{lead_id}/activities", response_model=list[ActivitySchema])
+async def list_lead_activities(
+    lead_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(LeadActivity)
+        .where(LeadActivity.lead_id == lead_id)
+        .order_by(LeadActivity.due_at.asc().nullslast(), LeadActivity.created_at.asc())
+    )
+    return list(result.scalars().all())
+
+
+@router.post("/{lead_id}/activities", response_model=ActivitySchema, status_code=201)
+async def create_lead_activity(
+    lead_id: uuid.UUID,
+    body: ActivityCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    activity = LeadActivity(
+        lead_id=lead_id,
+        created_by=current_user.id,
+        assigned_to=body.assigned_to or current_user.id,
+        title=body.title,
+        description=body.description,
+        due_at=body.due_at,
+        status="pending",
+    )
+    db.add(activity)
+    await db.commit()
+    await db.refresh(activity)
+    return activity
+
+
+@router.patch("/{lead_id}/activities/{activity_id}", response_model=ActivitySchema)
+async def update_lead_activity(
+    lead_id: uuid.UUID,
+    activity_id: uuid.UUID,
+    body: ActivityUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(LeadActivity).where(
+            LeadActivity.id == activity_id,
+            LeadActivity.lead_id == lead_id,
+        )
+    )
+    activity = result.scalar_one_or_none()
+    if not activity:
+        raise HTTPException(status_code=404, detail="Atividade não encontrada.")
+
+    if body.title is not None:
+        activity.title = body.title
+    if body.description is not None:
+        activity.description = body.description
+    if body.due_at is not None:
+        activity.due_at = body.due_at
+    if body.assigned_to is not None:
+        activity.assigned_to = body.assigned_to
+    if body.status in ("done", "cancelled"):
+        activity.status = body.status
+        if body.status == "done" and activity.completed_at is None:
+            activity.completed_at = datetime.now(timezone.utc)
+
+    await db.commit()
+    await db.refresh(activity)
+    return activity
+
+
+@router.get("/my-activities", response_model=list[ActivitySchema])
+async def my_pending_activities(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """All pending activities assigned to the current user (across all leads)."""
+    result = await db.execute(
+        select(LeadActivity)
+        .where(
+            LeadActivity.assigned_to == current_user.id,
+            LeadActivity.status == "pending",
+        )
+        .order_by(LeadActivity.due_at.asc().nullslast())
     )
     return list(result.scalars().all())

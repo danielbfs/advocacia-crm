@@ -1,4 +1,4 @@
-"""Lead AI Agent models — configs, conversations and supervisor queries."""
+"""Lead AI Agent models — configs, conversations, supervisor queries, outbound messages and activities."""
 import uuid
 from datetime import datetime, timezone
 
@@ -127,3 +127,58 @@ class SupervisorQuery(Base):
     answered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     conversation = relationship("LeadConversation", back_populates="supervisor_queries")
+
+
+class LeadOutboundMessage(Base):
+    """WhatsApp message sent or scheduled by a human operator for a lead."""
+
+    __tablename__ = "lead_outbound_messages"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    lead_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("leads.id", ondelete="CASCADE"), nullable=False
+    )
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    channel: Mapped[str] = mapped_column(String(20), default="whatsapp", nullable=False)
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    # null = send immediately
+    scheduled_for: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # "pending" | "sent" | "failed" | "cancelled"
+    status: Mapped[str] = mapped_column(String(20), default="pending", nullable=False)
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+
+class LeadActivity(Base):
+    """Reminder / to-do activity linked to a lead, assigned to a user."""
+
+    __tablename__ = "lead_activities"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    lead_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("leads.id", ondelete="CASCADE"), nullable=False
+    )
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    assigned_to: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # "pending" | "done" | "cancelled"
+    status: Mapped[str] = mapped_column(String(20), default="pending", nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )

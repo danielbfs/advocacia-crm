@@ -97,6 +97,31 @@ export interface PricingItem {
   notes?: string;
 }
 
+export interface LeadOutboundMessage {
+  id: string;
+  lead_id: string;
+  channel: string;
+  message: string;
+  scheduled_for: string | null;
+  status: "pending" | "sent" | "failed" | "cancelled";
+  sent_at: string | null;
+  error: string | null;
+  created_at: string;
+}
+
+export interface LeadActivity {
+  id: string;
+  lead_id: string;
+  created_by: string | null;
+  assigned_to: string | null;
+  title: string;
+  description: string | null;
+  due_at: string | null;
+  status: "pending" | "done" | "cancelled";
+  completed_at: string | null;
+  created_at: string;
+}
+
 export interface SupervisorConfig {
   supervisor_whatsapp: string;
   awaiting_message: string;
@@ -107,6 +132,7 @@ export interface SupervisorConfig {
 export interface Lead {
   id: string;
   code: string;
+  ai_active: boolean | null;
   full_name: string | null;
   phone: string;
   email: string | null;

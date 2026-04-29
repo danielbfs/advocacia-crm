@@ -404,10 +404,11 @@ async def send_proactive_message(
         conversation.last_message_at = now
         await db.commit()
 
-        # Move lead to em_contato if still in novo
+        # Mark lead as AI-handled and move to em_contato if still in novo
+        lead.ai_active = True
         if lead.status == "novo":
             lead.status = "em_contato"
             if lead.contacted_at is None:
                 lead.contacted_at = now
-            await db.commit()
+        await db.commit()
     return ok

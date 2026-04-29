@@ -671,8 +671,18 @@ function KanbanBoard({
                         )}
                       </div>
 
-                      <div className="flex items-center justify-between text-xs text-gray-500 mt-2">
+                      <div className="flex items-center justify-between text-xs text-gray-500 mt-1.5">
                         <span>{CHANNEL_LABELS[lead.channel] || lead.channel}</span>
+                        {lead.ai_active === true && (
+                          <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-medium">
+                            🤖 IA
+                          </span>
+                        )}
+                        {lead.ai_active === false && (
+                          <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-medium">
+                            👤 Humano
+                          </span>
+                        )}
                         {lead.quote_value && (
                           <span className="font-medium text-gray-700">
                             {formatCurrency(lead.quote_value)}
@@ -748,6 +758,7 @@ function LeadsTable({
             <th className="text-left px-3 py-2 text-gray-500 font-medium">Lead</th>
             <th className="text-left px-3 py-2 text-gray-500 font-medium">Canal</th>
             <th className="text-left px-3 py-2 text-gray-500 font-medium">Status</th>
+            <th className="text-left px-3 py-2 text-gray-500 font-medium">Atendimento</th>
             <th className="text-left px-3 py-2 text-gray-500 font-medium">Resp.</th>
             <th className="text-right px-3 py-2 text-gray-500 font-medium">Valor</th>
             <th className="text-left px-3 py-2 text-gray-500 font-medium">SLA</th>
@@ -784,6 +795,21 @@ function LeadsTable({
                 >
                   {statusLabel(lead.status)}
                 </span>
+              </td>
+              <td className="px-3 py-2" onClick={() => onClick(lead)}>
+                {lead.ai_active === true && (
+                  <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+                    🤖 IA
+                  </span>
+                )}
+                {lead.ai_active === false && (
+                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">
+                    👤 Humano
+                  </span>
+                )}
+                {lead.ai_active === null && (
+                  <span className="text-xs text-gray-400">—</span>
+                )}
               </td>
               <td className="px-3 py-2 text-gray-600" onClick={() => onClick(lead)}>
                 {lead.assigned_user?.full_name || "—"}

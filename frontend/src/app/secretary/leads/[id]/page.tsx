@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
-import type { Lead, LeadInteraction, LeadConversation } from "@/types";
+import type { Lead, LeadInteraction, LeadConversation, LeadOutboundMessage, LeadActivity } from "@/types";
+import { useAuth } from "@/lib/auth";
 
 const STATUS_OPTIONS = [
   { value: "novo", label: "Novo" },
@@ -56,7 +57,7 @@ const CHANNEL_LABELS: Record<string, string> = {
   outro: "Outro",
 };
 
-type Tab = "info" | "conversa";
+type Tab = "info" | "conversa" | "whatsapp" | "lembretes";
 
 // --- AI Control helpers ---
 
@@ -277,13 +278,15 @@ function ConversaTab({
 export default function LeadDetailPage() {
   const { id } = useParams();
   const router = useRouter();
+  const { user } = useAuth();
   const [lead, setLead] = useState<Lead | null>(null);
   const [interactions, setInteractions] = useState<LeadInteraction[]>([]);
-  const [conversation, setConversation] = useState<LeadConversation | null>(
-    null
-  );
+  const [conversation, setConversation] = useState<LeadConversation | null>(null);
+  const [outboundMessages, setOutboundMessages] = useState<LeadOutboundMessage[]>([]);
+  const [activities, setActivities] = useState<LeadActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("info");
+  const [handlingBusy, setHandlingBusy] = useState(false);
 
   // Edit state
   const [editing, setEditing] = useState(false);
@@ -317,10 +320,12 @@ export default function LeadDetailPage() {
   async function fetchAll() {
     setLoading(true);
     try {
-      const [leadRes, intRes, convRes] = await Promise.allSettled([
+      const [leadRes, intRes, convRes, outRes, actRes] = await Promise.allSettled([
         api.get(`/leads/${id}`),
         api.get(`/leads/${id}/interactions`),
         api.get(`/leads/${id}/ai-conversation`),
+        api.get(`/leads/${id}/outbound-messages`),
+        api.get(`/leads/${id}/activities`),
       ]);
       if (leadRes.status === "fulfilled") {
         const l = leadRes.value.data;
@@ -338,8 +343,23 @@ export default function LeadDetailPage() {
       if (intRes.status === "fulfilled") setInteractions(intRes.value.data);
       if (convRes.status === "fulfilled") setConversation(convRes.value.data);
       else setConversation(null);
+      if (outRes.status === "fulfilled") setOutboundMessages(outRes.value.data);
+      if (actRes.status === "fulfilled") setActivities(actRes.value.data);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function toggleHandling(mode: "ia" | "human") {
+    if (!lead) return;
+    setHandlingBusy(true);
+    try {
+      await api.patch(`/leads/${lead.id}/ai-handling`, { mode });
+      fetchAll();
+    } catch {
+      alert("Erro ao alterar controle de atendimento.");
+    } finally {
+      setHandlingBusy(false);
     }
   }
 
@@ -490,26 +510,67 @@ export default function LeadDetailPage() {
         </button>
       </div>
 
+      {/* Handling control */}
+      <div className="flex items-center gap-3 mb-5 p-3 bg-white border rounded-lg">
+        <span className="text-xs text-gray-500">Atendimento:</span>
+        {lead.ai_active === true && (
+          <>
+            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+              🤖 IA ativa
+            </span>
+            <button
+              onClick={() => toggleHandling("human")}
+              disabled={handlingBusy}
+              className="text-xs px-3 py-1 rounded-lg border border-blue-600 text-blue-600 hover:bg-blue-50 disabled:opacity-50"
+            >
+              Assumir atendimento
+            </button>
+          </>
+        )}
+        {lead.ai_active === false && (
+          <>
+            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">
+              👤 {lead.assigned_user?.full_name || "Humano"}
+            </span>
+            <button
+              onClick={() => toggleHandling("ia")}
+              disabled={handlingBusy}
+              className="text-xs px-3 py-1 rounded-lg border border-green-600 text-green-600 hover:bg-green-50 disabled:opacity-50"
+            >
+              Devolver para IA
+            </button>
+          </>
+        )}
+        {lead.ai_active === null && (
+          <span className="text-xs text-gray-400">Sem IA envolvida</span>
+        )}
+      </div>
+
       {/* Tabs */}
       <div className="flex gap-1 mb-6 border-b">
-        {(["info", "conversa"] as Tab[]).map((t) => (
+        {([
+          { key: "info", label: "Informações" },
+          { key: "whatsapp", label: "WhatsApp" },
+          { key: "lembretes", label: "Lembretes", badge: activities.filter((a) => a.status === "pending").length },
+          { key: "conversa", label: "Conversa IA" },
+        ] as { key: Tab; label: string; badge?: number }[]).map(({ key, label, badge }) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              tab === t
+            key={key}
+            onClick={() => setTab(key)}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 ${
+              tab === key
                 ? "border-blue-600 text-blue-600"
                 : "border-transparent text-gray-500 hover:text-gray-700"
             }`}
           >
-            {t === "info" ? "Informações" : "Conversa da IA"}
-            {t === "conversa" && conversation?.control === "awaiting_supervisor" && (
-              <span className="ml-1.5 w-2 h-2 rounded-full bg-yellow-500 inline-block" />
-            )}
-            {t === "conversa" && conversation?.supervisor_queries.some((q) => q.status === "pending") && (
-              <span className="ml-1 text-[10px] bg-yellow-100 text-yellow-700 px-1 rounded">
-                {conversation.supervisor_queries.filter((q) => q.status === "pending").length}
+            {label}
+            {badge !== undefined && badge > 0 && (
+              <span className="text-[10px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full font-medium">
+                {badge}
               </span>
+            )}
+            {key === "conversa" && conversation?.control === "awaiting_supervisor" && (
+              <span className="w-2 h-2 rounded-full bg-yellow-500 inline-block" />
             )}
           </button>
         ))}
@@ -766,6 +827,25 @@ export default function LeadDetailPage() {
         </>
       )}
 
+      {/* Tab: WhatsApp */}
+      {tab === "whatsapp" && (
+        <WhatsAppTab
+          leadId={lead.id}
+          messages={outboundMessages}
+          onSent={fetchAll}
+        />
+      )}
+
+      {/* Tab: Lembretes */}
+      {tab === "lembretes" && (
+        <LembretesTab
+          leadId={lead.id}
+          activities={activities}
+          currentUserId={user?.id ?? null}
+          onChanged={fetchAll}
+        />
+      )}
+
       {/* Tab: Conversa da IA */}
       {tab === "conversa" && (
         <ConversaTab
@@ -846,6 +926,333 @@ export default function LeadDetailPage() {
         </Modal>
       )}
     </main>
+  );
+}
+
+// --- WhatsApp Tab ---
+
+function WhatsAppTab({
+  leadId,
+  messages,
+  onSent,
+}: {
+  leadId: string;
+  messages: LeadOutboundMessage[];
+  onSent: () => void;
+}) {
+  const [msg, setMsg] = useState("");
+  const [scheduleMode, setScheduleMode] = useState(false);
+  const [scheduledFor, setScheduledFor] = useState("");
+  const [sending, setSending] = useState(false);
+
+  async function send() {
+    if (!msg.trim()) return;
+    setSending(true);
+    try {
+      await api.post(`/leads/${leadId}/send-whatsapp`, {
+        message: msg,
+        scheduled_for: scheduleMode && scheduledFor ? scheduledFor : null,
+      });
+      setMsg("");
+      setScheduledFor("");
+      setScheduleMode(false);
+      onSent();
+    } catch {
+      alert("Erro ao enviar mensagem.");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function cancel(msgId: string) {
+    if (!confirm("Cancelar mensagem agendada?")) return;
+    try {
+      await api.delete(`/leads/${leadId}/outbound-messages/${msgId}`);
+      onSent();
+    } catch {
+      alert("Erro ao cancelar.");
+    }
+  }
+
+  const statusLabel: Record<string, string> = {
+    pending: "Agendada",
+    sent: "Enviada",
+    failed: "Falhou",
+    cancelled: "Cancelada",
+  };
+  const statusColor: Record<string, string> = {
+    pending: "bg-yellow-100 text-yellow-700",
+    sent: "bg-green-100 text-green-700",
+    failed: "bg-red-100 text-red-700",
+    cancelled: "bg-gray-100 text-gray-500",
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Send form */}
+      <div className="bg-white border rounded-xl p-4 space-y-3">
+        <h4 className="text-sm font-semibold text-gray-700">Nova mensagem WhatsApp</h4>
+        <textarea
+          rows={3}
+          value={msg}
+          onChange={(e) => setMsg(e.target.value)}
+          placeholder="Digite a mensagem..."
+          className="w-full border rounded-lg px-3 py-2 text-sm"
+        />
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+            <input
+              type="radio"
+              checked={!scheduleMode}
+              onChange={() => setScheduleMode(false)}
+            />
+            Enviar agora
+          </label>
+          <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+            <input
+              type="radio"
+              checked={scheduleMode}
+              onChange={() => setScheduleMode(true)}
+            />
+            Agendar para:
+          </label>
+          {scheduleMode && (
+            <input
+              type="datetime-local"
+              value={scheduledFor}
+              onChange={(e) => setScheduledFor(e.target.value)}
+              className="border rounded px-2 py-1 text-sm"
+            />
+          )}
+        </div>
+        <button
+          onClick={send}
+          disabled={sending || !msg.trim() || (scheduleMode && !scheduledFor)}
+          className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50"
+        >
+          {sending ? "Enviando..." : scheduleMode ? "Agendar" : "Enviar agora"}
+        </button>
+      </div>
+
+      {/* History */}
+      {messages.length > 0 && (
+        <div className="bg-white border rounded-xl p-4">
+          <h4 className="text-sm font-semibold text-gray-700 mb-3">Histórico</h4>
+          <div className="space-y-2">
+            {messages.map((m) => (
+              <div key={m.id} className="border rounded-lg p-3 text-sm">
+                <div className="flex items-center justify-between mb-1">
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor[m.status]}`}>
+                    {statusLabel[m.status]}
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    {m.scheduled_for
+                      ? `Agendada: ${new Date(m.scheduled_for).toLocaleString("pt-BR")}`
+                      : m.sent_at
+                      ? new Date(m.sent_at).toLocaleString("pt-BR")
+                      : new Date(m.created_at).toLocaleString("pt-BR")}
+                  </span>
+                </div>
+                <p className="text-gray-700 whitespace-pre-wrap">{m.message}</p>
+                {m.error && <p className="text-xs text-red-500 mt-1">{m.error}</p>}
+                {m.status === "pending" && (
+                  <button
+                    onClick={() => cancel(m.id)}
+                    className="text-xs text-red-500 hover:text-red-700 mt-1"
+                  >
+                    Cancelar
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- Lembretes Tab ---
+
+function LembretesTab({
+  leadId,
+  activities,
+  currentUserId,
+  onChanged,
+}: {
+  leadId: string;
+  activities: LeadActivity[];
+  currentUserId: string | null;
+  onChanged: () => void;
+}) {
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ title: "", description: "", due_at: "" });
+  const [saving, setSaving] = useState(false);
+
+  async function create() {
+    if (!form.title.trim()) return;
+    setSaving(true);
+    try {
+      await api.post(`/leads/${leadId}/activities`, {
+        title: form.title,
+        description: form.description || null,
+        due_at: form.due_at || null,
+      });
+      setForm({ title: "", description: "", due_at: "" });
+      setShowForm(false);
+      onChanged();
+    } catch {
+      alert("Erro ao criar lembrete.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function complete(actId: string) {
+    try {
+      await api.patch(`/leads/${leadId}/activities/${actId}`, { status: "done" });
+      onChanged();
+    } catch {
+      alert("Erro ao concluir.");
+    }
+  }
+
+  async function cancel(actId: string) {
+    try {
+      await api.patch(`/leads/${leadId}/activities/${actId}`, { status: "cancelled" });
+      onChanged();
+    } catch {
+      alert("Erro ao cancelar.");
+    }
+  }
+
+  const pending = activities.filter((a) => a.status === "pending");
+  const done = activities.filter((a) => a.status !== "pending");
+
+  function isOverdue(due_at: string | null) {
+    if (!due_at) return false;
+    return new Date(due_at) < new Date();
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h4 className="text-sm font-semibold text-gray-700">
+          Lembretes / Atividades
+        </h4>
+        <button
+          onClick={() => setShowForm(!showForm)}
+          className="text-sm text-blue-600 hover:underline"
+        >
+          {showForm ? "Cancelar" : "+ Novo lembrete"}
+        </button>
+      </div>
+
+      {showForm && (
+        <div className="bg-white border rounded-xl p-4 space-y-3">
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Título *</label>
+            <input
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+              placeholder="Ex: Ligar para confirmar interesse"
+              className="w-full border rounded-lg px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Descrição (opcional)</label>
+            <textarea
+              rows={2}
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              className="w-full border rounded-lg px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Vencimento (opcional)</label>
+            <input
+              type="datetime-local"
+              value={form.due_at}
+              onChange={(e) => setForm({ ...form, due_at: e.target.value })}
+              className="border rounded-lg px-3 py-2 text-sm"
+            />
+          </div>
+          <button
+            onClick={create}
+            disabled={saving || !form.title.trim()}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+          >
+            {saving ? "Salvando..." : "Criar lembrete"}
+          </button>
+        </div>
+      )}
+
+      {/* Pending */}
+      {pending.length === 0 && !showForm ? (
+        <div className="bg-white border rounded-xl p-6 text-center text-sm text-gray-400">
+          Nenhum lembrete pendente.
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {pending.map((a) => (
+            <div
+              key={a.id}
+              className={`bg-white border rounded-xl p-3 flex items-start gap-3 ${
+                isOverdue(a.due_at) ? "border-orange-300 bg-orange-50" : ""
+              }`}
+            >
+              <button
+                onClick={() => complete(a.id)}
+                className="mt-0.5 w-5 h-5 rounded border-2 border-gray-300 hover:border-green-500 flex-shrink-0 transition-colors"
+                title="Marcar como concluído"
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-800">{a.title}</p>
+                {a.description && (
+                  <p className="text-xs text-gray-500 mt-0.5">{a.description}</p>
+                )}
+                {a.due_at && (
+                  <p className={`text-xs mt-1 font-medium ${isOverdue(a.due_at) ? "text-orange-600" : "text-gray-400"}`}>
+                    {isOverdue(a.due_at) ? "⚠️ " : ""}
+                    Vence: {new Date(a.due_at).toLocaleString("pt-BR")}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={() => cancel(a.id)}
+                className="text-xs text-gray-400 hover:text-red-500 flex-shrink-0"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Completed */}
+      {done.length > 0 && (
+        <details className="bg-white border rounded-xl overflow-hidden">
+          <summary className="px-4 py-3 text-sm text-gray-500 cursor-pointer hover:bg-gray-50">
+            {done.length} concluído(s) / cancelado(s)
+          </summary>
+          <div className="border-t divide-y">
+            {done.map((a) => (
+              <div key={a.id} className="px-4 py-2.5 flex items-center gap-3">
+                <span className="text-gray-300 text-base">
+                  {a.status === "done" ? "✓" : "—"}
+                </span>
+                <span className="text-sm text-gray-500 line-through">{a.title}</span>
+                {a.completed_at && (
+                  <span className="text-xs text-gray-400 ml-auto">
+                    {new Date(a.completed_at).toLocaleDateString("pt-BR")}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
+    </div>
   );
 }
 

@@ -152,6 +152,15 @@ def check_supervisor_timeouts():
     _run_async(_do_check_supervisor_timeouts())
 
 
+@celery_app.task(
+    name="app.modules.leads.ai_tasks.process_lead_scheduled_messages",
+    queue="leads",
+)
+def process_lead_scheduled_messages():
+    """Send pending outbound messages whose scheduled_for time has arrived."""
+    _run_async(_do_process_scheduled_messages())
+
+
 async def _do_check_supervisor_timeouts() -> None:
     from sqlalchemy import select
     from app.database import AsyncSessionLocal
@@ -217,3 +226,48 @@ async def _do_check_supervisor_timeouts() -> None:
                 lead.code,
                 on_timeout,
             )
+
+
+async def _do_process_scheduled_messages() -> None:
+    from sqlalchemy import select, and_
+    from app.database import AsyncSessionLocal
+    from app.modules.leads.models import Lead
+    from app.modules.leads.ai_models import LeadOutboundMessage
+    from app.modules.messaging.gateway import send_message
+
+    now = datetime.now(timezone.utc)
+
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(
+            select(LeadOutboundMessage).where(
+                and_(
+                    LeadOutboundMessage.status == "pending",
+                    LeadOutboundMessage.scheduled_for <= now,
+                )
+            )
+        )
+        pending = list(result.scalars().all())
+
+        for msg in pending:
+            lead = await db.get(Lead, msg.lead_id)
+            if not lead:
+                msg.status = "failed"
+                msg.error = "Lead not found"
+                await db.commit()
+                continue
+
+            try:
+                ok = await send_message(msg.channel, lead.phone, msg.message)
+                msg.status = "sent" if ok else "failed"
+                msg.sent_at = datetime.now(timezone.utc)
+                if not ok:
+                    msg.error = "send_message retornou False"
+            except Exception as e:
+                msg.status = "failed"
+                msg.error = str(e)[:500]
+                logger.exception("Failed to send scheduled message %s for lead %s", msg.id, lead.code)
+
+            await db.commit()
+
+        if pending:
+            logger.info("Processed %d scheduled lead message(s)", len(pending))

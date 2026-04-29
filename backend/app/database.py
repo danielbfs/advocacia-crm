@@ -32,7 +32,7 @@ async def init_db():
     from app.modules.scheduling.models import Doctor, DoctorSchedule, ScheduleBlock, Appointment  # noqa
     from app.modules.crm.models import Patient  # noqa
     from app.modules.leads.models import Lead, LeadInteraction  # noqa
-    from app.modules.leads.ai_models import LeadAgentConfig, LeadConversation, LeadMessage, SupervisorQuery  # noqa
+    from app.modules.leads.ai_models import LeadAgentConfig, LeadConversation, LeadMessage, SupervisorQuery, LeadOutboundMessage, LeadActivity  # noqa
     from app.modules.messaging.models import Conversation, Message  # noqa
     from app.modules.followup.models import FollowupRule, FollowupJob  # noqa
 
