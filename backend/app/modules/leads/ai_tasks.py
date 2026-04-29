@@ -35,8 +35,12 @@ async def _do_send_proactive(lead_id_str: str) -> None:
     from app.database import AsyncSessionLocal
     from app.modules.leads.models import Lead
     from app.modules.leads.ai_engine import load_agent_config, send_proactive_message
+    from app.modules.leads.schedule import is_messaging_allowed
 
     async with AsyncSessionLocal() as db:
+        if not await is_messaging_allowed(db):
+            logger.info("Proactive message for lead %s skipped — outside allowed hours", lead_id_str)
+            return
         lead = await db.get(Lead, uuid.UUID(lead_id_str))
         if not lead:
             return
@@ -64,11 +68,17 @@ async def _do_check_inactivity() -> None:
     from app.database import AsyncSessionLocal
     from app.modules.leads.models import Lead, LeadInteraction
     from app.modules.leads.ai_models import LeadAgentConfig, LeadConversation, LeadMessage
+    from app.modules.leads.schedule import is_messaging_allowed
     from app.modules.messaging.gateway import send_message
 
     now = datetime.now(timezone.utc)
 
     async with AsyncSessionLocal() as db:
+        # Skip follow-up messages outside allowed hours
+        if not await is_messaging_allowed(db):
+            logger.info("Inactivity check skipped — outside allowed messaging hours")
+            return
+
         result = await db.execute(
             select(LeadConversation).where(
                 LeadConversation.control == "ai",
@@ -233,11 +243,15 @@ async def _do_process_scheduled_messages() -> None:
     from app.database import AsyncSessionLocal
     from app.modules.leads.models import Lead
     from app.modules.leads.ai_models import LeadOutboundMessage
+    from app.modules.leads.schedule import is_messaging_allowed
     from app.modules.messaging.gateway import send_message
 
     now = datetime.now(timezone.utc)
 
     async with AsyncSessionLocal() as db:
+        if not await is_messaging_allowed(db):
+            logger.info("Scheduled messages skipped — outside allowed messaging hours")
+            return
         result = await db.execute(
             select(LeadOutboundMessage).where(
                 and_(

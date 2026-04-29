@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import type { LeadAgentConfig, PricingItem, SupervisorConfig } from "@/types";
 
@@ -15,6 +15,44 @@ const PIPELINE_STATUSES = [
 const DEFAULT_AWAITING =
   "Vou verificar com nosso supervisor e retorno em breve! ✅";
 
+// ----- Schedule types -----
+const DAYS_OF_WEEK = [
+  { key: "mon", label: "Seg" },
+  { key: "tue", label: "Ter" },
+  { key: "wed", label: "Qua" },
+  { key: "thu", label: "Qui" },
+  { key: "fri", label: "Sex" },
+  { key: "sat", label: "Sáb" },
+  { key: "sun", label: "Dom" },
+];
+const HOURS = Array.from({ length: 24 }, (_, i) => i);
+type AllowedSlots = Record<string, number[]>;
+
+interface ScheduleConfig {
+  enabled: boolean;
+  timezone: string;
+  allowed_slots: AllowedSlots;
+  holidays: string[];
+}
+
+const DEFAULT_SCHEDULE: ScheduleConfig = {
+  enabled: false,
+  timezone: "America/Sao_Paulo",
+  allowed_slots: {
+    mon: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
+    tue: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
+    wed: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
+    thu: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
+    fri: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
+    sat: [],
+    sun: [],
+  },
+  holidays: [],
+};
+
+// ============================================================
+// Toggle component
+// ============================================================
 function Toggle({
   checked,
   onChange,
@@ -43,6 +81,199 @@ function Toggle({
   );
 }
 
+// ============================================================
+// Weekly grid (drag-to-paint)
+// ============================================================
+function WeeklyGrid({
+  slots,
+  onChange,
+}: {
+  slots: AllowedSlots;
+  onChange: (s: AllowedSlots) => void;
+}) {
+  const paintingRef = useRef(false);
+  const paintValueRef = useRef(true);
+
+  function isOn(day: string, hour: number) {
+    return (slots[day] || []).includes(hour);
+  }
+
+  function applyCell(day: string, hour: number, value: boolean) {
+    const current = slots[day] || [];
+    let next: number[];
+    if (value) {
+      next = Array.from(new Set([...current, hour])).sort((a, b) => a - b);
+    } else {
+      next = current.filter((h) => h !== hour);
+    }
+    onChange({ ...slots, [day]: next });
+  }
+
+  function handleMouseDown(day: string, hour: number) {
+    const currently = isOn(day, hour);
+    paintValueRef.current = !currently;
+    paintingRef.current = true;
+    applyCell(day, hour, !currently);
+  }
+
+  function handleMouseEnter(day: string, hour: number) {
+    if (!paintingRef.current) return;
+    applyCell(day, hour, paintValueRef.current);
+  }
+
+  function handleMouseUp() {
+    paintingRef.current = false;
+  }
+
+  function toggleWholeDay(day: string) {
+    const allOn = HOURS.every((h) => isOn(day, h));
+    onChange({ ...slots, [day]: allOn ? [] : [...HOURS] });
+  }
+
+  function toggleWholeHour(hour: number) {
+    const allOn = DAYS_OF_WEEK.every(({ key }) => isOn(key, hour));
+    const next = { ...slots };
+    DAYS_OF_WEEK.forEach(({ key }) => {
+      const current = next[key] || [];
+      if (allOn) {
+        next[key] = current.filter((h) => h !== hour);
+      } else {
+        if (!current.includes(hour)) {
+          next[key] = [...current, hour].sort((a, b) => a - b);
+        }
+      }
+    });
+    onChange(next);
+  }
+
+  return (
+    <div
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+      className="overflow-x-auto select-none"
+    >
+      <table className="border-separate border-spacing-[3px]">
+        <thead>
+          <tr>
+            {/* corner */}
+            <th className="w-9" />
+            {HOURS.map((h) => (
+              <th
+                key={h}
+                onClick={() => toggleWholeHour(h)}
+                title={`${h}h — clique para alternar coluna`}
+                className="w-7 text-[9px] text-gray-400 font-normal text-center cursor-pointer hover:text-blue-600 pb-0.5"
+              >
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {DAYS_OF_WEEK.map(({ key, label }) => (
+            <tr key={key}>
+              <td
+                onClick={() => toggleWholeDay(key)}
+                title="Clique para alternar o dia inteiro"
+                className="text-xs font-medium text-gray-500 pr-2 cursor-pointer hover:text-blue-600 whitespace-nowrap text-right"
+              >
+                {label}
+              </td>
+              {HOURS.map((h) => (
+                <td
+                  key={h}
+                  onMouseDown={() => handleMouseDown(key, h)}
+                  onMouseEnter={() => handleMouseEnter(key, h)}
+                  title={`${label} ${h}h`}
+                  className={`w-7 h-6 rounded cursor-pointer transition-colors ${
+                    isOn(key, h)
+                      ? "bg-blue-500 hover:bg-blue-400"
+                      : "bg-gray-100 hover:bg-gray-200 border border-gray-200"
+                  }`}
+                />
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="text-[10px] text-gray-400 mt-1.5">
+        Azul = permitido · Clique ou arraste para marcar/desmarcar ·
+        Clique no dia ou hora para alternar a linha/coluna inteira
+      </p>
+    </div>
+  );
+}
+
+// ============================================================
+// Holidays manager
+// ============================================================
+function HolidaysManager({
+  holidays,
+  onChange,
+}: {
+  holidays: string[];
+  onChange: (h: string[]) => void;
+}) {
+  const [newDate, setNewDate] = useState("");
+
+  function add() {
+    if (!newDate || holidays.includes(newDate)) return;
+    onChange([...holidays, newDate].sort());
+    setNewDate("");
+  }
+
+  function remove(date: string) {
+    onChange(holidays.filter((d) => d !== date));
+  }
+
+  function fmt(iso: string) {
+    return new Date(iso + "T12:00:00").toLocaleDateString("pt-BR");
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex gap-2 items-center">
+        <input
+          type="date"
+          value={newDate}
+          onChange={(e) => setNewDate(e.target.value)}
+          className="border rounded-lg px-3 py-2 text-sm"
+        />
+        <button
+          onClick={add}
+          disabled={!newDate}
+          className="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-40"
+        >
+          + Adicionar feriado
+        </button>
+      </div>
+      {holidays.length === 0 ? (
+        <p className="text-xs text-gray-400">Nenhum feriado cadastrado.</p>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          {holidays.map((date) => (
+            <span
+              key={date}
+              className="inline-flex items-center gap-1.5 text-xs bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full"
+            >
+              {fmt(date)}
+              <button
+                onClick={() => remove(date)}
+                className="text-gray-400 hover:text-red-500 font-bold leading-none"
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// Status config card (collapsible)
+// ============================================================
 function StatusConfigCard({
   config,
   label,
@@ -119,7 +350,7 @@ function StatusConfigCard({
                 rows={2}
                 value={form.initial_message || ""}
                 onChange={(e) => set("initial_message", e.target.value)}
-                placeholder="Ex: Olá {nome}! Vi que você tem interesse em nossa clínica..."
+                placeholder="Ex: Olá! Vi que você tem interesse em nossa clínica..."
                 className="w-full border rounded-lg px-3 py-2 text-sm"
               />
             </div>
@@ -147,7 +378,9 @@ function StatusConfigCard({
                 type="number"
                 min={1}
                 value={form.inactivity_hours}
-                onChange={(e) => set("inactivity_hours", parseInt(e.target.value) || 24)}
+                onChange={(e) =>
+                  set("inactivity_hours", parseInt(e.target.value) || 24)
+                }
                 className="w-full border rounded-lg px-3 py-2 text-sm"
               />
             </div>
@@ -185,7 +418,9 @@ function StatusConfigCard({
           <div>
             <label className="block text-xs text-gray-500 mb-1">
               Mensagem de follow-up por inatividade
-              <span className="ml-1 text-gray-400">(use {"{nome}"} para o nome do lead)</span>
+              <span className="ml-1 text-gray-400">
+                (use {"{nome}"} para o nome do lead)
+              </span>
             </label>
             <textarea
               rows={2}
@@ -193,7 +428,7 @@ function StatusConfigCard({
               onChange={(e) =>
                 set("inactivity_followup_message", e.target.value || null)
               }
-              placeholder="Ex: Olá {nome}, ficamos sem notícias. Ainda tem interesse? Posso ajudar!"
+              placeholder="Ex: Olá {nome}, ainda podemos ajudar?"
               className="w-full border rounded-lg px-3 py-2 text-sm"
             />
           </div>
@@ -211,6 +446,9 @@ function StatusConfigCard({
   );
 }
 
+// ============================================================
+// Pricing table
+// ============================================================
 function PricingTable({
   items,
   onChange,
@@ -291,7 +529,9 @@ function PricingTable({
           />
           <input
             value={newItem.service}
-            onChange={(e) => setNewItem({ ...newItem, service: e.target.value })}
+            onChange={(e) =>
+              setNewItem({ ...newItem, service: e.target.value })
+            }
             placeholder="Serviço (ex: Consulta, Exame)"
             className="border rounded px-2 py-1.5 text-sm"
           />
@@ -325,6 +565,9 @@ function PricingTable({
   );
 }
 
+// ============================================================
+// Page
+// ============================================================
 export default function IaComercialPage() {
   const [configs, setConfigs] = useState<LeadAgentConfig[]>([]);
   const [supervisorConfig, setSupervisorConfig] = useState<SupervisorConfig>({
@@ -335,11 +578,15 @@ export default function IaComercialPage() {
   });
   const [pricingItems, setPricingItems] = useState<PricingItem[]>([]);
   const [pricingNotes, setPricingNotes] = useState("");
+  const [schedule, setSchedule] = useState<ScheduleConfig>(DEFAULT_SCHEDULE);
+
   const [loading, setLoading] = useState(true);
   const [supSaving, setSupSaving] = useState(false);
   const [supSaved, setSupSaved] = useState(false);
   const [pricingSaving, setPricingSaving] = useState(false);
   const [pricingSaved, setPricingSaved] = useState(false);
+  const [schedSaving, setSchedSaving] = useState(false);
+  const [schedSaved, setSchedSaved] = useState(false);
 
   useEffect(() => {
     fetchAll();
@@ -348,10 +595,11 @@ export default function IaComercialPage() {
   async function fetchAll() {
     setLoading(true);
     try {
-      const [cfgRes, supRes, priceRes] = await Promise.allSettled([
+      const [cfgRes, supRes, priceRes, schedRes] = await Promise.allSettled([
         api.get("/leads/ai-configs"),
         api.get("/leads/ai-supervisor-config"),
         api.get("/leads/ai-pricing"),
+        api.get("/leads/ai-messaging-schedule"),
       ]);
       if (cfgRes.status === "fulfilled") setConfigs(cfgRes.value.data);
       if (supRes.status === "fulfilled") setSupervisorConfig(supRes.value.data);
@@ -359,6 +607,7 @@ export default function IaComercialPage() {
         setPricingItems(priceRes.value.data.items || []);
         setPricingNotes(priceRes.value.data.notes || "");
       }
+      if (schedRes.status === "fulfilled") setSchedule(schedRes.value.data);
     } finally {
       setLoading(false);
     }
@@ -398,6 +647,19 @@ export default function IaComercialPage() {
       alert("Erro ao salvar tabela de preços.");
     } finally {
       setPricingSaving(false);
+    }
+  }
+
+  async function saveSchedule() {
+    setSchedSaving(true);
+    try {
+      await api.put("/leads/ai-messaging-schedule", schedule);
+      setSchedSaved(true);
+      setTimeout(() => setSchedSaved(false), 2000);
+    } catch {
+      alert("Erro ao salvar horários.");
+    } finally {
+      setSchedSaving(false);
     }
   }
 
@@ -451,8 +713,8 @@ export default function IaComercialPage() {
           <h2 className="text-base font-semibold text-gray-700">Supervisor</h2>
           <p className="text-xs text-gray-400 mt-0.5">
             Quando a IA não conseguir resolver (desconto, serviço fora da
-            tabela, etc.), envia a pergunta para este número via WhatsApp.
-            O supervisor responde diretamente pelo celular.
+            tabela, etc.), envia a pergunta para este número via WhatsApp. O
+            supervisor responde diretamente pelo celular.
           </p>
         </div>
 
@@ -473,7 +735,7 @@ export default function IaComercialPage() {
               className="w-full border rounded-lg px-3 py-2 text-sm"
             />
             <p className="text-[10px] text-gray-400 mt-1">
-              Formato: código do país + DDD + número, sem espaços ou traços.
+              Código do país + DDD + número, sem espaços ou traços.
             </p>
           </div>
 
@@ -528,9 +790,7 @@ export default function IaComercialPage() {
               <option value="escalate_human">
                 Escalar para atendente humano
               </option>
-              <option value="close_ai">
-                Informar cliente e encerrar IA
-              </option>
+              <option value="close_ai">Informar cliente e encerrar IA</option>
             </select>
           </div>
         </div>
@@ -552,7 +812,6 @@ export default function IaComercialPage() {
           </h2>
           <p className="text-xs text-gray-400 mt-0.5">
             A IA consulta esta tabela antes de informar valores ao cliente.
-            Adicione todos os serviços e valores praticados.
           </p>
         </div>
 
@@ -580,6 +839,92 @@ export default function IaComercialPage() {
             : pricingSaved
             ? "✓ Salvo"
             : "Salvar Tabela"}
+        </button>
+      </section>
+
+      {/* Section 4: Messaging Schedule */}
+      <section className="bg-white border rounded-xl p-5 space-y-5">
+        <div>
+          <h2 className="text-base font-semibold text-gray-700">
+            Horários de envio
+          </h2>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Restrinja os horários em que a IA e as mensagens agendadas podem
+            ser enviadas. Fora dos horários marcados em azul, nenhuma mensagem
+            automática é disparada.
+          </p>
+        </div>
+
+        <Toggle
+          checked={schedule.enabled}
+          onChange={(v) => setSchedule({ ...schedule, enabled: v })}
+          label="Ativar restrição de horários"
+        />
+
+        {schedule.enabled && (
+          <>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">
+                Fuso horário
+              </label>
+              <select
+                value={schedule.timezone}
+                onChange={(e) =>
+                  setSchedule({ ...schedule, timezone: e.target.value })
+                }
+                className="border rounded-lg px-3 py-2 text-sm"
+              >
+                <option value="America/Sao_Paulo">
+                  America/Sao_Paulo (Brasília)
+                </option>
+                <option value="America/Manaus">America/Manaus</option>
+                <option value="America/Belem">America/Belem</option>
+                <option value="America/Fortaleza">America/Fortaleza</option>
+                <option value="America/Recife">America/Recife</option>
+                <option value="America/Cuiaba">America/Cuiaba</option>
+                <option value="America/Porto_Velho">America/Porto_Velho</option>
+                <option value="America/Boa_Vista">America/Boa_Vista</option>
+                <option value="America/Rio_Branco">America/Rio_Branco</option>
+                <option value="America/Noronha">America/Noronha</option>
+              </select>
+            </div>
+
+            <div>
+              <p className="text-xs font-medium text-gray-600 mb-3">
+                Grade semanal — marque em azul os horários permitidos
+              </p>
+              <WeeklyGrid
+                slots={schedule.allowed_slots}
+                onChange={(slots) =>
+                  setSchedule({ ...schedule, allowed_slots: slots })
+                }
+              />
+            </div>
+
+            <div>
+              <p className="text-xs font-medium text-gray-600 mb-2">
+                Feriados — nenhuma mensagem é enviada nestes dias
+              </p>
+              <HolidaysManager
+                holidays={schedule.holidays}
+                onChange={(holidays) =>
+                  setSchedule({ ...schedule, holidays })
+                }
+              />
+            </div>
+          </>
+        )}
+
+        <button
+          onClick={saveSchedule}
+          disabled={schedSaving}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+        >
+          {schedSaving
+            ? "Salvando..."
+            : schedSaved
+            ? "✓ Salvo"
+            : "Salvar Horários"}
         </button>
       </section>
     </main>

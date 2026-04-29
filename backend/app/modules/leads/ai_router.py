@@ -543,6 +543,56 @@ async def update_lead_activity(
     return activity
 
 
+@router.get("/ai-messaging-schedule")
+async def get_messaging_schedule(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    from app.modules.admin.models import SystemConfig
+    result = await db.execute(
+        select(SystemConfig).where(SystemConfig.key == "lead_messaging_schedule")
+    )
+    row = result.scalar_one_or_none()
+    if row and row.value:
+        return row.value
+    return {
+        "enabled": False,
+        "timezone": "America/Sao_Paulo",
+        "allowed_slots": {
+            "mon": list(range(8, 18)),
+            "tue": list(range(8, 18)),
+            "wed": list(range(8, 18)),
+            "thu": list(range(8, 18)),
+            "fri": list(range(8, 18)),
+            "sat": [],
+            "sun": [],
+        },
+        "holidays": [],
+    }
+
+
+@router.put("/ai-messaging-schedule")
+async def update_messaging_schedule(
+    body: dict,
+    current_user: User = Depends(require_role("admin")),
+    db: AsyncSession = Depends(get_db),
+):
+    from app.modules.admin.models import SystemConfig
+    result = await db.execute(
+        select(SystemConfig).where(SystemConfig.key == "lead_messaging_schedule")
+    )
+    row = result.scalar_one_or_none()
+    if row:
+        row.value = body
+        row.updated_by = current_user.id
+        row.updated_at = datetime.now(timezone.utc)
+    else:
+        row = SystemConfig(key="lead_messaging_schedule", value=body, updated_by=current_user.id)
+        db.add(row)
+    await db.commit()
+    return body
+
+
 @router.get("/my-activities", response_model=list[ActivitySchema])
 async def my_pending_activities(
     current_user: User = Depends(get_current_user),
