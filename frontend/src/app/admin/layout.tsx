@@ -16,8 +16,9 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/admin/leads", label: "Leads" },
 
   { heading: "Automações" },
+  { href: "/admin/shared-inbox", label: "Caixa Compartilhada" },
   { href: "/admin/chatbot", label: "Chatbot / IA" },
-  { href: "/admin/ia-comercial", label: "IA Comercial", advancedOnly: true },
+  { href: "/admin/ia-comercial", label: "Atendente IA" },
   { href: "/admin/follow-ups", label: "Follow-ups" },
   
   { heading: "Relatórios" },
@@ -25,9 +26,9 @@ const NAV_ITEMS: NavItem[] = [
   
   { heading: "Cadastros" },
   { href: "/admin/patients", label: "Pacientes" },
-  { href: "/admin/doctors", label: "Médicos / Horários", advancedOnly: true },
+  { href: "/admin/doctors", label: "Médicos / Horários" },
   { href: "/admin/specialties", label: "Especialidades" },
-  { href: "/admin/users", label: "Usuários", advancedOnly: true },
+  { href: "/admin/users", label: "Usuários" },
   
   { heading: "Sistema" },
   { href: "/admin/whatsapp", label: "WhatsApp" },
