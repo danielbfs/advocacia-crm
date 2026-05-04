@@ -625,15 +625,22 @@ export default function IaComercialPage() {
   }
 
   async function saveStatusConfig(config: LeadAgentConfig) {
-    await api.get("/auth/me"); // Verify session
-    await api.put(`/leads/ai-configs/${config.status}`, config);
-    setConfigs((prev) => {
-      const exists = prev.some((c) => c.status === config.status);
-      if (exists) {
-        return prev.map((c) => (c.status === config.status ? config : c));
-      }
-      return [...prev, config];
-    });
+    try {
+      console.log("Saving AI config for", config.status, config);
+      await api.put(`/leads/ai-configs/${config.status}`, config);
+      setConfigs((prev) => {
+        const exists = prev.some((c) => c.status === config.status);
+        if (exists) {
+          return prev.map((c) => (c.status === config.status ? config : c));
+        }
+        return [...prev, config];
+      });
+    } catch (err: any) {
+      console.error("Error saving AI config:", err);
+      const msg = err.response?.data?.detail || err.message || "Erro desconhecido";
+      alert(`Erro ao salvar configuração para ${config.status}: ${msg}`);
+      throw err; // Re-throw to keep StatusConfigCard in 'unsaved' state
+    }
   }
 
   async function saveSupervisor() {
