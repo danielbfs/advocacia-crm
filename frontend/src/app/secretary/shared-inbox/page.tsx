@@ -6,6 +6,10 @@ import { MessagingConversation, SendHumanMessageRequest } from '@/types/messagin
 import { User, Bot, Send, ArrowLeft, MessageSquare, ShieldAlert } from 'lucide-react';
 
 export default function SharedInbox() {
+  const [conversations, setConversations] = useState<MessagingConversation[]>([]);
+  const [selectedConv, setSelectedConv] = useState<MessagingConversation | null>(null);
+  const [messageText, setMessageText] = useState('');
+  const [loading, setLoading] = useState(true);
   const [messages, setMessages] = useState<any[]>([]);
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
 
