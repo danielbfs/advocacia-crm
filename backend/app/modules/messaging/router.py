@@ -159,7 +159,7 @@ async def _handle_lead_message(db: AsyncSession, msg: IncomingMessage) -> bool:
         select(Lead).where(
             or_(
                 Lead.phone == phone,
-                text(f"'{phone}' LIKE '%' || leads.phone")
+                Lead.phone.like(f"%{phone}")
             ),
             Lead.status.notin_(["convertido", "perdido"]),
         ).order_by(Lead.created_at.desc()).limit(1)
