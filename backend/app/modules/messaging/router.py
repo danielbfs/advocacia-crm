@@ -144,18 +144,23 @@ async def _handle_lead_message(db: AsyncSession, msg: IncomingMessage) -> bool:
     Returns True if handled.
     """
     from sqlalchemy import and_
-    from app.modules.leads.models import Lead
     from app.modules.leads.ai_engine import (
         get_or_create_lead_conversation,
         load_agent_config,
         process_lead_message,
     )
-    from app.modules.leads.ai_models import LeadConversation
-
-    # Find active lead by phone
+    from sqlalchemy import and_, or_, text
+    from app.modules.leads.models import Lead
+    
+    # Find active lead by phone (handle country codes by matching suffix)
+    phone = msg.channel_user_id
+    # If phone is '5531999999999', it will match Lead.phone '31999999999' or '999999999'
     result = await db.execute(
         select(Lead).where(
-            Lead.phone == msg.channel_user_id,
+            or_(
+                Lead.phone == phone,
+                text(f"'{phone}' LIKE '%' || leads.phone")
+            ),
             Lead.status.notin_(["convertido", "perdido"]),
         ).order_by(Lead.created_at.desc()).limit(1)
     )
@@ -295,7 +300,11 @@ async def handle_incoming_message(
         user_name=msg.user_name,
     )
 
-    from app.modules.messaging.models import Conversation
+    from app.modules.messaging.models import Conversation, Message
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc)
+    
     conv_result = await db.execute(
         select(Conversation).where(
             Conversation.channel == channel,
@@ -304,9 +313,28 @@ async def handle_incoming_message(
         )
     )
     conversation = conv_result.scalar_one_or_none()
+    
+    if not conversation:
+        conversation = Conversation(
+            patient_id=patient.id,
+            channel=channel,
+            status="active",
+            control="ai",
+            started_at=now
+        )
+        db.add(conversation)
+        await db.commit()
+        await db.refresh(conversation)
 
-    if conversation and conversation.control == "human":
+    if conversation.control == "human":
+        # Save incoming message and stop
+        db.add(Message(conversation_id=conversation.id, role="user", content=msg.text, sent_at=now))
+        await db.commit()
         return {"ok": True}
+
+    # Save incoming message
+    db.add(Message(conversation_id=conversation.id, role="user", content=msg.text, sent_at=now))
+    await db.commit()
 
     try:
         from app.modules.ai.engine import process_message
@@ -317,6 +345,11 @@ async def handle_incoming_message(
             "Desculpe, estou com dificuldades no momento. "
             "Por favor, tente novamente em alguns instantes."
         )
+
+    # Save assistant message
+    db.add(Message(conversation_id=conversation.id, role="assistant", content=response_text, sent_at=datetime.now(timezone.utc)))
+    conversation.last_message_at = datetime.now(timezone.utc)
+    await db.commit()
 
     await send_message(channel, msg.channel_chat_id, response_text)
     return {"ok": True}
