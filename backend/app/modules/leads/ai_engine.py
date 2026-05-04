@@ -129,6 +129,7 @@ def _build_system_prompt(
     lead: Lead,
     clinic_name: str,
     clinic_timezone: str,
+    pricing_table: dict | None = None,
 ) -> str:
     tz = clinic_timezone or settings.CLINIC_TIMEZONE
     clinic_tz = ZoneInfo(tz)
@@ -155,17 +156,27 @@ def _build_system_prompt(
     custom = (agent_config.system_prompt or "").strip() if agent_config else ""
     instructions = custom or DEFAULT_LEAD_PROMPT
 
+    pricing_context = ""
+    if pricing_table and pricing_table.get("items"):
+        items_str = "\n".join([
+            f"- {item['specialty']} ({item['service']}): R${item['price']:.2f} {item.get('notes', '')}"
+            for item in pricing_table["items"]
+        ])
+        pricing_context = f"\nTABELA DE PREÇOS ATUAL:\n{items_str}\n"
+        if pricing_table.get("notes"):
+            pricing_context += f"Notas: {pricing_table['notes']}\n"
+
     tool_rules = """
 ---
 REGRAS DE USO DAS FERRAMENTAS (obrigatórias):
-- get_pricing_table → use ANTES de qualquer citação de valor. NUNCA invente preços.
+- get_pricing_table → use para confirmar se há atualizações na tabela.
 - update_lead_status → atualize conforme o progresso (qualificado → orcamento_enviado → negociando)
 - consult_supervisor → use para desconto, parcelamento especial, serviço fora da tabela
 - convert_to_patient → ao fechar negócio confirmado pelo cliente
 - mark_lost → ao confirmar definitivamente que o cliente não tem interesse
 - escalate_to_human → último recurso quando nem a IA nem o supervisor conseguem resolver
 """
-    return f"{header}{context}\n{instructions}\n{tool_rules}"
+    return f"{header}{context}{pricing_context}\n{instructions}\n{tool_rules}"
 
 
 async def process_lead_message(
@@ -190,12 +201,20 @@ async def process_lead_message(
     max_tool_calls = 5
     temperature = 0.3
 
+    # Fetch pricing table to inject into prompt
+    price_result = await db.execute(
+        select(SystemConfig).where(SystemConfig.key == "lead_pricing")
+    )
+    price_row = price_result.scalar_one_or_none()
+    pricing_table = price_row.value if price_row else None
+
     history = await _load_conversation_history(conversation)
     system_prompt = _build_system_prompt(
         agent_config,
         lead,
         clinic_name=clinic_cfg.get("name", ""),
         clinic_timezone=clinic_cfg.get("timezone", settings.CLINIC_TIMEZONE),
+        pricing_table=pricing_table,
     )
 
     messages: list[dict] = [{"role": "system", "content": system_prompt}]

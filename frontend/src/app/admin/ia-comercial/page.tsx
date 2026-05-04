@@ -452,9 +452,11 @@ function StatusConfigCard({
 function PricingTable({
   items,
   onChange,
+  specialties,
 }: {
   items: PricingItem[];
   onChange: (items: PricingItem[]) => void;
+  specialties: { id: string; name: string }[];
 }) {
   const [newItem, setNewItem] = useState<PricingItem>({
     specialty: "",
@@ -519,14 +521,20 @@ function PricingTable({
       <div className="border rounded-lg p-3 bg-gray-50">
         <p className="text-xs font-medium text-gray-600 mb-2">Adicionar item</p>
         <div className="grid grid-cols-2 gap-2 mb-2">
-          <input
+          <select
             value={newItem.specialty}
             onChange={(e) =>
               setNewItem({ ...newItem, specialty: e.target.value })
             }
-            placeholder="Especialidade"
             className="border rounded px-2 py-1.5 text-sm"
-          />
+          >
+            <option value="">Selecione a Especialidade</option>
+            {specialties.map((s) => (
+              <option key={s.id} value={s.name}>
+                {s.name}
+              </option>
+            ))}
+          </select>
           <input
             value={newItem.service}
             onChange={(e) =>
@@ -579,6 +587,7 @@ export default function IaComercialPage() {
   const [pricingItems, setPricingItems] = useState<PricingItem[]>([]);
   const [pricingNotes, setPricingNotes] = useState("");
   const [schedule, setSchedule] = useState<ScheduleConfig>(DEFAULT_SCHEDULE);
+  const [specialties, setSpecialties] = useState<{ id: string; name: string }[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [supSaving, setSupSaving] = useState(false);
@@ -595,11 +604,12 @@ export default function IaComercialPage() {
   async function fetchAll() {
     setLoading(true);
     try {
-      const [cfgRes, supRes, priceRes, schedRes] = await Promise.allSettled([
+      const [cfgRes, supRes, priceRes, schedRes, specRes] = await Promise.allSettled([
         api.get("/leads/ai-configs"),
         api.get("/leads/ai-supervisor-config"),
         api.get("/leads/ai-pricing"),
         api.get("/leads/ai-messaging-schedule"),
+        api.get("/specialties"),
       ]);
       if (cfgRes.status === "fulfilled") setConfigs(cfgRes.value.data);
       if (supRes.status === "fulfilled") setSupervisorConfig(supRes.value.data);
@@ -608,6 +618,7 @@ export default function IaComercialPage() {
         setPricingNotes(priceRes.value.data.notes || "");
       }
       if (schedRes.status === "fulfilled") setSchedule(schedRes.value.data);
+      if (specRes.status === "fulfilled") setSpecialties(specRes.value.data);
     } finally {
       setLoading(false);
     }
@@ -815,7 +826,11 @@ export default function IaComercialPage() {
           </p>
         </div>
 
-        <PricingTable items={pricingItems} onChange={setPricingItems} />
+        <PricingTable 
+          items={pricingItems} 
+          onChange={setPricingItems} 
+          specialties={specialties}
+        />
 
         <div>
           <label className="block text-xs text-gray-500 mb-1">
