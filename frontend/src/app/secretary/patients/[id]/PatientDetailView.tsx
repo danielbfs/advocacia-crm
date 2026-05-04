@@ -213,6 +213,63 @@ export function PatientDetailView({ backPath = "/secretary/patients" }: { backPa
           </div>
         )}
       </div>
+
+      {/* Messaging History */}
+      <div className="bg-white border rounded-lg p-4 mt-6">
+        <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+          <MessageSquare size={16} />
+          Histórico de Mensagens
+        </h3>
+        <ChatHistory patientId={patient.id} />
+      </div>
     </main>
   );
 }
+
+function ChatHistory({ patientId }: { patientId: string }) {
+  const [messages, setMessages] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchMessages() {
+      try {
+        // First find conversation for this patient
+        const convRes = await api.get<any[]>('/messaging/conversations');
+        const myConv = convRes.data.find(c => c.patient_id === patientId || c.lead_id === patientId);
+        
+        if (myConv) {
+          const msgRes = await api.get(`/messaging/conversations/${myConv.id}/messages`);
+          setMessages(msgRes.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch messages', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchMessages();
+  }, [patientId]);
+
+  if (loading) return <div className="text-xs text-gray-400">Carregando mensagens...</div>;
+  if (messages.length === 0) return <p className="text-sm text-gray-400">Nenhuma conversa registrada.</p>;
+
+  return (
+    <div className="space-y-3 max-h-96 overflow-y-auto p-2 bg-gray-50 rounded-lg">
+      {messages.map((m) => (
+        <div 
+          key={m.id} 
+          className={`p-2 rounded-lg text-xs max-w-[80%] ${
+            m.role === 'user' ? 'bg-white self-start border' : 'bg-green-50 self-end ml-auto border-green-100'
+          }`}
+        >
+          <p className="whitespace-pre-wrap">{m.content}</p>
+          <span className="text-[9px] text-gray-400 mt-1 block text-right">
+            {new Date(m.sent_at).toLocaleString("pt-BR")}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+import { MessageSquare } from "lucide-react";
