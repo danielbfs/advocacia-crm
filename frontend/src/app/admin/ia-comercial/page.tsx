@@ -609,7 +609,7 @@ export default function IaComercialPage() {
         api.get("/leads/ai-supervisor-config"),
         api.get("/leads/ai-pricing"),
         api.get("/leads/ai-messaging-schedule"),
-        api.get("/specialties"),
+        api.get("/specialties/"),
       ]);
       if (cfgRes.status === "fulfilled") setConfigs(cfgRes.value.data);
       if (supRes.status === "fulfilled") setSupervisorConfig(supRes.value.data);
