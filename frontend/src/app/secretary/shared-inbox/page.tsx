@@ -17,7 +17,7 @@ export default function SharedInbox() {
 
   async function loadConversations() {
     try {
-      const response = await api.get<MessagingConversation[]>('/webhooks/conversations');
+      const response = await api.get<MessagingConversation[]>('/messaging/conversations');
       setConversations(response.data);
     } catch (error) {
       console.error('Failed to load conversations', error);
@@ -29,7 +29,7 @@ export default function SharedInbox() {
   async function toggleControl(id: string, currentControl: string) {
     const newControl = currentControl === 'ai' ? 'human' : 'ai';
     try {
-      await api.patch(`/webhooks/conversations/${id}/control`, { control: newControl });
+      await api.patch(`/messaging/conversations/${id}/control`, { control: newControl });
       await loadConversations();
       if (selectedConv?.id === id) {
         setSelectedConv({ ...selectedConv, control: newControl });
@@ -48,7 +48,7 @@ export default function SharedInbox() {
         channel: selectedConv.channel,
         chat_id: selectedConv.id, // Note: In a real scenario, we'd use the patient's channel_id
       };
-      await api.post(`/webhooks/conversations/${selectedConv.id}/send`, payload);
+      await api.post(`/messaging/conversations/${selectedConv.id}/send`, payload);
       setMessageText('');
       alert('Message sent successfully');
     } catch (error) {

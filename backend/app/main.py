@@ -53,6 +53,7 @@ app.include_router(patients_router, prefix="/api/v1/patients", tags=["patients"]
 app.include_router(leads_router, prefix="/api/v1/leads", tags=["leads"])
 app.include_router(leads_ai_router, prefix="/api/v1/leads", tags=["leads-ai"])
 app.include_router(webhooks_router, prefix="/webhooks", tags=["webhooks"])
+app.include_router(webhooks_router, prefix="/api/v1/messaging", tags=["messaging"])
 app.include_router(admin_setup_router, prefix="/api/v1/admin", tags=["admin"])
 app.include_router(followup_router, prefix="/api/v1/followup", tags=["followup"])
 
