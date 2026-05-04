@@ -189,7 +189,7 @@ async def setup_whatsapp_webhook(
 
     try:
         async with httpx.AsyncClient(timeout=10) as client:
-            resp = await client.put(url, json=payload, headers=headers)
+            resp = await client.post(url, json=payload, headers=headers)
             success = resp.status_code in (200, 201)
             if not success:
                 logger.error("Evolution API webhook registration failed: %s %s", resp.status_code, resp.text)
