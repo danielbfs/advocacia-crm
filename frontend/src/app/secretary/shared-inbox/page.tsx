@@ -77,7 +77,9 @@ export default function SharedInbox() {
                 className={`p-4 border-b cursor-pointer transition-colors ${selectedConv?.id === conv.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : 'hover:bg-gray-50'}`}
               >
                 <div className="flex justify-between items-start mb-1">
-                  <span className="font-medium text-sm">Patient ID: {conv.patient_id?.slice(0,8)}...</span>
+                  <span className="font-medium text-sm">
+                    {conv.lead_id ? `Lead: ${conv.lead_id.slice(0,8)}` : `Patient: ${conv.patient_id?.slice(0,8)}`}
+                  </span>
                   <span className={`text-[10px] px-2 py-0.5 rounded-full ${conv.channel === 'whatsapp' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
                     {conv.channel.toUpperCase()}
                   </span>
