@@ -383,19 +383,35 @@ async def create_evolution_instance(
     body: CreateInstanceRequest,
     current_user: User = Depends(require_role("admin")),
 ):
+    # 1. Create the instance
     status_code, data = await _evo("POST", "/instance/create", {
         "instanceName": body.instance_name,
         "integration": "WHATSAPP-BAILEYS",
         "qrcode": True,
     })
+
     if status_code >= 400:
         detail = data.get("error") or data.get("message", "Falha ao criar instância") if isinstance(data, dict) else "Erro"
         raise HTTPException(status_code=status_code, detail=detail)
+
+    # 2. Extract QR code from creation response
     qr = data.get("qrcode", {}) if isinstance(data, dict) else {}
+    base64_qr = qr.get("base64")
+    qr_code_text = qr.get("code")
+
+    # 3. Fallback: if not in creation response, try the connect endpoint immediately
+    if not base64_qr:
+        logger.info("QR Code not in creation response for %s, fetching from connect endpoint", body.instance_name)
+        conn_status, conn_data = await _evo("GET", f"/instance/connect/{body.instance_name}")
+        if conn_status < 400 and isinstance(conn_data, dict):
+            # Try different possible keys (v1 vs v2 vs root)
+            base64_qr = conn_data.get("base64") or conn_data.get("qrcode", {}).get("base64")
+            qr_code_text = conn_data.get("code") or conn_data.get("qrcode", {}).get("code")
+
     return {
         "instance_name": body.instance_name,
-        "qr_code": qr.get("base64"),
-        "qr_code_text": qr.get("code"),
+        "qr_code": base64_qr,
+        "qr_code_text": qr_code_text,
     }
 
 
@@ -403,10 +419,21 @@ async def create_evolution_instance(
 async def get_instance_qrcode(instance_name: str, current_user: User = Depends(require_role("admin"))):
     status_code, data = await _evo("GET", f"/instance/connect/{instance_name}")
     if status_code >= 400:
+        # Check if already connected
+        if isinstance(data, dict) and "connected" in (data.get("message") or "").lower():
+            return {"qr_code": None, "status": "open"}
         raise HTTPException(status_code=status_code, detail="Falha ao obter QR Code")
+
+    if not isinstance(data, dict):
+        return {"qr_code": None}
+
+    # Handle both direct base64 and nested qrcode.base64
+    base64_qr = data.get("base64") or data.get("qrcode", {}).get("base64")
+    qr_code_text = data.get("code") or data.get("qrcode", {}).get("code")
+
     return {
-        "qr_code": data.get("base64") if isinstance(data, dict) else None,
-        "qr_code_text": data.get("code") if isinstance(data, dict) else None,
+        "qr_code": base64_qr,
+        "qr_code_text": qr_code_text,
     }
 
 

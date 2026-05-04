@@ -51,11 +51,13 @@ export default function WhatsAppPage() {
       if (!connected) {
         try {
           const { data } = await api.get(`/admin/evolution/instances/${instanceName}/qrcode`);
-          setQrCode(data.qr_code);
+          if (data.qr_code) {
+            setQrCode(data.qr_code);
+          }
           scheduleQrRefresh(instanceName);
         } catch {}
       }
-    }, 40000);
+    }, 10000); // 10 seconds
   }
 
   function startPolling(instanceName: string) {
@@ -100,9 +102,35 @@ export default function WhatsAppPage() {
     if (!qrInstance) return;
     try {
       const { data } = await api.get(`/admin/evolution/instances/${qrInstance}/qrcode`);
-      setQrCode(data.qr_code);
+      if (data.qr_code) {
+        setQrCode(data.qr_code);
+      } else if (data.status === "open") {
+        setConnected(true);
+        setQrCode(null);
+        await fetchAll();
+      }
     } catch {
       alert("Erro ao atualizar QR Code.");
+    }
+  }
+
+  async function showQr(instanceName: string) {
+    setQrInstance(instanceName);
+    setQrCode(null);
+    setConnected(false);
+    try {
+      const { data } = await api.get(`/admin/evolution/instances/${instanceName}/qrcode`);
+      if (data.qr_code) {
+        setQrCode(data.qr_code);
+        startPolling(instanceName);
+      } else if (data.status === "open") {
+        alert("Esta instância já está conectada.");
+        await fetchAll();
+      } else {
+        alert("Não foi possível gerar o QR Code no momento. Tente novamente.");
+      }
+    } catch {
+      alert("Erro ao carregar QR Code.");
     }
   }
 
@@ -193,36 +221,53 @@ export default function WhatsAppPage() {
               </button>
             </div>
 
-            {/* QR Code */}
-            {qrCode && (
-              <div className="mt-6 flex flex-col items-center">
+            {/* QR Code Display Area */}
+            {qrInstance && (
+              <div className="mt-8 pt-8 border-t flex flex-col items-center">
+                <div className="text-center mb-4">
+                  <h3 className="font-semibold text-gray-900">Conectar: {qrInstance}</h3>
+                  <p className="text-sm text-gray-500">Escaneie o código abaixo com seu WhatsApp</p>
+                </div>
+
                 {connected ? (
-                  <div className="flex items-center gap-2 text-green-600 font-medium py-4">
-                    <CheckCircle size={22} />
-                    WhatsApp conectado com sucesso!
+                  <div className="flex flex-col items-center gap-3 py-8 animate-in fade-in zoom-in duration-500">
+                    <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
+                      <CheckCircle size={32} />
+                    </div>
+                    <p className="text-lg font-bold text-green-700">WhatsApp Conectado!</p>
+                    <button
+                      onClick={() => { setQrCode(null); setQrInstance(null); }}
+                      className="text-sm text-gray-500 underline"
+                    >
+                      Fechar
+                    </button>
                   </div>
                 ) : (
-                  <>
-                    <p className="text-sm text-gray-600 mb-4 text-center">
-                      Abra o WhatsApp no celular →{" "}
-                      <strong>Dispositivos conectados</strong> →{" "}
-                      <strong>Conectar dispositivo</strong>
-                    </p>
-                    <img
-                      src={qrCode}
-                      alt="QR Code WhatsApp"
-                      className="w-60 h-60 border-4 border-gray-100 rounded-xl"
-                    />
+                  <div className="flex flex-col items-center">
+                    <div className="relative group">
+                      {!qrCode ? (
+                        <div className="w-60 h-60 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-3">
+                          <RefreshCw size={24} className="text-gray-300 animate-spin" />
+                          <p className="text-xs text-gray-400">Gerando QR Code...</p>
+                        </div>
+                      ) : (
+                        <img
+                          src={qrCode.startsWith("data:") ? qrCode : `data:image/png;base64,${qrCode}`}
+                          alt="QR Code WhatsApp"
+                          className="w-60 h-60 border-4 border-white shadow-xl rounded-xl"
+                        />
+                      )}
+                    </div>
                     <button
                       onClick={refreshQr}
-                      className="mt-3 text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1"
+                      className="mt-4 text-sm text-green-600 hover:text-green-700 font-medium flex items-center gap-2 px-4 py-2 bg-green-50 rounded-full transition-colors"
                     >
-                      <RefreshCw size={12} /> Atualizar QR Code
+                      <RefreshCw size={14} /> Atualizar QR Code
                     </button>
-                    <p className="text-xs text-gray-400 mt-2 animate-pulse">
-                      Aguardando leitura...
+                    <p className="text-xs text-gray-400 mt-4 animate-pulse">
+                      Aguardando leitura no celular...
                     </p>
-                  </>
+                  </div>
                 )}
               </div>
             )}
@@ -274,14 +319,24 @@ export default function WhatsAppPage() {
                       </p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => deleteInstance(inst.name)}
-                    disabled={deleting === inst.name}
-                    className="text-red-300 hover:text-red-500 disabled:opacity-40 ml-4"
-                    title="Remover instância"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {inst.status !== "open" && (
+                      <button
+                        onClick={() => showQr(inst.name)}
+                        className="text-xs bg-green-50 text-green-600 px-3 py-1 rounded-full font-medium hover:bg-green-100 transition-colors"
+                      >
+                        Conectar
+                      </button>
+                    )}
+                    <button
+                      onClick={() => deleteInstance(inst.name)}
+                      disabled={deleting === inst.name}
+                      className="p-2 text-gray-300 hover:text-red-500 transition-colors disabled:opacity-40"
+                      title="Remover instância"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
