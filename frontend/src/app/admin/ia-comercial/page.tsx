@@ -625,10 +625,15 @@ export default function IaComercialPage() {
   }
 
   async function saveStatusConfig(config: LeadAgentConfig) {
+    await api.get("/auth/me"); // Verify session
     await api.put(`/leads/ai-configs/${config.status}`, config);
-    setConfigs((prev) =>
-      prev.map((c) => (c.status === config.status ? config : c))
-    );
+    setConfigs((prev) => {
+      const exists = prev.some((c) => c.status === config.status);
+      if (exists) {
+        return prev.map((c) => (c.status === config.status ? config : c));
+      }
+      return [...prev, config];
+    });
   }
 
   async function saveSupervisor() {
