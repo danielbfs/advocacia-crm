@@ -6,14 +6,28 @@ import { MessagingConversation, SendHumanMessageRequest } from '@/types/messagin
 import { User, Bot, Send, ArrowLeft, MessageSquare, ShieldAlert } from 'lucide-react';
 
 export default function SharedInbox() {
-  const [conversations, setConversations] = useState<MessagingConversation[]>([]);
-  const [selectedConv, setSelectedConv] = useState<MessagingConversation | null>(null);
-  const [messageText, setMessageText] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     loadConversations();
+    const interval = setInterval(loadConversations, 5000);
+    return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (selectedConv) {
+      loadMessages(selectedConv.id);
+      if (pollingInterval) clearInterval(pollingInterval);
+      const interval = setInterval(() => loadMessages(selectedConv.id), 3000);
+      setPollingInterval(interval);
+    } else {
+      if (pollingInterval) clearInterval(pollingInterval);
+    }
+    return () => {
+      if (pollingInterval) clearInterval(pollingInterval);
+    };
+  }, [selectedConv]);
 
   async function loadConversations() {
     try {
@@ -23,6 +37,15 @@ export default function SharedInbox() {
       console.error('Failed to load conversations', error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadMessages(id: string) {
+    try {
+      const response = await api.get(`/messaging/conversations/${id}/messages`);
+      setMessages(response.data);
+    } catch (error) {
+      console.error('Failed to load messages', error);
     }
   }
 
@@ -46,11 +69,11 @@ export default function SharedInbox() {
       const payload: SendHumanMessageRequest = {
         text: messageText,
         channel: selectedConv.channel,
-        chat_id: selectedConv.id, // Note: In a real scenario, we'd use the patient's channel_id
+        chat_id: selectedConv.lead_id || selectedConv.id, // Use lead_id if it's a lead, else id
       };
       await api.post(`/messaging/conversations/${selectedConv.id}/send`, payload);
       setMessageText('');
-      alert('Message sent successfully');
+      loadMessages(selectedConv.id);
     } catch (error) {
       alert('Failed to send message');
     }
@@ -121,18 +144,34 @@ export default function SharedInbox() {
               </button>
             </div>
 
-            <div className="flex-1 p-6 overflow-y-auto bg-[#e5ddd5]">
-              <div className="max-w-3xl mx-auto space-y-4">
-                <div className="text-center text-xs text-gray-500 bg-white/50 rounded-full py-1 px-3 w-fit mx-auto mb-4">
-                  {selectedConv.control === 'human' 
-                    ? 'You are now in control of this conversation' 
-                    : 'AI is currently responding to this user'}
-                </div>
-                {/* Messages would be fetched here in a real app */}
-                <div className="text-center text-gray-400 italic text-sm">
-                  Conversation history is available in the CRM patient record.
-                </div>
+            <div className="flex-1 p-6 overflow-y-auto bg-[#e5ddd5] flex flex-col gap-3">
+              <div className="text-center text-xs text-gray-500 bg-white/50 rounded-full py-1 px-3 w-fit mx-auto mb-4">
+                {selectedConv.control === 'human' 
+                  ? 'You are now in control of this conversation' 
+                  : 'AI is currently responding to this user'}
               </div>
+              
+              {messages.length === 0 ? (
+                <div className="text-center text-gray-500 italic text-sm mt-10">
+                  No messages yet in this conversation.
+                </div>
+              ) : (
+                messages.map(m => (
+                  <div 
+                    key={m.id}
+                    className={`max-w-[70%] p-3 rounded-lg text-sm shadow-sm ${
+                      m.role === 'user' 
+                        ? 'bg-white self-start rounded-tl-none' 
+                        : 'bg-green-100 self-end rounded-tr-none'
+                    }`}
+                  >
+                    <p className="whitespace-pre-wrap">{m.content}</p>
+                    <span className="text-[10px] text-gray-400 mt-1 block text-right">
+                      {new Date(m.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
 
             <div className="p-4 bg-white border-t">
@@ -141,9 +180,10 @@ export default function SharedInbox() {
                   type="text" 
                   value={messageText}
                   onChange={(e) => setMessageText(e.target.value)}
-                  placeholder="Type your reply..."
+                  placeholder={selectedConv.control === 'ai' ? "Take control to send a message..." : "Type your reply..."}
                   className="flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   disabled={selectedConv.control === 'ai'}
+                  onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
                 />
                 <button 
                   onClick={sendMessage}

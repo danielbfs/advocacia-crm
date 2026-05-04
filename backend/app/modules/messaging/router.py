@@ -356,6 +356,14 @@ async def list_conversations(
     return await messaging_service.get_active_conversations(db, channel)
 
 
+@router.get("/conversations/{conversation_id}/messages")
+async def get_conversation_messages(
+    conversation_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    return await messaging_service.get_messages(db, conversation_id)
+
+
 @router.patch("/conversations/{conversation_id}/control")
 async def toggle_conversation_control(
     conversation_id: uuid.UUID,

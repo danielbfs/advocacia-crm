@@ -80,8 +80,38 @@ class MessagingService:
         await db.commit()
         return True
 
+    async def get_messages(self, db: AsyncSession, conversation_id: uuid.UUID):
+        """Get all messages for a conversation (Patient or Lead)."""
+        # Try Patient Messages
+        res = await db.execute(
+            select(Message)
+            .where(Message.conversation_id == conversation_id)
+            .order_by(Message.sent_at.asc())
+        )
+        messages = list(res.scalars().all())
+        
+        if not messages:
+            # Try Lead Messages
+            from app.modules.leads.ai_models import LeadMessage
+            res = await db.execute(
+                select(LeadMessage)
+                .where(LeadMessage.conversation_id == conversation_id)
+                .order_by(LeadMessage.sent_at.asc())
+            )
+            messages = list(res.scalars().all())
+            
+        return [
+            {
+                "id": str(m.id),
+                "role": m.role,
+                "content": m.content,
+                "sent_at": m.sent_at.isoformat()
+            }
+            for m in messages
+        ]
+
     async def send_human_message(self, db: AsyncSession, conversation_id: uuid.UUID, text: str, channel: str, chat_id: str):
-        """Send a message on behalf of a human and record it in the DB."""
+        """Send a message on behalf of a human and record it in the DB (Patient or Lead)."""
         from app.modules.messaging.gateway import gateway
         
         # Send via adapter
@@ -89,14 +119,30 @@ class MessagingService:
         if not success:
             return False
 
-        # Record message
-        msg = Message(
-            conversation_id=conversation_id,
-            role="assistant", # marked as assistant because it's a reply to the user
-            content=text,
-            metadata_json={"sender": "human"}
-        )
-        db.add(msg)
+        # Record message in Patient table
+        res = await db.execute(select(Conversation).where(Conversation.id == conversation_id))
+        conv = res.scalar_one_or_none()
+        
+        if conv:
+            msg = Message(
+                conversation_id=conversation_id,
+                role="assistant",
+                content=text,
+                metadata_json={"sender": "human"}
+            )
+            db.add(msg)
+        else:
+            # Record message in Lead table
+            from app.modules.leads.ai_models import LeadConversation, LeadMessage
+            res = await db.execute(select(LeadConversation).where(LeadConversation.id == conversation_id))
+            if res.scalar_one_or_none():
+                msg = LeadMessage(
+                    conversation_id=conversation_id,
+                    role="assistant",
+                    content=text
+                )
+                db.add(msg)
+        
         await db.commit()
         return True
 
