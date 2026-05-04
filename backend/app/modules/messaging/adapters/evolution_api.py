@@ -31,8 +31,9 @@ class EvolutionApiAdapter(AbstractMessagingAdapter):
         }
         payload = {
             "number": chat_id,
-            "options": {"delay": 1200, "presence": "composing"},
-            "textMessage": {"text": text},
+            "text": text,
+            "delay": 1200,
+            "linkPreview": False
         }
 
         async with httpx.AsyncClient(timeout=10) as client:
