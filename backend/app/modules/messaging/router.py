@@ -261,9 +261,11 @@ async def handle_incoming_message(
 ) -> dict:
     """Common logic to process messages from any channel."""
     payload = await request.json()
+    logger.info("Incoming webhook payload: %s", payload)
     msg = gateway.parse_webhook(channel, payload)
 
     if not msg:
+        logger.warning("Webhook parsed as None. Event: %s", payload.get("event"))
         return {"ok": True}
 
     # 1. Check if message is from the supervisor (WhatsApp only)
