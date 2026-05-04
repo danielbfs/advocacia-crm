@@ -93,9 +93,11 @@ async def list_ai_configs(
         if status in ("convertido", "perdido"):
             continue
         if status in configs_in_db:
-            response.append(configs_in_db[status])
+            # Use model_validate to convert SQLAlchemy model to schema
+            response.append(LeadAgentConfigSchema.model_validate(configs_in_db[status]))
         else:
-            response.append(LeadAgentConfig(status=status))
+            # Create a default schema instance
+            response.append(LeadAgentConfigSchema(status=status))
     return response
 
 
