@@ -42,7 +42,7 @@ class FollowupJob(Base):
         UUID(as_uuid=True), ForeignKey("patients.id"), nullable=True
     )
     lead_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("leads.id"), nullable=True
+        UUID(as_uuid=True), ForeignKey("leads.id", ondelete="CASCADE"), nullable=True
     )
     scheduled_for: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     status: Mapped[str] = mapped_column(String(20), default="pending")

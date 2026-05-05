@@ -128,6 +128,30 @@ async def update_lead(db: AsyncSession, lead: Lead, **kwargs) -> Lead:
     return lead
 
 
+async def delete_lead(db: AsyncSession, lead: Lead) -> None:
+    """Permanently delete a lead and all its interactions/conversations."""
+    from sqlalchemy import delete
+    from app.modules.leads.ai_models import LeadConversation, LeadOutboundMessage, LeadActivity
+    
+    # Manually delete related records from all potential tables
+    # 1. Followup Jobs
+    await db.execute(delete(FollowupJob).where(FollowupJob.lead_id == lead.id))
+    
+    # 2. AI Conversations & Messages (cascade handled by LeadConversation delete)
+    await db.execute(delete(LeadConversation).where(LeadConversation.lead_id == lead.id))
+    
+    # 3. Outbound messages & Activities
+    await db.execute(delete(LeadOutboundMessage).where(LeadOutboundMessage.lead_id == lead.id))
+    await db.execute(delete(LeadActivity).where(LeadActivity.lead_id == lead.id))
+    
+    # 4. Interactions
+    await db.execute(delete(LeadInteraction).where(LeadInteraction.lead_id == lead.id))
+    
+    # Finally delete the lead
+    await db.delete(lead)
+    await db.commit()
+
+
 # --- Pipeline actions ---
 
 async def mark_contacted(db: AsyncSession, lead: Lead, notes: str | None = None) -> Lead:
