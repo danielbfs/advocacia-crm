@@ -24,7 +24,7 @@ def send_followup_message(self, job_id: str):
 
 
 async def _send_followup(task, job_id: str):
-    from app.database import AsyncSessionLocal
+    from app.modules.leads.ai_tasks import _celery_db_session
     from app.modules.followup.models import FollowupJob
     from app.modules.crm.models import Patient
     from app.modules.leads.models import Lead
@@ -36,7 +36,7 @@ async def _send_followup(task, job_id: str):
     from datetime import datetime, timezone
     from zoneinfo import ZoneInfo
 
-    async with AsyncSessionLocal() as db:
+    async with _celery_db_session() as db:
         result = await db.execute(
             select(FollowupJob).where(FollowupJob.id == uuid.UUID(job_id))
         )
@@ -144,12 +144,12 @@ def process_pending_followups():
 
 
 async def _process_pending():
-    from app.database import AsyncSessionLocal
+    from app.modules.leads.ai_tasks import _celery_db_session
     from app.modules.followup.models import FollowupJob
     from sqlalchemy import select, and_
     from datetime import datetime, timezone
 
-    async with AsyncSessionLocal() as db:
+    async with _celery_db_session() as db:
         now = datetime.now(timezone.utc)
         result = await db.execute(
             select(FollowupJob).where(

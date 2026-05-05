@@ -7,7 +7,6 @@ import redis.asyncio as aioredis
 from sqlalchemy import select, and_
 
 from app.config import settings
-from app.database import AsyncSessionLocal
 from app.modules.admin.models import SystemConfig
 from app.modules.leads.models import Lead
 from app.modules.messaging.gateway import send_message
@@ -37,7 +36,9 @@ async def _get_chat_id(db) -> str:
 
 
 async def _check_overdue():
-    async with AsyncSessionLocal() as db:
+    from app.modules.leads.ai_tasks import _celery_db_session
+
+    async with _celery_db_session() as db:
         now = datetime.now(timezone.utc)
         result = await db.execute(
             select(Lead).where(
