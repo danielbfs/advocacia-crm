@@ -26,6 +26,7 @@ class LeadAgentConfigSchema(BaseModel):
     initial_message: str | None = None
     inactivity_hours: int = 24
     max_inactivity_followups: int = 2
+    proactive_delay_minutes: int = 0
     inactivity_followup_message: str | None = None
     auto_lost_after_hours: int = 72
     convert_on_appointment: bool = True
@@ -79,6 +80,7 @@ class SupervisorConfigSchema(BaseModel):
 
 class LeadAIGlobalConfigSchema(BaseModel):
     convert_on_appointment: bool = True
+    delay_between_leads_minutes: int = 0
 
 
 # --- Agent Config endpoints ---
@@ -129,6 +131,7 @@ async def upsert_ai_config(
         config.initial_message = body.initial_message
         config.inactivity_hours = body.inactivity_hours
         config.max_inactivity_followups = body.max_inactivity_followups
+        config.proactive_delay_minutes = body.proactive_delay_minutes
         config.inactivity_followup_message = body.inactivity_followup_message
         config.auto_lost_after_hours = body.auto_lost_after_hours
         config.updated_at = datetime.now(timezone.utc)
@@ -141,6 +144,7 @@ async def upsert_ai_config(
             initial_message=body.initial_message,
             inactivity_hours=body.inactivity_hours,
             max_inactivity_followups=body.max_inactivity_followups,
+            proactive_delay_minutes=body.proactive_delay_minutes,
             inactivity_followup_message=body.inactivity_followup_message,
             auto_lost_after_hours=body.auto_lost_after_hours,
         )

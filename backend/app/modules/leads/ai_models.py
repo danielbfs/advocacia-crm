@@ -21,6 +21,8 @@ class LeadAgentConfig(Base):
     initial_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     inactivity_hours: Mapped[int] = mapped_column(Integer, default=24, nullable=False)
     max_inactivity_followups: Mapped[int] = mapped_column(Integer, default=2, nullable=False)
+    # Delay before sending the proactive first message when entering this status.
+    proactive_delay_minutes: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     inactivity_followup_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     auto_lost_after_hours: Mapped[int] = mapped_column(Integer, default=72, nullable=False)
     # When True, booking an appointment auto-converts the lead to 'convertido'

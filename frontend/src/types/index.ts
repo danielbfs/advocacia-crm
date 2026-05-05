@@ -55,6 +55,7 @@ export interface LeadAgentConfig {
   initial_message: string | null;
   inactivity_hours: number;
   max_inactivity_followups: number;
+  proactive_delay_minutes: number;
   inactivity_followup_message: string | null;
   auto_lost_after_hours: number;
   convert_on_appointment: boolean;
@@ -132,6 +133,7 @@ export interface SupervisorConfig {
 
 export interface LeadAIGlobalConfig {
   convert_on_appointment: boolean;
+  delay_between_leads_minutes: number;
 }
 
 export interface Lead {

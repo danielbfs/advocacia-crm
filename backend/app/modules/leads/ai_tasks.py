@@ -70,6 +70,8 @@ def send_lead_proactive_message(self, lead_id: str, status: str | None = None):
 
 async def _do_send_proactive(task, lead_id_str: str, status: str | None = None) -> None:
     import uuid
+    from sqlalchemy import select
+    from app.modules.admin.models import SystemConfig
     from app.modules.leads.models import Lead
     from app.modules.leads.ai_engine import load_agent_config, send_proactive_message
     from app.modules.leads.schedule import is_messaging_allowed
@@ -89,14 +91,6 @@ async def _do_send_proactive(task, lead_id_str: str, status: str | None = None) 
             logger.info("Proactive task: lead %s channel '%s' unsupported", lead.code, lead.channel)
             return
 
-        # --- Schedule gate: re-queue instead of dropping ---
-        if not await is_messaging_allowed(db):
-            logger.info(
-                "Proactive message for lead %s queued — outside allowed hours (retry %d)",
-                lead_id_str, task.request.retries,
-            )
-            raise task.retry(countdown=SCHEDULE_RETRY_SECONDS)
-
         agent_config = await load_agent_config(db, check_status)
         if not agent_config:
             logger.info("Proactive task: no active AI config for '%s' (lead %s)", check_status, lead.code)
@@ -105,6 +99,40 @@ async def _do_send_proactive(task, lead_id_str: str, status: str | None = None) 
         if not agent_config.auto_send_on_enter:
             logger.info("Proactive task: auto_send_on_enter=False for '%s' (lead %s)", check_status, lead.code)
             return
+
+        # Optional humanized delay (global + per-status), applied once on first run.
+        global_delay_minutes = 0
+        cfg_result = await db.execute(
+            select(SystemConfig).where(SystemConfig.key == "lead_ai_global")
+        )
+        cfg_row = cfg_result.scalar_one_or_none()
+        if cfg_row and cfg_row.value:
+            global_delay_minutes = max(
+                0,
+                int(cfg_row.value.get("delay_between_leads_minutes", 0) or 0),
+            )
+
+        status_delay_minutes = max(0, int(getattr(agent_config, "proactive_delay_minutes", 0) or 0))
+        delay_minutes = global_delay_minutes + status_delay_minutes
+        if task.request.retries == 0 and delay_minutes > 0:
+            delay_seconds = delay_minutes * 60
+            logger.info(
+                "Proactive task: delaying first message for lead %s by %d minute(s) (global=%d, status=%d, status_name=%s)",
+                lead.code,
+                delay_minutes,
+                global_delay_minutes,
+                status_delay_minutes,
+                check_status,
+            )
+            raise task.retry(countdown=delay_seconds)
+
+        # --- Schedule gate: re-queue instead of dropping ---
+        if not await is_messaging_allowed(db):
+            logger.info(
+                "Proactive message for lead %s queued — outside allowed hours (retry %d)",
+                lead_id_str, task.request.retries,
+            )
+            raise task.retry(countdown=SCHEDULE_RETRY_SECONDS)
 
 
         ok = await send_proactive_message(db, lead, agent_config)

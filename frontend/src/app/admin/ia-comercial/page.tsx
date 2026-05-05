@@ -381,6 +381,24 @@ function StatusConfigCard({
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="block text-xs text-gray-500 mb-1">
+                Atraso inicial da IA (min)
+              </label>
+              <input
+                type="number"
+                min={0}
+                max={240}
+                value={form.proactive_delay_minutes ?? 0}
+                onChange={(e) =>
+                  set("proactive_delay_minutes", Math.max(0, parseInt(e.target.value) || 0))
+                }
+                className="w-full border rounded-lg px-3 py-2 text-sm"
+              />
+              <p className="text-[10px] text-gray-400 mt-1">
+                Espera antes da mensagem proativa ao entrar neste status.
+              </p>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">
                 Follow-up após inatividade (horas)
               </label>
               <input
@@ -589,6 +607,7 @@ export default function IaComercialPage() {
   const [configs, setConfigs] = useState<LeadAgentConfig[]>([]);
   const [globalConfig, setGlobalConfig] = useState<LeadAIGlobalConfig>({
     convert_on_appointment: true,
+    delay_between_leads_minutes: 0,
   });
   const [supervisorConfig, setSupervisorConfig] = useState<SupervisorConfig>({
     supervisor_whatsapp: "",
@@ -782,6 +801,27 @@ export default function IaComercialPage() {
           Quando ativado, ao confirmar agendamento o lead é convertido para
           paciente em qualquer status.
         </p>
+        <div className="max-w-xs">
+          <label className="block text-xs text-gray-500 mb-1">
+            Delay global entre leads (min)
+          </label>
+          <input
+            type="number"
+            min={0}
+            max={240}
+            value={globalConfig.delay_between_leads_minutes ?? 0}
+            onChange={(e) =>
+              setGlobalConfig((prev) => ({
+                ...prev,
+                delay_between_leads_minutes: Math.max(0, parseInt(e.target.value) || 0),
+              }))
+            }
+            className="w-full border rounded-lg px-3 py-2 text-sm"
+          />
+          <p className="text-[10px] text-gray-400 mt-1">
+            Atraso base aplicado antes da primeira mensagem proativa.
+          </p>
+        </div>
         <button
           onClick={saveGlobalConfig}
           disabled={globalSaving}
@@ -808,6 +848,7 @@ export default function IaComercialPage() {
                 initial_message: null,
                 inactivity_hours: 24,
                 max_inactivity_followups: 2,
+                proactive_delay_minutes: 0,
                 inactivity_followup_message: null,
                 auto_lost_after_hours: 72,
               } as LeadAgentConfig);
