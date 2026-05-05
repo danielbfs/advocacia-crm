@@ -398,6 +398,14 @@ async def resume_after_supervisor(
     return response_text
 
 
+def _clean_phone(phone: str) -> str:
+    """Strip channel prefix (e.g. 'whatsapp:', 'telegram:') from a phone/chat_id."""
+    for prefix in ("whatsapp:", "telegram:", "whatsapp_", "telegram_"):
+        if phone.startswith(prefix):
+            return phone[len(prefix):]
+    return phone
+
+
 async def send_proactive_message(
     db: AsyncSession,
     lead: Lead,
@@ -408,10 +416,12 @@ async def send_proactive_message(
         return False
 
     channel = lead.channel if lead.channel in ("whatsapp", "telegram") else "whatsapp"
-    conversation = await get_or_create_lead_conversation(db, lead, channel, lead.phone)
+    clean_phone = _clean_phone(lead.phone)
+
+    conversation = await get_or_create_lead_conversation(db, lead, channel, clean_phone)
 
     from app.modules.messaging.gateway import send_message
-    ok = await send_message(channel, lead.phone, agent_config.initial_message)
+    ok = await send_message(channel, clean_phone, agent_config.initial_message)
     if ok:
         now = datetime.now(timezone.utc)
         db.add(LeadMessage(
@@ -430,4 +440,13 @@ async def send_proactive_message(
             if lead.contacted_at is None:
                 lead.contacted_at = now
         await db.commit()
+        logger.info(
+            "Proactive message sent successfully to lead %s via %s (%s)",
+            lead.code, channel, clean_phone,
+        )
+    else:
+        logger.error(
+            "Proactive message FAILED for lead %s via %s (%s)",
+            lead.code, channel, clean_phone,
+        )
     return ok

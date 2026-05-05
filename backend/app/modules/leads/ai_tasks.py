@@ -16,7 +16,28 @@ def _run_async(coro):
         loop.close()
 
 
-# --- Proactive message when lead enters a status ---
+def _ensure_models_loaded():
+    """
+    Import all SQLAlchemy models so that the ORM mapper can resolve all
+    relationships (e.g. Lead.assigned_user → User) before any query runs.
+    This is required in Celery workers, which bypass FastAPI's startup event.
+    """
+    from app.modules.auth.models import User  # noqa: F401
+    from app.modules.admin.models import AuditLog, Specialty, SystemConfig  # noqa: F401
+    from app.modules.scheduling.models import Doctor, DoctorSchedule, ScheduleBlock, Appointment  # noqa: F401
+    from app.modules.crm.models import Patient  # noqa: F401
+    from app.modules.leads.models import Lead, LeadInteraction  # noqa: F401
+    from app.modules.leads.ai_models import (  # noqa: F401
+        LeadAgentConfig, LeadConversation, LeadMessage,
+        SupervisorQuery, LeadOutboundMessage, LeadActivity
+    )
+    from app.modules.messaging.models import Conversation, Message  # noqa: F401
+    from app.modules.followup.models import FollowupRule, FollowupJob  # noqa: F401
+
+
+# ---------------------------------------------------------------------------
+# Proactive message when lead enters a status
+# ---------------------------------------------------------------------------
 
 @celery_app.task(
     name="app.modules.leads.ai_tasks.send_lead_proactive_message",
@@ -24,35 +45,86 @@ def _run_async(coro):
     max_retries=2,
     default_retry_delay=60,
 )
-def send_lead_proactive_message(lead_id: str):
-    """Send the configured initial AI message when a lead enters a new status."""
-    _run_async(_do_send_proactive(lead_id))
+def send_lead_proactive_message(lead_id: str, status: str | None = None):
+    """
+    Send the configured initial AI message when a lead enters a new status.
+    Optionally pass the target status to avoid a race condition where the
+    lead's status was already updated before the task runs.
+    """
+    _run_async(_do_send_proactive(lead_id, status))
 
 
-async def _do_send_proactive(lead_id_str: str) -> None:
+async def _do_send_proactive(lead_id_str: str, status: str | None = None) -> None:
     import uuid
-    from sqlalchemy import select
     from app.database import AsyncSessionLocal
     from app.modules.leads.models import Lead
     from app.modules.leads.ai_engine import load_agent_config, send_proactive_message
     from app.modules.leads.schedule import is_messaging_allowed
 
+    _ensure_models_loaded()
+
     async with AsyncSessionLocal() as db:
-        if not await is_messaging_allowed(db):
-            logger.info("Proactive message for lead %s skipped — outside allowed hours", lead_id_str)
-            return
         lead = await db.get(Lead, uuid.UUID(lead_id_str))
         if not lead:
+            logger.warning("Proactive task: lead %s not found", lead_id_str)
             return
-        agent_config = await load_agent_config(db, lead.status)
-        if not agent_config or not agent_config.auto_send_on_enter:
+
+        # Use the passed status or fall back to the current lead status
+        check_status = status or lead.status
+
+        # Skip for terminal statuses
+        if check_status in ("convertido", "perdido"):
             return
+
+        # Only run for leads with a real messaging channel
+        if lead.channel not in ("whatsapp", "telegram"):
+            logger.info(
+                "Proactive task: lead %s channel '%s' not supported, skipping",
+                lead.code, lead.channel,
+            )
+            return
+
+        # Check schedule — but only if schedule enforcement is enabled
+        if not await is_messaging_allowed(db):
+            logger.info(
+                "Proactive message for lead %s skipped — outside allowed hours", lead_id_str
+            )
+            return
+
+        agent_config = await load_agent_config(db, check_status)
+        if not agent_config:
+            logger.info(
+                "Proactive task: no active AI config for status '%s' (lead %s)",
+                check_status, lead.code,
+            )
+            return
+
+        if not agent_config.auto_send_on_enter:
+            logger.info(
+                "Proactive task: auto_send_on_enter=False for status '%s' (lead %s)",
+                check_status, lead.code,
+            )
+            return
+
+        if not agent_config.initial_message:
+            logger.info(
+                "Proactive task: no initial_message configured for status '%s' (lead %s)",
+                check_status, lead.code,
+            )
+            return
+
         ok = await send_proactive_message(db, lead, agent_config)
         if ok:
-            logger.info("Proactive message sent for lead %s", lead.code)
+            logger.info("Proactive message sent for lead %s (status=%s)", lead.code, check_status)
+        else:
+            logger.warning(
+                "Proactive message FAILED for lead %s (status=%s)", lead.code, check_status
+            )
 
 
-# --- Inactivity follow-up check (runs every 30 min) ---
+# ---------------------------------------------------------------------------
+# Inactivity follow-up check (runs every 30 min)
+# ---------------------------------------------------------------------------
 
 @celery_app.task(
     name="app.modules.leads.ai_tasks.check_lead_inactivity",
@@ -71,10 +143,11 @@ async def _do_check_inactivity() -> None:
     from app.modules.leads.schedule import is_messaging_allowed
     from app.modules.messaging.gateway import send_message
 
+    _ensure_models_loaded()
+
     now = datetime.now(timezone.utc)
 
     async with AsyncSessionLocal() as db:
-        # Skip follow-up messages outside allowed hours
         if not await is_messaging_allowed(db):
             logger.info("Inactivity check skipped — outside allowed messaging hours")
             return
@@ -151,7 +224,9 @@ async def _do_check_inactivity() -> None:
                     )
 
 
-# --- Supervisor query timeout check (runs every hour) ---
+# ---------------------------------------------------------------------------
+# Supervisor query timeout check (runs every hour)
+# ---------------------------------------------------------------------------
 
 @celery_app.task(
     name="app.modules.leads.ai_tasks.check_supervisor_timeouts",
@@ -162,15 +237,6 @@ def check_supervisor_timeouts():
     _run_async(_do_check_supervisor_timeouts())
 
 
-@celery_app.task(
-    name="app.modules.leads.ai_tasks.process_lead_scheduled_messages",
-    queue="leads",
-)
-def process_lead_scheduled_messages():
-    """Send pending outbound messages whose scheduled_for time has arrived."""
-    _run_async(_do_process_scheduled_messages())
-
-
 async def _do_check_supervisor_timeouts() -> None:
     from sqlalchemy import select
     from app.database import AsyncSessionLocal
@@ -178,6 +244,8 @@ async def _do_check_supervisor_timeouts() -> None:
     from app.modules.leads.models import Lead, LeadInteraction
     from app.modules.leads.ai_models import LeadConversation, SupervisorQuery
     from app.modules.messaging.gateway import send_message
+
+    _ensure_models_loaded()
 
     now = datetime.now(timezone.utc)
 
@@ -232,10 +300,21 @@ async def _do_check_supervisor_timeouts() -> None:
 
             logger.info(
                 "Supervisor query %s timed out for lead %s — action: %s",
-                query.id,
-                lead.code,
-                on_timeout,
+                query.id, lead.code, on_timeout,
             )
+
+
+# ---------------------------------------------------------------------------
+# Scheduled outbound messages (runs every 2 min)
+# ---------------------------------------------------------------------------
+
+@celery_app.task(
+    name="app.modules.leads.ai_tasks.process_lead_scheduled_messages",
+    queue="leads",
+)
+def process_lead_scheduled_messages():
+    """Send pending outbound messages whose scheduled_for time has arrived."""
+    _run_async(_do_process_scheduled_messages())
 
 
 async def _do_process_scheduled_messages() -> None:
@@ -245,6 +324,8 @@ async def _do_process_scheduled_messages() -> None:
     from app.modules.leads.ai_models import LeadOutboundMessage
     from app.modules.leads.schedule import is_messaging_allowed
     from app.modules.messaging.gateway import send_message
+
+    _ensure_models_loaded()
 
     now = datetime.now(timezone.utc)
 
@@ -279,7 +360,9 @@ async def _do_process_scheduled_messages() -> None:
             except Exception as e:
                 msg.status = "failed"
                 msg.error = str(e)[:500]
-                logger.exception("Failed to send scheduled message %s for lead %s", msg.id, lead.code)
+                logger.exception(
+                    "Failed to send scheduled message %s for lead %s", msg.id, lead.code
+                )
 
             await db.commit()
 

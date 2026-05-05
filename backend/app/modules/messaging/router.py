@@ -152,14 +152,15 @@ async def _handle_lead_message(db: AsyncSession, msg: IncomingMessage) -> bool:
     from sqlalchemy import and_, or_, text
     from app.modules.leads.models import Lead
     
-    # Find active lead by phone (handle country codes by matching suffix)
-    phone = msg.channel_user_id
-    # If phone is '5531999999999', it will match Lead.phone '31999999999' or '999999999'
+    # Find active lead by phone (handle channel prefixes and country codes)
+    phone = msg.channel_user_id  # e.g. '553193293735'
     result = await db.execute(
         select(Lead).where(
             or_(
                 Lead.phone == phone,
-                Lead.phone.like(f"%{phone}")
+                Lead.phone == f"whatsapp:{phone}",
+                Lead.phone == f"telegram:{phone}",
+                Lead.phone.like(f"%{phone}"),
             ),
             Lead.status.notin_(["convertido", "perdido"]),
         ).order_by(Lead.created_at.desc()).limit(1)
