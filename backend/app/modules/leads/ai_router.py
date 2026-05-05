@@ -28,6 +28,7 @@ class LeadAgentConfigSchema(BaseModel):
     max_inactivity_followups: int = 2
     inactivity_followup_message: str | None = None
     auto_lost_after_hours: int = 72
+    convert_on_appointment: bool = True
 
     model_config = {"from_attributes": True}
 

@@ -344,17 +344,30 @@ function StatusConfigCard({
           {form.auto_send_on_enter && (
             <div>
               <label className="block text-xs text-gray-500 mb-1">
-                Mensagem de abertura
+                Instrução para a IA no primeiro contato
+                <span className="ml-1 text-gray-400">(ex: apresente a clínica e pergunte sobre o interesse)</span>
               </label>
               <textarea
                 rows={2}
                 value={form.initial_message || ""}
                 onChange={(e) => set("initial_message", e.target.value)}
-                placeholder="Ex: Olá! Vi que você tem interesse em nossa clínica..."
+                placeholder="Ex: Apresente-se como atendente da clínica, seja acolhedor e pergunte qual especialidade o cliente busca."
                 className="w-full border rounded-lg px-3 py-2 text-sm"
               />
+              <p className="text-[10px] text-gray-400 mt-1">
+                A IA usará esta instrução para gerar uma mensagem personalizada — não é um texto fixo.
+              </p>
             </div>
           )}
+
+          <Toggle
+            checked={form.convert_on_appointment ?? true}
+            onChange={(v) => set("convert_on_appointment", v)}
+            label="Converter lead em paciente automaticamente ao agendar consulta"
+          />
+          <p className="text-xs text-gray-400 -mt-2 ml-12">
+            Quando ativado, a IA converte o lead para &ldquo;Convertido&rdquo; assim que agendar uma consulta na agenda.
+          </p>
 
           <div>
             <label className="block text-xs text-gray-500 mb-1">
@@ -749,6 +762,7 @@ export default function IaComercialPage() {
                 max_inactivity_followups: 2,
                 inactivity_followup_message: null,
                 auto_lost_after_hours: 72,
+                convert_on_appointment: true,
               } as LeadAgentConfig);
             return (
               <StatusConfigCard

@@ -23,6 +23,8 @@ class LeadAgentConfig(Base):
     max_inactivity_followups: Mapped[int] = mapped_column(Integer, default=2, nullable=False)
     inactivity_followup_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     auto_lost_after_hours: Mapped[int] = mapped_column(Integer, default=72, nullable=False)
+    # When True, booking an appointment auto-converts the lead to 'convertido'
+    convert_on_appointment: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),

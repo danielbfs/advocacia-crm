@@ -270,7 +270,7 @@ async def process_lead_message(
                     await db.refresh(lead)
                     await db.refresh(conversation)
 
-                    result_str = await execute_lead_tool(tool_name, args, db, lead, conversation)
+                    result_str = await execute_lead_tool(tool_name, args, db, lead, conversation, agent_config)
 
                     # If supervisor was consulted, capture the awaiting message
                     if tool_name == "consult_supervisor":

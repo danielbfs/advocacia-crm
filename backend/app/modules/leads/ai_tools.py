@@ -179,6 +179,68 @@ LEAD_TOOL_DEFINITIONS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "list_doctors",
+            "description": "Lista os médicos/especialistas disponíveis na clínica. Use antes de book_appointment.",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "list_available_slots",
+            "description": (
+                "Lista os horários disponíveis de um médico para agendamento. "
+                "Use antes de book_appointment para mostrar opções ao cliente."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "doctor_id": {
+                        "type": "string",
+                        "description": "UUID do médico",
+                    },
+                    "date": {
+                        "type": "string",
+                        "description": "Data para verificar (YYYY-MM-DD). Se omitida, retorna próximos dias.",
+                    },
+                },
+                "required": ["doctor_id"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "book_appointment",
+            "description": (
+                "Agenda uma consulta para o lead na clínica. "
+                "Use SOMENTE após o lead confirmar data/hora. "
+                "Se a configuração 'converter ao agendar' estiver ativa, "
+                "o lead será automaticamente convertido em paciente."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "doctor_id": {
+                        "type": "string",
+                        "description": "UUID do médico",
+                    },
+                    "starts_at": {
+                        "type": "string",
+                        "description": "Data/hora da consulta em ISO 8601 (ex: 2026-05-10T14:00:00)",
+                    },
+                    "notes": {
+                        "type": "string",
+                        "description": "Observações (opcional)",
+                    },
+                },
+                "required": ["doctor_id", "starts_at"],
+            },
+        },
+    },
 ]
 
 
@@ -188,6 +250,7 @@ async def execute_lead_tool(
     db: AsyncSession,
     lead: Lead,
     conversation: LeadConversation,
+    agent_config=None,
 ) -> str:
     """Execute a lead tool call and return the result as a JSON string."""
     try:
@@ -209,11 +272,18 @@ async def execute_lead_tool(
             return await _consult_supervisor(db, lead, conversation, arguments)
         elif tool_name == "escalate_to_human":
             return await _escalate_to_human(db, lead, conversation, arguments)
+        elif tool_name == "list_doctors":
+            return await _list_doctors(db)
+        elif tool_name == "list_available_slots":
+            return await _list_available_slots(db, arguments)
+        elif tool_name == "book_appointment":
+            return await _book_appointment(db, lead, conversation, arguments, agent_config)
         else:
             return json.dumps({"error": f"Tool desconhecida: {tool_name}"})
     except Exception as e:
         logger.exception("Lead tool execution error: %s args=%s", tool_name, arguments)
         return json.dumps({"error": str(e)})
+
 
 
 async def _get_lead_info(lead: Lead) -> str:
@@ -489,4 +559,188 @@ async def _escalate_to_human(
             "Vou chamar nossa equipe para te atender. "
             "Em breve um de nossos atendentes entrará em contato!"
         ),
+    })
+
+
+async def _list_doctors(db: AsyncSession) -> str:
+    """Return all active doctors with their specialties."""
+    from app.modules.scheduling.models import Doctor
+    from sqlalchemy.orm import selectinload
+
+    result = await db.execute(
+        select(Doctor)
+        .options(selectinload(Doctor.specialty))
+        .where(Doctor.is_active == True)  # noqa: E712
+        .order_by(Doctor.full_name)
+    )
+    doctors = result.scalars().all()
+
+    return json.dumps([
+        {
+            "id": str(d.id),
+            "full_name": d.full_name,
+            "crm": d.crm,
+            "specialty": d.specialty.name if d.specialty else None,
+            "slot_duration_minutes": d.slot_duration_minutes,
+        }
+        for d in doctors
+    ])
+
+
+async def _list_available_slots(db: AsyncSession, args: dict) -> str:
+    """Return available time slots for a doctor."""
+    from app.modules.scheduling.service import get_available_slots
+    from datetime import date as date_type
+
+    doctor_id_str = args.get("doctor_id", "")
+    date_str = args.get("date")
+
+    try:
+        doctor_id = uuid.UUID(doctor_id_str)
+    except ValueError:
+        return json.dumps({"error": "doctor_id inválido"})
+
+    now = datetime.now(timezone.utc)
+
+    if date_str:
+        try:
+            target_date = date_type.fromisoformat(date_str)
+            date_from = datetime.combine(target_date, datetime.min.time(), tzinfo=timezone.utc)
+            date_to = datetime.combine(target_date, datetime.max.time(), tzinfo=timezone.utc)
+        except ValueError:
+            return json.dumps({"error": "Formato de data inválido. Use YYYY-MM-DD"})
+    else:
+        # Next 7 days
+        date_from = now
+        date_to = now + timedelta(days=7)
+
+    try:
+        slots = await get_available_slots(db, doctor_id, date_from, date_to)
+        # Limit to 20 slots to avoid huge responses
+        return json.dumps({"slots": slots[:20], "total": len(slots)})
+    except Exception as e:
+        logger.exception("Error fetching slots for doctor %s", doctor_id_str)
+        return json.dumps({"error": str(e)})
+
+
+
+async def _book_appointment(
+    db: AsyncSession,
+    lead: Lead,
+    conversation: LeadConversation,
+    args: dict,
+    agent_config=None,
+) -> str:
+    """
+    Book an appointment for the lead and optionally convert them to a patient.
+    If agent_config.convert_on_appointment is True (default), the lead is
+    automatically converted to 'convertido' status after a successful booking.
+    """
+    from app.modules.scheduling.models import Doctor, Appointment
+    from app.modules.crm.service import get_patient_by_phone, create_patient
+
+    doctor_id_str = args.get("doctor_id", "")
+    starts_at_str = args.get("starts_at", "")
+    notes = args.get("notes", "")
+
+    try:
+        doctor_id = uuid.UUID(doctor_id_str)
+    except ValueError:
+        return json.dumps({"error": "doctor_id inválido"})
+
+    try:
+        # Parse ISO 8601 — accept with or without timezone
+        starts_at = datetime.fromisoformat(starts_at_str)
+        if starts_at.tzinfo is None:
+            starts_at = starts_at.replace(tzinfo=timezone.utc)
+    except ValueError:
+        return json.dumps({"error": "Formato de data/hora inválido. Use ISO 8601 (ex: 2026-05-10T14:00:00)"})
+
+    # Load doctor
+    doctor = await db.get(Doctor, doctor_id)
+    if not doctor:
+        return json.dumps({"error": "Médico não encontrado"})
+
+    ends_at = starts_at + timedelta(minutes=doctor.slot_duration_minutes or 30)
+
+    # Ensure patient exists
+    clean_phone = lead.phone
+    for prefix in ("whatsapp:", "telegram:"):
+        if clean_phone.startswith(prefix):
+            clean_phone = clean_phone[len(prefix):]
+
+    patient = await get_patient_by_phone(db, clean_phone)
+    if not patient:
+        channel = lead.channel if lead.channel in ("telegram", "whatsapp") else "whatsapp"
+        patient = await create_patient(
+            db,
+            phone=clean_phone,
+            full_name=lead.full_name,
+            email=lead.email,
+            channel=channel,
+        )
+
+    # Create appointment
+    appointment = Appointment(
+        patient_id=patient.id,
+        doctor_id=doctor.id,
+        specialty_id=doctor.specialty_id,
+        starts_at=starts_at,
+        ends_at=ends_at,
+        status="agendado",
+        source="ia_comercial",
+        notes=f"[IA Comercial] {notes}".strip() if notes else "[IA Comercial] Agendado pelo atendente IA",
+        created_by_user=None,
+    )
+    db.add(appointment)
+    await db.flush()  # get appointment.id before commit
+
+    # Log interaction
+    db.add(LeadInteraction(
+        lead_id=lead.id,
+        type="nota",
+        content=(
+            f"[IA] Consulta agendada com Dr(a). {doctor.full_name} "
+            f"em {starts_at.strftime('%d/%m/%Y às %H:%M')}."
+        ),
+    ))
+
+    # Auto-convert if configured
+    should_convert = (agent_config is None) or getattr(agent_config, "convert_on_appointment", True)
+    if should_convert:
+        now = datetime.now(timezone.utc)
+        lead.status = "convertido"
+        lead.converted_patient_id = patient.id
+        lead.converted_at = now
+        lead.appointment_id = appointment.id
+        if lead.contacted_at is None:
+            lead.contacted_at = now
+
+        conversation.status = "closed"
+        conversation.closed_at = now
+
+        db.add(LeadInteraction(
+            lead_id=lead.id,
+            type="nota",
+            content="[IA] Lead convertido automaticamente após agendamento de consulta.",
+        ))
+
+    await db.commit()
+
+    specialty_name = doctor.specialty.name if doctor.specialty else "consulta"
+    date_fmt = starts_at.strftime("%d/%m/%Y às %H:%M")
+
+    return json.dumps({
+        "success": True,
+        "appointment_id": str(appointment.id),
+        "doctor": doctor.full_name,
+        "specialty": specialty_name,
+        "starts_at": date_fmt,
+        "lead_converted": should_convert,
+        "message": (
+            f"Consulta agendada com sucesso! ✅\n"
+            f"📅 {date_fmt}\n"
+            f"👨‍⚕️ Dr(a). {doctor.full_name} — {specialty_name}\n"
+            f"{'Você já está cadastrado(a) como paciente!' if should_convert else ''}"
+        ).strip(),
     })

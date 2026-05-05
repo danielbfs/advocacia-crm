@@ -57,6 +57,7 @@ export interface LeadAgentConfig {
   max_inactivity_followups: number;
   inactivity_followup_message: string | null;
   auto_lost_after_hours: number;
+  convert_on_appointment: boolean;
 }
 
 export interface LeadMessage {
