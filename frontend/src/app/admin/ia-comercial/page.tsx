@@ -698,6 +698,38 @@ export default function IaComercialPage() {
         </p>
       </div>
 
+      {/* Instructions Banner */}
+      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5 space-y-3">
+        <h2 className="text-sm font-bold text-blue-900 flex items-center gap-2">
+          <span className="text-lg">🤖</span> Como funciona o Atendente IA
+        </h2>
+        <div className="grid gap-3 text-xs text-blue-800 leading-relaxed">
+          <div className="flex gap-2">
+            <span className="font-bold text-blue-600 shrink-0">1.</span>
+            <p><strong>Configuração por Etapa:</strong> Cada status do pipeline (Novo, Em Contato, Qualificado, etc.) pode ter seu próprio agente IA com instruções específicas. Ative o toggle para habilitar a IA naquela etapa.</p>
+          </div>
+          <div className="flex gap-2">
+            <span className="font-bold text-blue-600 shrink-0">2.</span>
+            <p><strong>Gatilho Automático:</strong> Quando um lead <strong>entra em um novo status</strong> (seja por criação ou movimentação no Kanban), a IA envia automaticamente a <em>mensagem inicial</em> configurada, se o toggle &ldquo;Enviar mensagem ao entrar neste status&rdquo; estiver ativo.</p>
+          </div>
+          <div className="flex gap-2">
+            <span className="font-bold text-blue-600 shrink-0">3.</span>
+            <p><strong>Respostas Inteligentes:</strong> Após o primeiro contato, a IA responde automaticamente as mensagens do lead usando as instruções (prompt) e a tabela de preços configurada abaixo. A IA nunca inventa preços — consulta sempre a tabela.</p>
+          </div>
+          <div className="flex gap-2">
+            <span className="font-bold text-blue-600 shrink-0">4.</span>
+            <p><strong>Follow-up de Inatividade:</strong> Se o lead parar de responder, a IA envia follow-ups automáticos (configurável por etapa) e pode marcar como perdido após o período definido.</p>
+          </div>
+          <div className="flex gap-2">
+            <span className="font-bold text-blue-600 shrink-0">5.</span>
+            <p><strong>Supervisor:</strong> Quando o lead pede desconto ou algo fora da tabela, a IA consulta o supervisor via WhatsApp e aguarda a resposta para continuar a negociação.</p>
+          </div>
+        </div>
+        <div className="bg-white/60 rounded-lg px-3 py-2 text-[11px] text-blue-700 border border-blue-100">
+          <strong>⚠️ Importante:</strong> Leads só são atendidos pela IA se tiverem canal <strong>WhatsApp</strong> ou <strong>Telegram</strong>. Leads criados manualmente com outros canais não receberão mensagens automáticas. Os horários de envio respeitam a grade configurada na seção &ldquo;Horários de Envio&rdquo; abaixo.
+        </div>
+      </div>
+
       {/* Section 1: Status Configs */}
       <section>
         <h2 className="text-base font-semibold text-gray-700 mb-3">
