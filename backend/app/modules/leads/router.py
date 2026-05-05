@@ -53,6 +53,7 @@ from app.modules.leads.service import (
     convert_lead,
     create_interaction,
     create_lead,
+    delete_lead,
     get_all_leads,
     get_funnel,
     get_lead_by_id,
@@ -160,7 +161,18 @@ async def update_existing_lead(
     return await update_lead(db, lead, **body.model_dump(exclude_unset=True))
 
 
-# --- Pipeline actions ---
+@router.delete("/{lead_id}", status_code=204)
+async def delete_existing_lead(
+    lead_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Permanently delete a lead (test/spam cleanup). Requires authenticated user."""
+    lead = await get_lead_by_id(db, lead_id)
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead não encontrado.")
+    await delete_lead(db, lead)
+
 
 @router.post("/{lead_id}/contact", response_model=LeadResponse)
 async def contact_lead(
