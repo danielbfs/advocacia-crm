@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { ToastMessage } from "@/components/toast-message";
 import type {
   Doctor,
   Lead,
@@ -88,6 +89,7 @@ function relativeDate(iso: string | null): string {
 
 export function LeadsListView({ basePath = "/secretary/leads" }: { basePath?: string }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { user } = useAuth();
 
   // Data
@@ -122,6 +124,7 @@ export function LeadsListView({ basePath = "/secretary/leads" }: { basePath?: st
   } | null>(null);
   const [convertModal, setConvertModal] = useState<Lead | null>(null);
   const [bulkAssignModal, setBulkAssignModal] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Drag state
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -138,6 +141,13 @@ export function LeadsListView({ basePath = "/secretary/leads" }: { basePath?: st
   }, []);
 
   useEffect(() => {
+    const deletedCode = searchParams.get("deleted");
+    if (!deletedCode) return;
+    setToastMessage(`Lead ${deletedCode} excluído com sucesso.`);
+    router.replace(pathname);
+  }, [searchParams, router, pathname]);
+
+  useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 250);
     return () => clearTimeout(t);
   }, [search]);
@@ -146,6 +156,12 @@ export function LeadsListView({ basePath = "/secretary/leads" }: { basePath?: st
     fetchLeads();
     fetchMetrics();
   }, [filterAssigned, filterChannel, filterStatus, filterOverdue, debouncedSearch, period, user?.id]);
+
+  useEffect(() => {
+    if (!toastMessage) return;
+    const timer = setTimeout(() => setToastMessage(null), 2500);
+    return () => clearTimeout(timer);
+  }, [toastMessage]);
 
   async function fetchLeads() {
     setLoading(true);
@@ -233,10 +249,12 @@ export function LeadsListView({ basePath = "/secretary/leads" }: { basePath?: st
     if (!window.confirm(`Excluir lead ${lead.code} (${lead.full_name || lead.phone})? Esta ação é permanente.`)) return;
     try {
       await api.delete(`/leads/${lead.id}`);
+      setToastMessage(`Lead ${lead.code} excluído com sucesso.`);
       fetchLeads();
       fetchMetrics();
-    } catch {
-      alert("Erro ao excluir o lead.");
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { detail?: string } } };
+      alert(e.response?.data?.detail || "Erro ao excluir o lead.");
     }
   }
 
@@ -342,6 +360,7 @@ export function LeadsListView({ basePath = "/secretary/leads" }: { basePath?: st
 
   return (
     <main className="p-8">
+      {toastMessage && <ToastMessage message={toastMessage} type="success" />}
       {/* Header */}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <h1 className="text-2xl font-bold text-gray-900">Pipeline de Leads</h1>

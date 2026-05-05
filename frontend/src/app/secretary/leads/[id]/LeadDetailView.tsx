@@ -312,6 +312,7 @@ export function LeadDetailView({ backPath = "/secretary" }: { backPath?: string 
   const [lostReason, setLostReason] = useState("");
   const [showConvertModal, setShowConvertModal] = useState(false);
   const [convertName, setConvertName] = useState("");
+  const [deletingLead, setDeletingLead] = useState(false);
 
   useEffect(() => {
     if (id) fetchAll();
@@ -456,6 +457,26 @@ export function LeadDetailView({ backPath = "/secretary" }: { backPath?: string 
     }
   }
 
+  async function handleDeleteLead() {
+    if (!lead || deletingLead) return;
+    const label = lead.full_name || lead.phone;
+    const confirmed = window.confirm(
+      `Excluir lead ${lead.code} (${label})? Esta ação é permanente e remove histórico, mensagens e lembretes.`,
+    );
+    if (!confirmed) return;
+
+    setDeletingLead(true);
+    try {
+      await api.delete(`/leads/${lead.id}`);
+      router.push(`${backPath}?deleted=${encodeURIComponent(lead.code)}`);
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { detail?: string } } };
+      alert(e.response?.data?.detail || "Erro ao excluir o lead.");
+    } finally {
+      setDeletingLead(false);
+    }
+  }
+
   if (loading) return <div className="p-8 text-gray-400">Carregando...</div>;
   if (!lead) return <div className="p-8 text-gray-400">Lead não encontrado.</div>;
 
@@ -502,12 +523,22 @@ export function LeadDetailView({ backPath = "/secretary" }: { backPath?: string 
             )}
           </div>
         </div>
-        <button
-          onClick={() => setEditing(!editing)}
-          className="text-sm text-blue-600 hover:underline"
-        >
-          {editing ? "Cancelar Edição" : "Editar"}
-        </button>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setEditing(!editing)}
+            className="text-sm text-blue-600 hover:underline"
+          >
+            {editing ? "Cancelar Edição" : "Editar"}
+          </button>
+          <button
+            onClick={handleDeleteLead}
+            disabled={deletingLead}
+            className="text-sm text-red-600 hover:underline disabled:opacity-50"
+            title="Excluir lead"
+          >
+            {deletingLead ? "Excluindo..." : "Excluir lead"}
+          </button>
+        </div>
       </div>
 
       {/* Handling control */}
