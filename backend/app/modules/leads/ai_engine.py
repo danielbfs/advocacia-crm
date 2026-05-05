@@ -411,23 +411,96 @@ async def send_proactive_message(
     lead: Lead,
     agent_config: LeadAgentConfig,
 ) -> bool:
-    """Send the configured initial message to the lead and create the conversation."""
-    if not agent_config.initial_message:
-        return False
+    """
+    Invoke the LLM to generate an intelligent first message for the lead,
+    then send it via WhatsApp/Telegram.
 
+    The `initial_message` field in the config is used as an instruction hint
+    for the AI (e.g. "apresente a clínica e pergunte sobre o interesse").
+    If it's empty, fall back to a default instruction.
+    """
     channel = lead.channel if lead.channel in ("whatsapp", "telegram") else "whatsapp"
     clean_phone = _clean_phone(lead.phone)
 
     conversation = await get_or_create_lead_conversation(db, lead, channel, clean_phone)
 
+    # --- Build the LLM prompt ---
+    ai_config = await load_ai_config(db)
+
+    result = await db.execute(
+        select(SystemConfig).where(SystemConfig.key == "clinic_info")
+    )
+    row = result.scalar_one_or_none()
+    clinic_cfg = row.value if row and row.value else {}
+
+    price_result = await db.execute(
+        select(SystemConfig).where(SystemConfig.key == "lead_pricing")
+    )
+    price_row = price_result.scalar_one_or_none()
+    pricing_table = price_row.value if price_row else None
+
+    system_prompt = _build_system_prompt(
+        agent_config,
+        lead,
+        clinic_name=clinic_cfg.get("name", ""),
+        clinic_timezone=clinic_cfg.get("timezone", settings.CLINIC_TIMEZONE),
+        pricing_table=pricing_table,
+    )
+
+    # The initial_message is the instruction for the AI's first outreach
+    hint = (agent_config.initial_message or "").strip()
+    if not hint:
+        hint = (
+            "Faça o primeiro contato com este lead de forma acolhedora. "
+            "Apresente-se, mencione a clínica e pergunte como pode ajudar."
+        )
+
+    user_instruction = (
+        f"[INSTRUÇÃO DO SISTEMA — NÃO MOSTRAR AO CLIENTE]\n"
+        f"Este é o primeiro contato com o lead. Gere uma mensagem inicial "
+        f"para enviar pelo WhatsApp seguindo esta instrução:\n\n"
+        f"{hint}\n\n"
+        f"Regras:\n"
+        f"- Fale como se estivesse mandando uma mensagem natural no WhatsApp\n"
+        f"- Seja breve e acolhedor (máximo 3-4 linhas)\n"
+        f"- Use o nome do lead se disponível\n"
+        f"- NÃO inclua [INSTRUÇÃO DO SISTEMA] na resposta\n"
+        f"- Responda APENAS com o texto da mensagem a ser enviada"
+    )
+
+    messages_for_llm: list[dict] = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_instruction},
+    ]
+
+    client = _get_client(ai_config)
+    model = _get_model(ai_config)
+
+    try:
+        completion = await client.chat.completions.create(
+            model=model,
+            messages=messages_for_llm,
+            temperature=0.5,
+            max_tokens=300,
+        )
+        generated_text = (completion.choices[0].message.content or "").strip()
+    except Exception:
+        logger.exception("LLM error generating proactive message for lead %s", lead.id)
+        # Fall back to the static initial_message if LLM fails
+        generated_text = agent_config.initial_message or ""
+
+    if not generated_text:
+        logger.warning("Empty proactive message for lead %s, skipping", lead.code)
+        return False
+
     from app.modules.messaging.gateway import send_message
-    ok = await send_message(channel, clean_phone, agent_config.initial_message)
+    ok = await send_message(channel, clean_phone, generated_text)
     if ok:
         now = datetime.now(timezone.utc)
         db.add(LeadMessage(
             conversation_id=conversation.id,
             role="assistant",
-            content=agent_config.initial_message,
+            content=generated_text,
             sent_at=now,
         ))
         conversation.last_message_at = now
@@ -441,7 +514,7 @@ async def send_proactive_message(
                 lead.contacted_at = now
         await db.commit()
         logger.info(
-            "Proactive message sent successfully to lead %s via %s (%s)",
+            "Proactive LLM message sent to lead %s via %s (%s)",
             lead.code, channel, clean_phone,
         )
     else:
@@ -450,3 +523,4 @@ async def send_proactive_message(
             lead.code, channel, clean_phone,
         )
     return ok
+

@@ -106,9 +106,6 @@ async def _do_send_proactive(task, lead_id_str: str, status: str | None = None) 
             logger.info("Proactive task: auto_send_on_enter=False for '%s' (lead %s)", check_status, lead.code)
             return
 
-        if not agent_config.initial_message:
-            logger.info("Proactive task: no initial_message for '%s' (lead %s)", check_status, lead.code)
-            return
 
         ok = await send_proactive_message(db, lead, agent_config)
         if ok:
