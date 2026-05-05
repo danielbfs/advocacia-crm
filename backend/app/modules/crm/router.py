@@ -2,6 +2,7 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.permissions import get_current_user
@@ -13,11 +14,19 @@ from app.modules.crm.service import (
     get_all_patients,
     get_patient_by_id,
     get_patient_by_phone,
+    get_unmatched_leads,
+    link_lead_to_patient,
+    merge_patients,
     update_patient,
+    add_patient_contact,
 )
 
 router = APIRouter()
 
+
+# ---------------------------------------------------------------------------
+# Patient CRUD
+# ---------------------------------------------------------------------------
 
 @router.get("/", response_model=list[PatientResponse])
 async def list_patients(
@@ -48,6 +57,28 @@ async def create_new_patient(
         channel_id=body.channel_id,
         notes=body.notes,
     )
+
+
+@router.get("/unmatched", response_model=list[dict])
+async def list_unmatched_contacts(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Return recent leads that have not been linked to a patient profile yet."""
+    leads = await get_unmatched_leads(db)
+    return [
+        {
+            "lead_id": str(lead.id),
+            "code": lead.code,
+            "full_name": lead.full_name,
+            "phone": lead.phone,
+            "email": lead.email,
+            "channel": lead.channel,
+            "status": lead.status,
+            "created_at": lead.created_at.isoformat(),
+        }
+        for lead in leads
+    ]
 
 
 @router.get("/{patient_id}", response_model=PatientResponse)
@@ -86,3 +117,80 @@ async def update_existing_patient(
         crm_status=body.crm_status,
         notes=body.notes,
     )
+
+
+# ---------------------------------------------------------------------------
+# Merge two patients
+# ---------------------------------------------------------------------------
+
+class MergeRequest(BaseModel):
+    source_patient_id: uuid.UUID
+
+
+@router.post("/{patient_id}/merge", response_model=PatientResponse)
+async def merge_into_patient(
+    patient_id: uuid.UUID,
+    body: MergeRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Merge source_patient_id into patient_id (target). Source is deleted after merge."""
+    if patient_id == body.source_patient_id:
+        raise HTTPException(status_code=400, detail="Não é possível unificar um paciente com ele mesmo.")
+    try:
+        return await merge_patients(db, source_id=body.source_patient_id, target_id=patient_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+# ---------------------------------------------------------------------------
+# Link a lead to an existing patient
+# ---------------------------------------------------------------------------
+
+class LinkLeadRequest(BaseModel):
+    lead_id: uuid.UUID
+
+
+@router.post("/{patient_id}/link-lead")
+async def link_lead(
+    patient_id: uuid.UUID,
+    body: LinkLeadRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Link an unmatched lead to an existing patient profile."""
+    patient = await get_patient_by_id(db, patient_id)
+    if not patient:
+        raise HTTPException(status_code=404, detail="Paciente não encontrado.")
+    await link_lead_to_patient(db, body.lead_id, patient_id)
+    return {"success": True}
+
+
+# ---------------------------------------------------------------------------
+# Add contact channel to a patient
+# ---------------------------------------------------------------------------
+
+class AddContactRequest(BaseModel):
+    channel: str
+    value: str
+    is_primary: bool = False
+
+
+@router.post("/{patient_id}/contacts")
+async def add_contact(
+    patient_id: uuid.UUID,
+    body: AddContactRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Add a new contact channel (phone/telegram/email) to a patient."""
+    patient = await get_patient_by_id(db, patient_id)
+    if not patient:
+        raise HTTPException(status_code=404, detail="Paciente não encontrado.")
+    contact = await add_patient_contact(db, patient_id, body.channel, body.value, body.is_primary)
+    return {
+        "id": str(contact.id),
+        "channel": contact.channel,
+        "value": contact.value,
+        "is_primary": contact.is_primary,
+    }

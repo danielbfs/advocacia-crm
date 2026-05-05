@@ -58,6 +58,10 @@ class Lead(Base):
     appointment_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), nullable=True
     )
+    # Vínculo direto ao paciente (preenchido assim que o lead é associado)
+    patient_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=True
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
@@ -72,6 +76,7 @@ class Lead(Base):
     specialty = relationship("Specialty", lazy="joined")
     assigned_user = relationship("User", foreign_keys=[assigned_to], lazy="joined")
     interactions = relationship("LeadInteraction", back_populates="lead", lazy="selectin", order_by="LeadInteraction.interacted_at.desc()")
+    patient = relationship("Patient", foreign_keys="Lead.patient_id", back_populates="leads", lazy="joined")
 
     @property
     def is_overdue(self) -> bool:

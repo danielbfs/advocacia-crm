@@ -5,6 +5,27 @@ from datetime import datetime
 from pydantic import BaseModel
 
 
+class PatientContactResponse(BaseModel):
+    id: uuid.UUID
+    channel: str
+    value: str
+    is_primary: bool
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class LeadSummary(BaseModel):
+    id: uuid.UUID
+    code: str
+    full_name: str | None
+    channel: str
+    status: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 class PatientCreate(BaseModel):
     full_name: str | None = None
     phone: str
@@ -34,5 +55,7 @@ class PatientResponse(BaseModel):
     notes: str | None
     created_at: datetime
     updated_at: datetime
+    contacts: list[PatientContactResponse] = []
+    leads: list[LeadSummary] = []
 
     model_config = {"from_attributes": True}
