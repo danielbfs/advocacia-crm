@@ -229,6 +229,17 @@ export function LeadsListView({ basePath = "/secretary/leads" }: { basePath?: st
     }
   }
 
+  async function performDelete(lead: Lead) {
+    if (!window.confirm(`Excluir lead ${lead.code} (${lead.full_name || lead.phone})? Esta ação é permanente.`)) return;
+    try {
+      await api.delete(`/leads/${lead.id}`);
+      fetchLeads();
+      fetchMetrics();
+    } catch {
+      alert("Erro ao excluir o lead.");
+    }
+  }
+
   async function exportCsv() {
     try {
       const params = new URLSearchParams();
@@ -483,6 +494,7 @@ export function LeadsListView({ basePath = "/secretary/leads" }: { basePath?: st
           onDragEnd={onDragEnd}
           onCardClick={(l) => router.push(`${basePath}/${l.id}`)}
           onAssignMe={quickAssignMe}
+          onDelete={performDelete}
           currentUserId={user?.id || null}
           statusLabel={statusLabel}
         />
@@ -494,6 +506,7 @@ export function LeadsListView({ basePath = "/secretary/leads" }: { basePath?: st
           onSelectAll={() => selectAll(leads)}
           statusLabel={statusLabel}
           onClick={(l) => router.push(`${basePath}/${l.id}`)}
+          onDelete={performDelete}
         />
       )}
 
@@ -596,6 +609,7 @@ function KanbanBoard({
   onDragEnd,
   onCardClick,
   onAssignMe,
+  onDelete,
   currentUserId,
   statusLabel,
 }: {
@@ -609,6 +623,7 @@ function KanbanBoard({
   onDragEnd: () => void;
   onCardClick: (lead: Lead) => void;
   onAssignMe: (leadId: string) => void;
+  onDelete: (lead: Lead) => void;
   currentUserId: string | null;
   statusLabel: (s: LeadStatus) => string;
 }) {
@@ -709,24 +724,33 @@ function KanbanBoard({
                         <span className="text-gray-400">
                           {relativeDate(lead.created_at)}
                         </span>
-                        {lead.assigned_user ? (
-                          <span
-                            className="text-gray-700 truncate max-w-[100px]"
-                            title={lead.assigned_user.full_name}
-                          >
-                            👤 {lead.assigned_user.full_name.split(" ")[0]}
-                          </span>
-                        ) : currentUserId ? (
+                        <div className="flex items-center gap-2">
+                          {lead.assigned_user ? (
+                            <span
+                              className="text-gray-700 truncate max-w-[100px]"
+                              title={lead.assigned_user.full_name}
+                            >
+                              👤 {lead.assigned_user.full_name.split(" ")[0]}
+                            </span>
+                          ) : currentUserId ? (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onAssignMe(lead.id);
+                              }}
+                              className="text-blue-600 hover:underline"
+                            >
+                              Pegar
+                            </button>
+                          ) : null}
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onAssignMe(lead.id);
-                            }}
-                            className="text-blue-600 hover:underline"
+                            onClick={(e) => { e.stopPropagation(); onDelete(lead); }}
+                            className="text-gray-300 hover:text-red-500 transition-colors ml-1"
+                            title="Excluir lead"
                           >
-                            Pegar
+                            🗑
                           </button>
-                        ) : null}
+                        </div>
                       </div>
                     </div>
                   ))
@@ -747,6 +771,7 @@ function LeadsTable({
   onSelectAll,
   statusLabel,
   onClick,
+  onDelete,
 }: {
   leads: Lead[];
   selected: Set<string>;
@@ -754,6 +779,7 @@ function LeadsTable({
   onSelectAll: () => void;
   statusLabel: (s: LeadStatus) => string;
   onClick: (lead: Lead) => void;
+  onDelete: (lead: Lead) => void;
 }) {
   if (leads.length === 0) {
     return <p className="text-gray-400">Nenhum lead encontrado.</p>;
@@ -778,6 +804,7 @@ function LeadsTable({
             <th className="text-right px-3 py-2 text-gray-500 font-medium">Valor</th>
             <th className="text-left px-3 py-2 text-gray-500 font-medium">SLA</th>
             <th className="text-left px-3 py-2 text-gray-500 font-medium">Criado</th>
+            <th className="w-10" />
           </tr>
         </thead>
         <tbody className="divide-y">
@@ -849,6 +876,15 @@ function LeadsTable({
                 onClick={() => onClick(lead)}
               >
                 {relativeDate(lead.created_at)}
+              </td>
+              <td className="px-3 py-2 text-center" onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={() => onDelete(lead)}
+                  className="text-gray-300 hover:text-red-500 transition-colors"
+                  title="Excluir lead"
+                >
+                  🗑
+                </button>
               </td>
             </tr>
           ))}
