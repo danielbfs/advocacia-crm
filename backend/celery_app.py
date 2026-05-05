@@ -6,6 +6,22 @@ from celery.schedules import crontab
 
 from app.config import settings
 
+# ---------------------------------------------------------------------------
+# PRE-LOAD all SQLAlchemy models so the ORM mapper can resolve every
+# relationship() string reference (e.g. Lead → "User") before any task
+# module is imported.  Without this, the Celery worker crashes with
+# "expression 'User' failed to locate a name" because the task modules
+# transitively import Lead (which references User via relationship).
+# ---------------------------------------------------------------------------
+import app.modules.auth.models  # noqa: F401  — User
+import app.modules.admin.models  # noqa: F401  — Specialty, SystemConfig, AuditLog
+import app.modules.scheduling.models  # noqa: F401  — Doctor, Appointment, etc.
+import app.modules.crm.models  # noqa: F401  — Patient
+import app.modules.leads.models  # noqa: F401  — Lead, LeadInteraction
+import app.modules.leads.ai_models  # noqa: F401  — LeadAgentConfig, LeadConversation, etc.
+import app.modules.messaging.models  # noqa: F401  — Conversation, Message
+import app.modules.followup.models  # noqa: F401  — FollowupRule, FollowupJob
+
 celery_app = Celery(
     "openclinic",
     broker=settings.REDIS_URL,
