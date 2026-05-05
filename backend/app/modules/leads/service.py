@@ -1,4 +1,5 @@
 """Lead business logic."""
+import logging
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -15,6 +16,35 @@ from app.modules.leads.pipeline import (
     validate_transition,
 )
 from app.modules.followup.service import schedule_event_followups, cancel_event_followups
+
+logger = logging.getLogger(__name__)
+
+
+def dispatch_proactive_on_status_change(
+    lead: Lead,
+    from_status: str | None,
+    to_status: str | None,
+) -> None:
+    """Dispatch proactive AI task when a lead status actually changes."""
+    if not to_status or from_status == to_status:
+        return
+    try:
+        from app.modules.leads.ai_tasks import send_lead_proactive_message
+        if lead.channel in ("whatsapp", "telegram"):
+            send_lead_proactive_message.delay(str(lead.id), to_status)
+            logger.info(
+                "Dispatched proactive task for lead %s status change (%s -> %s)",
+                lead.id,
+                from_status,
+                to_status,
+            )
+    except Exception:
+        logger.exception(
+            "Failed to dispatch proactive task for lead %s status change (%s -> %s)",
+            lead.id,
+            from_status,
+            to_status,
+        )
 
 
 # --- CRUD ---
@@ -116,15 +146,18 @@ async def create_lead(
     db.add(lead)
     await db.commit()
     await db.refresh(lead)
+    dispatch_proactive_on_status_change(lead, None, lead.status)
     return lead
 
 
 async def update_lead(db: AsyncSession, lead: Lead, **kwargs) -> Lead:
+    from_status = lead.status
     for key, value in kwargs.items():
         if value is not None and hasattr(lead, key):
             setattr(lead, key, value)
     await db.commit()
     await db.refresh(lead)
+    dispatch_proactive_on_status_change(lead, from_status, lead.status)
     return lead
 
 
@@ -169,19 +202,23 @@ async def delete_lead(db: AsyncSession, lead: Lead) -> None:
 # --- Pipeline actions ---
 
 async def mark_contacted(db: AsyncSession, lead: Lead, notes: str | None = None) -> Lead:
+    from_status = lead.status
     lead.contacted_at = datetime.now(timezone.utc)
     if lead.status == "novo":
         lead.status = "em_contato"
     await db.commit()
     await db.refresh(lead)
+    dispatch_proactive_on_status_change(lead, from_status, lead.status)
     return lead
 
 
 async def mark_lost(db: AsyncSession, lead: Lead, lost_reason: str) -> Lead:
+    from_status = lead.status
     lead.status = "perdido"
     lead.lost_reason = lost_reason
     await db.commit()
     await db.refresh(lead)
+    dispatch_proactive_on_status_change(lead, from_status, lead.status)
     await schedule_event_followups(db, "lead_lost", lead_id=lead.id)
     return lead
 
@@ -192,6 +229,7 @@ async def convert_lead(
     converted_patient_id: uuid.UUID,
     appointment_id: uuid.UUID | None = None,
 ) -> Lead:
+    from_status = lead.status
     lead.status = "convertido"
     lead.converted_patient_id = converted_patient_id
     lead.appointment_id = appointment_id
@@ -200,6 +238,7 @@ async def convert_lead(
         lead.contacted_at = datetime.now(timezone.utc)
     await db.commit()
     await db.refresh(lead)
+    dispatch_proactive_on_status_change(lead, from_status, lead.status)
     await cancel_event_followups(db, "inactivity", lead_id=lead.id)
     await schedule_event_followups(
         db, "lead_converted", lead_id=lead.id, patient_id=converted_patient_id, appointment_id=appointment_id
@@ -250,6 +289,7 @@ async def transition_status(
 
     await db.commit()
     await db.refresh(lead)
+    dispatch_proactive_on_status_change(lead, from_status, lead.status)
 
     # Registra interação automática
     label_from = STATUS_LABELS.get(from_status, from_status)

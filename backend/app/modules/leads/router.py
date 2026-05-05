@@ -1,9 +1,6 @@
 """Lead API endpoints."""
-import logging
 import uuid
 from datetime import datetime, timedelta, timezone
-
-logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, HTTPException, Header, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -72,18 +69,6 @@ from app.modules.leads.service import (
 router = APIRouter()
 
 
-def _maybe_dispatch_proactive(lead, status: str | None = None) -> None:
-    """Dispatch the proactive AI message task if the lead's channel supports it."""
-    try:
-        from app.modules.leads.ai_tasks import send_lead_proactive_message
-        if lead.channel in ("whatsapp", "telegram"):
-            target_status = status or lead.status
-            send_lead_proactive_message.delay(str(lead.id), target_status)
-            logger.info("Dispatched proactive task for lead %s (status=%s)", lead.id, target_status)
-    except Exception:
-        logger.exception("Failed to dispatch proactive task for lead %s", lead.id)
-
-
 # --- CRUD ---
 
 @router.get("/", response_model=list[LeadResponse])
@@ -132,7 +117,6 @@ async def create_new_lead(
         quote_value=body.quote_value,
         assigned_to=body.assigned_to,
     )
-    _maybe_dispatch_proactive(lead)
     return lead
 
 
@@ -368,8 +352,6 @@ async def transition_lead(
         payload={"to_status": body.to_status, "lost_reason": body.lost_reason},
         request=request,
     )
-    # Dispatch AI proactive message for the new status
-    _maybe_dispatch_proactive(lead, status=body.to_status)
     return lead
 
 
@@ -486,7 +468,6 @@ async def inbound_lead_webhook(
         utm_term=body.utm_term,
         description=body.message,
     )
-    _maybe_dispatch_proactive(lead)
     return lead
 
 

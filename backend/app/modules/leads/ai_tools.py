@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.leads.models import Lead, LeadInteraction
 from app.modules.leads.ai_models import LeadConversation, SupervisorQuery
 from app.modules.leads.pipeline import validate_transition, InvalidTransitionError, STATUS_LABELS
+from app.modules.leads.service import dispatch_proactive_on_status_change
 
 logger = logging.getLogger(__name__)
 
@@ -341,6 +342,7 @@ async def _update_lead_status(db: AsyncSession, lead: Lead, args: dict) -> str:
         lead.contacted_at = datetime.now(timezone.utc)
     await db.commit()
     await db.refresh(lead)
+    dispatch_proactive_on_status_change(lead, from_status, lead.status)
 
     label_from = STATUS_LABELS.get(from_status, from_status)
     label_to = STATUS_LABELS.get(to_status, to_status)
@@ -394,6 +396,7 @@ async def _convert_to_patient(
         )
 
     now = datetime.now(timezone.utc)
+    from_status = lead.status
     lead.status = "convertido"
     lead.converted_patient_id = patient.id
     lead.converted_at = now
@@ -411,6 +414,7 @@ async def _convert_to_patient(
     conversation.status = "closed"
     conversation.closed_at = now
     await db.commit()
+    dispatch_proactive_on_status_change(lead, from_status, lead.status)
 
     return json.dumps({
         "success": True,
@@ -423,6 +427,7 @@ async def _mark_lost(
     db: AsyncSession, lead: Lead, conversation: LeadConversation, args: dict
 ) -> str:
     lost_reason = args.get("lost_reason", "outro")
+    from_status = lead.status
     lead.status = "perdido"
     lead.lost_reason = lost_reason
 
@@ -436,6 +441,7 @@ async def _mark_lost(
     conversation.status = "closed"
     conversation.closed_at = datetime.now(timezone.utc)
     await db.commit()
+    dispatch_proactive_on_status_change(lead, from_status, lead.status)
 
     return json.dumps({"success": True, "lost_reason": lost_reason})
 
@@ -709,6 +715,7 @@ async def _book_appointment(
     should_convert = (agent_config is None) or getattr(agent_config, "convert_on_appointment", True)
     if should_convert:
         now = datetime.now(timezone.utc)
+        from_status = lead.status
         lead.status = "convertido"
         lead.converted_patient_id = patient.id
         lead.converted_at = now
@@ -726,6 +733,8 @@ async def _book_appointment(
         ))
 
     await db.commit()
+    if should_convert:
+        dispatch_proactive_on_status_change(lead, from_status, lead.status)
 
     specialty_name = doctor.specialty.name if doctor.specialty else "consulta"
     date_fmt = starts_at.strftime("%d/%m/%Y às %H:%M")

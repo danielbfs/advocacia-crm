@@ -21,6 +21,7 @@ from app.modules.scheduling.service import (
     update_appointment,
     get_doctor_by_id,
 )
+from app.modules.leads.service import dispatch_proactive_on_status_change
 
 logger = logging.getLogger(__name__)
 
@@ -538,6 +539,7 @@ async def _create_lead(
     db.add(lead)
     await db.commit()
     await db.refresh(lead)
+    dispatch_proactive_on_status_change(lead, None, lead.status)
 
     logger.info("Lead criado via chatbot: %s (paciente %s)", lead.id, patient_id)
     return json.dumps({
