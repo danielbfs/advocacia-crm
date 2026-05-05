@@ -643,6 +643,7 @@ async def _book_appointment(
     automatically converted to 'convertido' status after a successful booking.
     """
     from app.modules.scheduling.models import Doctor, Appointment
+    from app.modules.admin.models import SystemConfig
     from app.modules.crm.service import get_patient_by_phone, create_patient
 
     doctor_id_str = args.get("doctor_id", "")
@@ -711,8 +712,15 @@ async def _book_appointment(
         ),
     ))
 
-    # Auto-convert if configured
-    should_convert = (agent_config is None) or getattr(agent_config, "convert_on_appointment", True)
+    # Auto-convert is a global IA Comercial setting (not per-status).
+    should_convert = True
+    cfg_result = await db.execute(
+        select(SystemConfig).where(SystemConfig.key == "lead_ai_global")
+    )
+    cfg_row = cfg_result.scalar_one_or_none()
+    if cfg_row and cfg_row.value:
+        should_convert = bool(cfg_row.value.get("convert_on_appointment", True))
+
     if should_convert:
         now = datetime.now(timezone.utc)
         from_status = lead.status

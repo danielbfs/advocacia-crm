@@ -11,13 +11,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.modules.admin.models import Specialty, SystemConfig
 from app.modules.ai.config_loader import load_ai_config
-from app.modules.leads.models import Lead
+from app.modules.leads.models import Lead, LeadInteraction
 from app.modules.leads.ai_models import LeadAgentConfig, LeadConversation, LeadMessage
 from app.modules.leads.ai_tools import LEAD_TOOL_DEFINITIONS, execute_lead_tool
 
 logger = logging.getLogger(__name__)
 
 MAX_HISTORY = 30
+MAX_INTERACTIONS_CONTEXT = 12
 DEFAULT_LEAD_PROMPT = """Você é um agente comercial virtual da clínica. Seu objetivo é transformar leads em clientes satisfeitos.
 
 Suas responsabilidades:
@@ -130,6 +131,7 @@ def _build_system_prompt(
     clinic_name: str,
     clinic_timezone: str,
     pricing_table: dict | None = None,
+    interactions_context: str | None = None,
 ) -> str:
     tz = clinic_timezone or settings.CLINIC_TIMEZONE
     clinic_tz = ZoneInfo(tz)
@@ -166,6 +168,14 @@ def _build_system_prompt(
         if pricing_table.get("notes"):
             pricing_context += f"Notas: {pricing_table['notes']}\n"
 
+    interactions_block = ""
+    if interactions_context:
+        interactions_block = (
+            "\nHISTÓRICO DO QUE JÁ FOI TRATADO COM ESTE LEAD:\n"
+            f"{interactions_context}\n"
+            "Use isso para NÃO repetir perguntas ou propostas já feitas e manter continuidade.\n"
+        )
+
     tool_rules = """
 ---
 REGRAS DE USO DAS FERRAMENTAS (obrigatórias):
@@ -176,7 +186,29 @@ REGRAS DE USO DAS FERRAMENTAS (obrigatórias):
 - mark_lost → ao confirmar definitivamente que o cliente não tem interesse
 - escalate_to_human → último recurso quando nem a IA nem o supervisor conseguem resolver
 """
-    return f"{header}{context}{pricing_context}\n{instructions}\n{tool_rules}"
+    return f"{header}{context}{pricing_context}{interactions_block}\n{instructions}\n{tool_rules}"
+
+
+async def _load_lead_interactions_context(db: AsyncSession, lead_id) -> str:
+    """Build a concise text context from the most recent lead interactions."""
+    result = await db.execute(
+        select(LeadInteraction)
+        .where(LeadInteraction.lead_id == lead_id)
+        .order_by(LeadInteraction.interacted_at.desc())
+        .limit(MAX_INTERACTIONS_CONTEXT)
+    )
+    interactions = list(result.scalars().all())
+    if not interactions:
+        return ""
+
+    lines: list[str] = []
+    for i in reversed(interactions):
+        when = i.interacted_at.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+        note = (i.content or "").strip().replace("\n", " ")
+        if len(note) > 280:
+            note = note[:277] + "..."
+        lines.append(f"- [{when}] ({i.type}) {note}")
+    return "\n".join(lines)
 
 
 async def process_lead_message(
@@ -209,12 +241,14 @@ async def process_lead_message(
     pricing_table = price_row.value if price_row else None
 
     history = await _load_conversation_history(conversation)
+    interactions_context = await _load_lead_interactions_context(db, lead.id)
     system_prompt = _build_system_prompt(
         agent_config,
         lead,
         clinic_name=clinic_cfg.get("name", ""),
         clinic_timezone=clinic_cfg.get("timezone", settings.CLINIC_TIMEZONE),
         pricing_table=pricing_table,
+        interactions_context=interactions_context,
     )
 
     messages: list[dict] = [{"role": "system", "content": system_prompt}]
@@ -328,11 +362,13 @@ async def resume_after_supervisor(
     model = _get_model(ai_config)
 
     history = await _load_conversation_history(conversation)
+    interactions_context = await _load_lead_interactions_context(db, lead.id)
     system_prompt = _build_system_prompt(
         agent_config,
         lead,
         clinic_name=clinic_cfg.get("name", ""),
         clinic_timezone=clinic_cfg.get("timezone", settings.CLINIC_TIMEZONE),
+        interactions_context=interactions_context,
     )
 
     # Inject supervisor answer as a system note
@@ -445,6 +481,7 @@ async def send_proactive_message(
         clinic_name=clinic_cfg.get("name", ""),
         clinic_timezone=clinic_cfg.get("timezone", settings.CLINIC_TIMEZONE),
         pricing_table=pricing_table,
+        interactions_context=await _load_lead_interactions_context(db, lead.id),
     )
 
     # The initial_message is the instruction for the AI's first outreach
@@ -523,4 +560,3 @@ async def send_proactive_message(
             lead.code, channel, clean_phone,
         )
     return ok
-

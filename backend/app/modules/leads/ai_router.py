@@ -77,6 +77,10 @@ class SupervisorConfigSchema(BaseModel):
     on_timeout: str = "escalate_human"
 
 
+class LeadAIGlobalConfigSchema(BaseModel):
+    convert_on_appointment: bool = True
+
+
 # --- Agent Config endpoints ---
 
 @router.get("/ai-configs", response_model=list[LeadAgentConfigSchema])
@@ -183,6 +187,50 @@ async def update_supervisor_config(
     else:
         row = SystemConfig(
             key="lead_agent_supervisor",
+            value=data,
+            updated_by=current_user.id,
+        )
+        db.add(row)
+    await db.commit()
+    return body
+
+
+# --- Global AI config ---
+
+@router.get("/ai-global-config", response_model=LeadAIGlobalConfigSchema)
+async def get_ai_global_config(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    from app.modules.admin.models import SystemConfig
+    result = await db.execute(
+        select(SystemConfig).where(SystemConfig.key == "lead_ai_global")
+    )
+    row = result.scalar_one_or_none()
+    if row and row.value:
+        return LeadAIGlobalConfigSchema(**row.value)
+    return LeadAIGlobalConfigSchema()
+
+
+@router.put("/ai-global-config", response_model=LeadAIGlobalConfigSchema)
+async def update_ai_global_config(
+    body: LeadAIGlobalConfigSchema,
+    current_user: User = Depends(require_role("admin")),
+    db: AsyncSession = Depends(get_db),
+):
+    from app.modules.admin.models import SystemConfig
+    result = await db.execute(
+        select(SystemConfig).where(SystemConfig.key == "lead_ai_global")
+    )
+    row = result.scalar_one_or_none()
+    data = body.model_dump()
+    if row:
+        row.value = data
+        row.updated_by = current_user.id
+        row.updated_at = datetime.now(timezone.utc)
+    else:
+        row = SystemConfig(
+            key="lead_ai_global",
             value=data,
             updated_by=current_user.id,
         )

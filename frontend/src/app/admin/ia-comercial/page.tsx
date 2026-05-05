@@ -2,7 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
-import type { LeadAgentConfig, PricingItem, SupervisorConfig } from "@/types";
+import type {
+  LeadAgentConfig,
+  LeadAIGlobalConfig,
+  PricingItem,
+  SupervisorConfig,
+} from "@/types";
 
 const PIPELINE_STATUSES = [
   { value: "novo", label: "Novo" },
@@ -360,15 +365,6 @@ function StatusConfigCard({
             </div>
           )}
 
-          <Toggle
-            checked={form.convert_on_appointment ?? true}
-            onChange={(v) => set("convert_on_appointment", v)}
-            label="Converter lead em paciente automaticamente ao agendar consulta"
-          />
-          <p className="text-xs text-gray-400 -mt-2 ml-12">
-            Quando ativado, a IA converte o lead para &ldquo;Convertido&rdquo; assim que agendar uma consulta na agenda.
-          </p>
-
           <div>
             <label className="block text-xs text-gray-500 mb-1">
               Prompt customizado (deixe vazio para usar o padrão)
@@ -591,6 +587,9 @@ function PricingTable({
 // ============================================================
 export default function IaComercialPage() {
   const [configs, setConfigs] = useState<LeadAgentConfig[]>([]);
+  const [globalConfig, setGlobalConfig] = useState<LeadAIGlobalConfig>({
+    convert_on_appointment: true,
+  });
   const [supervisorConfig, setSupervisorConfig] = useState<SupervisorConfig>({
     supervisor_whatsapp: "",
     awaiting_message: DEFAULT_AWAITING,
@@ -609,6 +608,8 @@ export default function IaComercialPage() {
   const [pricingSaved, setPricingSaved] = useState(false);
   const [schedSaving, setSchedSaving] = useState(false);
   const [schedSaved, setSchedSaved] = useState(false);
+  const [globalSaving, setGlobalSaving] = useState(false);
+  const [globalSaved, setGlobalSaved] = useState(false);
 
   useEffect(() => {
     fetchAll();
@@ -617,14 +618,17 @@ export default function IaComercialPage() {
   async function fetchAll() {
     setLoading(true);
     try {
-      const [cfgRes, supRes, priceRes, schedRes, specRes] = await Promise.allSettled([
+      const [cfgRes, globalRes, supRes, priceRes, schedRes, specRes] =
+        await Promise.allSettled([
         api.get("/leads/ai-configs"),
+        api.get("/leads/ai-global-config"),
         api.get("/leads/ai-supervisor-config"),
         api.get("/leads/ai-pricing"),
         api.get("/leads/ai-messaging-schedule"),
         api.get("/specialties/"),
       ]);
       if (cfgRes.status === "fulfilled") setConfigs(cfgRes.value.data);
+      if (globalRes.status === "fulfilled") setGlobalConfig(globalRes.value.data);
       if (supRes.status === "fulfilled") setSupervisorConfig(supRes.value.data);
       if (priceRes.status === "fulfilled") {
         setPricingItems(priceRes.value.data.items || []);
@@ -653,6 +657,19 @@ export default function IaComercialPage() {
       const msg = err.response?.data?.detail || err.message || "Erro desconhecido";
       alert(`Erro ao salvar configuração para ${config.status}: ${msg}`);
       throw err; // Re-throw to keep StatusConfigCard in 'unsaved' state
+    }
+  }
+
+  async function saveGlobalConfig() {
+    setGlobalSaving(true);
+    try {
+      await api.put("/leads/ai-global-config", globalConfig);
+      setGlobalSaved(true);
+      setTimeout(() => setGlobalSaved(false), 2000);
+    } catch {
+      alert("Erro ao salvar configuração global da IA Comercial.");
+    } finally {
+      setGlobalSaving(false);
     }
   }
 
@@ -743,7 +760,38 @@ export default function IaComercialPage() {
         </div>
       </div>
 
-      {/* Section 1: Status Configs */}
+      {/* Section 1: Global Config */}
+      <section className="bg-white border rounded-xl p-5 space-y-4">
+        <div>
+          <h2 className="text-base font-semibold text-gray-700">
+            Configuração Global
+          </h2>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Esta configuração vale para qualquer etapa do funil quando a conversa
+            resultar em agendamento.
+          </p>
+        </div>
+        <Toggle
+          checked={globalConfig.convert_on_appointment}
+          onChange={(v) =>
+            setGlobalConfig((prev) => ({ ...prev, convert_on_appointment: v }))
+          }
+          label="Converter lead em paciente automaticamente ao agendar consulta"
+        />
+        <p className="text-xs text-gray-400 -mt-2 ml-12">
+          Quando ativado, ao confirmar agendamento o lead é convertido para
+          paciente em qualquer status.
+        </p>
+        <button
+          onClick={saveGlobalConfig}
+          disabled={globalSaving}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+        >
+          {globalSaving ? "Salvando..." : globalSaved ? "✓ Salvo" : "Salvar"}
+        </button>
+      </section>
+
+      {/* Section 2: Status Configs */}
       <section>
         <h2 className="text-base font-semibold text-gray-700 mb-3">
           Configuração por Status
@@ -762,7 +810,6 @@ export default function IaComercialPage() {
                 max_inactivity_followups: 2,
                 inactivity_followup_message: null,
                 auto_lost_after_hours: 72,
-                convert_on_appointment: true,
               } as LeadAgentConfig);
             return (
               <StatusConfigCard
@@ -776,7 +823,7 @@ export default function IaComercialPage() {
         </div>
       </section>
 
-      {/* Section 2: Supervisor */}
+      {/* Section 3: Supervisor */}
       <section className="bg-white border rounded-xl p-5 space-y-4">
         <div>
           <h2 className="text-base font-semibold text-gray-700">Supervisor</h2>
@@ -873,7 +920,7 @@ export default function IaComercialPage() {
         </button>
       </section>
 
-      {/* Section 3: Pricing */}
+      {/* Section 4: Pricing */}
       <section className="bg-white border rounded-xl p-5 space-y-4">
         <div>
           <h2 className="text-base font-semibold text-gray-700">
@@ -915,7 +962,7 @@ export default function IaComercialPage() {
         </button>
       </section>
 
-      {/* Section 4: Messaging Schedule */}
+      {/* Section 5: Messaging Schedule */}
       <section className="bg-white border rounded-xl p-5 space-y-5">
         <div>
           <h2 className="text-base font-semibold text-gray-700">

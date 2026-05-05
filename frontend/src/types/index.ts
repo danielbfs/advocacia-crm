@@ -130,6 +130,10 @@ export interface SupervisorConfig {
   on_timeout: "escalate_human" | "close_ai";
 }
 
+export interface LeadAIGlobalConfig {
+  convert_on_appointment: boolean;
+}
+
 export interface Lead {
   id: string;
   code: string;
