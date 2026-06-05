@@ -56,7 +56,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="flex flex-1 overflow-hidden">
           <nav className="w-64 bg-sidebar text-sidebar-text shadow-xl flex flex-col z-10">
             <div className="p-6">
-              <h1 className="text-2xl font-bold text-white tracking-tight">Open<span className="text-primary-400 font-light">Clinic</span></h1>
+              <h1 className="text-2xl font-bold text-white tracking-tight">Open<span className="text-primary-400 font-light">Clinic</span> <span className="text-base font-light text-sidebar-muted">1.0</span></h1>
             </div>
             <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-1 custom-scrollbar">
               {filteredNavItems.map((item, idx) => {
