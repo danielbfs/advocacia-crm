@@ -29,7 +29,7 @@ Sistema open-source para clínicas automatizarem comunicação com pacientes via
 
 ---
 
-## Deploy Rápido (VPS Hostinger)
+## Opção A: Deploy Rápido (VPS Hostinger)
 
 ### Pré-requisitos
 
@@ -94,6 +94,60 @@ docker image prune -f
 ```
 
 > **Nota:** A Hostinger não puxa atualizações do GitHub automaticamente. O botão "Reimplantar" no painel recria os containers a partir do código já presente na VPS. Para obter o código novo, é necessário rodar `git pull` via SSH antes de reimplantar.
+
+---
+
+## Opção B: Deploy na AWS Lightsail + Neon DB
+
+Esta opção utiliza uma VPS tradicional no AWS Lightsail (1 GB+ RAM com SWAP) e delega o banco de dados PostgreSQL para o **Neon DB**, economizando CPU/RAM na VPS. O SSL e proxy reverso são gerenciados localmente pelo Traefik rodando em container.
+
+### Pré-requisitos
+
+- Instância AWS Lightsail (Ubuntu 22.04 LTS, mínimo 1 GB RAM / 2 vCPU).
+- Conta no [neon.tech](https://neon.tech/) com dois bancos criados: `openclinic` e `evolution`.
+- Domínio apontando para o IP Estático da Lightsail (registro DNS tipo A).
+
+### Passos
+
+1. Na VPS Lightsail, instale o Docker e configure 4 GB de memória SWAP (obrigatório para compilar Next.js em instâncias de 1 GB RAM).
+2. Clone o repositório e configure o `.env` baseado no `.env.lightsail.example`:
+   ```bash
+   git clone https://github.com/danielbfs/openclinic.git
+   cd openclinic
+   cp .env.lightsail.example .env
+   nano .env # preencha DOMAIN, ACME_EMAIL, chaves de API e strings de conexão do Neon
+   ```
+3. Suba os containers usando o compose específico:
+   ```bash
+   docker compose -f docker-compose.lightsail.yml up -d
+   ```
+4. Rode o script de pós-deploy da Lightsail (inicializa Git, testa conexão com Neon, roda migrations e cria o admin):
+   ```bash
+   chmod +x install_lightsail.sh update_lightsail.sh
+   ./install_lightsail.sh
+   ```
+
+Acesse `https://seu-dominio.com` — SSL provisionado automaticamente pelo Traefik interno do Docker.
+
+### Credenciais Iniciais
+
+Após rodar `./install_lightsail.sh`, as seguintes credenciais são criadas:
+
+| Usuário | Senha | Role |
+|---|---|---|
+| `admin` | `admin` | admin |
+| `secretaria` | `secretaria` | secretary |
+
+> **IMPORTANTE:** Altere as senhas no primeiro acesso!
+
+### Atualizar para nova versão
+
+Conecte-se via SSH na VPS Lightsail e rode:
+
+```bash
+cd /home/ubuntu/openclinic
+./update_lightsail.sh
+```
 
 ---
 
