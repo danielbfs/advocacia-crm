@@ -124,16 +124,16 @@ async def seed() -> None:
 
         # ── Leads ──────────────────────────────────────────────────
         db.add_all([
-            Lead(full_name="Lucas Pereira",    phone="11988881001", channel="whatsapp",   status="novo",              sla_deadline=sla_default, specialty_id=cardio.id),
-            Lead(full_name="Paula Rodrigues",  phone="11988882002", channel="instagram",  status="em_contato",        sla_deadline=now - timedelta(hours=1), contacted_at=now - timedelta(hours=3)),
-            Lead(full_name="Rafael Santos",    phone="11988883003", channel="google_ads", status="qualificado",       sla_deadline=sla_default, utm_campaign="cardio-q1"),
-            Lead(full_name="Juliana Alves",    phone="11988884004", channel="telegram",   status="orcamento_enviado", sla_deadline=sla_default, quote_value=350.00, specialty_id=dermato.id),
-            Lead(full_name="Marcos Oliveira",  phone="11988885005", channel="meta_ads",   status="negociando",        sla_deadline=sla_default, quote_value=500.00),
-            Lead(full_name="Cláudia Ferreira", phone="11988886006", channel="site",       status="convertido",        sla_deadline=sla_default, converted_at=now - timedelta(days=1), converted_patient_id=p3.id),
-            Lead(full_name="Roberto Lima",     phone="11988887007", channel="whatsapp",   status="perdido",           sla_deadline=sla_default, lost_reason="preco"),
-            Lead(full_name="Tatiana Costa",    phone="11988888008", channel="indicacao",  status="novo",              sla_deadline=sla_default, specialty_id=dermato.id),
-            Lead(full_name="André Gomes",      phone="11988889009", channel="outro",      status="em_contato",        sla_deadline=sla_default, contacted_at=now - timedelta(hours=1)),
-            Lead(full_name="Carolina Souza",   phone="11988880010", channel="whatsapp",   status="qualificado",       sla_deadline=sla_default, specialty_id=cardio.id, description="Check-up cardíaco de rotina"),
+            Lead(code="L-2026-00001", full_name="Lucas Pereira",    phone="11988881001", channel="whatsapp",   status="novo",              sla_deadline=sla_default, specialty_id=cardio.id),
+            Lead(code="L-2026-00002", full_name="Paula Rodrigues",  phone="11988882002", channel="instagram",  status="em_contato",        sla_deadline=now - timedelta(hours=1), contacted_at=now - timedelta(hours=3)),
+            Lead(code="L-2026-00003", full_name="Rafael Santos",    phone="11988883003", channel="google_ads", status="qualificado",       sla_deadline=sla_default, utm_campaign="cardio-q1"),
+            Lead(code="L-2026-00004", full_name="Juliana Alves",    phone="11988884004", channel="telegram",   status="orcamento_enviado", sla_deadline=sla_default, quote_value=350.00, specialty_id=dermato.id),
+            Lead(code="L-2026-00005", full_name="Marcos Oliveira",  phone="11988885005", channel="meta_ads",   status="negociando",        sla_deadline=sla_default, quote_value=500.00),
+            Lead(code="L-2026-00006", full_name="Cláudia Ferreira", phone="11988886006", channel="site",       status="convertido",        sla_deadline=sla_default, converted_at=now - timedelta(days=1), converted_patient_id=p3.id),
+            Lead(code="L-2026-00007", full_name="Roberto Lima",     phone="11988887007", channel="whatsapp",   status="perdido",           sla_deadline=sla_default, lost_reason="preco"),
+            Lead(code="L-2026-00008", full_name="Tatiana Costa",    phone="11988888008", channel="indicacao",  status="novo",              sla_deadline=sla_default, specialty_id=dermato.id),
+            Lead(code="L-2026-00009", full_name="André Gomes",      phone="11988889009", channel="outro",      status="em_contato",        sla_deadline=sla_default, contacted_at=now - timedelta(hours=1)),
+            Lead(code="L-2026-00010", full_name="Carolina Souza",   phone="11988880010", channel="whatsapp",   status="qualificado",       sla_deadline=sla_default, specialty_id=cardio.id, description="Check-up cardíaco de rotina"),
         ])
 
         await db.commit()

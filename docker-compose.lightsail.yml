@@ -1,0 +1,182 @@
+# ============================================================
+# Open Clinic AI — docker-compose.lightsail.yml (AWS LIGHTSAIL)
+#
+# Deploy via AWS Lightsail:
+# 1. Clone this repo to Lightsail VPS
+# 2. Configure .env (pointing database variables to Neon DB)
+# 3. Run: docker compose -f docker-compose.lightsail.yml up -d
+#
+# Note: Local postgres container is removed to save RAM/CPU.
+# ============================================================
+
+x-backend-env: &backend-env
+  DATABASE_URL: ${DATABASE_URL}
+  REDIS_URL: redis://redis:6379/0
+  SECRET_KEY: ${SECRET_KEY:-changeme-in-production}
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+  TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+  EVOLUTION_API_URL: http://evolution_api:8080
+  EVOLUTION_API_KEY: ${EVOLUTION_API_KEY:-openclinic-evo-key}
+  EVOLUTION_INSTANCE_NAME: ${EVOLUTION_INSTANCE_NAME:-openclinic}
+  CLINIC_TIMEZONE: ${CLINIC_TIMEZONE:-America/Sao_Paulo}
+  CLINIC_SLA_HOURS: ${CLINIC_SLA_HOURS:-2}
+  ENVIRONMENT: production
+  DOMAIN: ${DOMAIN}
+  DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+
+networks:
+  internal:
+    name: openclinic_internal
+
+volumes:
+  redis_data:
+  evolution_instances:
+  traefik_acme:
+
+services:
+
+  # ── TRAEFIK REVERSE PROXY & SSL ──────────────────────────
+  traefik:
+    image: traefik:latest
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOCKER_API_VERSION=1.40
+    command:
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=openclinic_internal"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/dynamic:/etc/traefik/dynamic:ro
+      - traefik_acme:/letsencrypt
+    networks:
+      - internal
+
+  # ── CACHE + FILA ─────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - internal
+
+  # ── BACKEND API ──────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      <<: *backend-env
+    depends_on:
+      - redis
+    networks:
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.openclinic-backend.rule=Host(`${DOMAIN}`) && (PathPrefix(`/api`) || PathPrefix(`/webhooks`) || PathPrefix(`/health`))"
+      - "traefik.http.routers.openclinic-backend.tls=true"
+      - "traefik.http.routers.openclinic-backend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.openclinic-backend.loadbalancer.server.port=8000"
+      - "traefik.http.routers.openclinic-backend.middlewares=security-headers@file,api-ratelimit@file"
+
+  # ── FRONTEND ─────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+    networks:
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.openclinic-frontend.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.openclinic-frontend.tls=true"
+      - "traefik.http.routers.openclinic-frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.openclinic-frontend.loadbalancer.server.port=3000"
+      - "traefik.http.routers.openclinic-frontend.priority=1"
+      - "traefik.http.routers.openclinic-frontend.middlewares=security-headers@file"
+
+  # ── WORKERS CELERY ───────────────────────────────────────
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      <<: *backend-env
+    command: celery -A celery_app worker --loglevel=info -Q default,followup,leads --concurrency=4
+    depends_on:
+      - redis
+    networks:
+      - internal
+
+  # ── CELERY BEAT (CRON) ───────────────────────────────────
+  celery_beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      <<: *backend-env
+    command: celery -A celery_app beat --loglevel=info
+    depends_on:
+      - redis
+    networks:
+      - internal
+
+  # ── WHATSAPP (EVOLUTION API) ─────────────────────────────
+  evolution_api:
+    image: evoapicloud/evolution-api:v2.3.7
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: "8080"
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY:-openclinic-evo-key}
+      DATABASE_ENABLED: "true"
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: ${EVOLUTION_DATABASE_URL}
+      DATABASE_CONNECTION_CLIENT_NAME: evolution_api
+      DATABASE_SAVE_DATA_INSTANCE: "true"
+      DATABASE_SAVE_DATA_NEW_MESSAGE: "true"
+      DATABASE_SAVE_MESSAGE_UPDATE: "true"
+      DATABASE_SAVE_DATA_CONTACTS: "true"
+      DATABASE_SAVE_DATA_CHATS: "true"
+      REDIS_ENABLED: "true"
+      REDIS_URI: "redis://redis:6379/1"
+      REDIS_PREFIX_KEY: "evolution"
+      CACHE_REDIS_ENABLED: "true"
+      CACHE_REDIS_URI: "redis://redis:6379/2"
+      CACHE_REDIS_PREFIX_KEY: "cache"
+      RABBITMQ_ENABLED: "false"
+      WEBSOCKET_ENABLED: "false"
+      DEL_INSTANCE: "false"
+      QRCODE_LIMIT: "10"
+      LOG_LEVEL: "WARN"
+      LOG_COLOR: "false"
+      LOG_BAILEYS: "fatal"
+      LANGUAGE: "pt-BR"
+    volumes:
+      - evolution_instances:/evolution/instances
+    depends_on:
+      - redis
+    networks:
+      - internal

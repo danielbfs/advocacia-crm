@@ -16,7 +16,7 @@ import sys
 from sqlalchemy import select
 
 from app.config import settings
-from app.database import AsyncSessionLocal, engine, Base
+from app.database import AsyncSessionLocal, engine, Base, init_db
 from app.modules.auth.models import User
 from app.core.security import hash_password
 
@@ -38,6 +38,9 @@ INITIAL_USERS = [
 
 
 async def create_initial_users():
+    # Importa todos os modelos para registrar no metadata
+    await init_db()
+
     # Garante que as tabelas existem (para rodar antes do Alembic se necessário)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

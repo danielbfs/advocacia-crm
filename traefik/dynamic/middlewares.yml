@@ -1,0 +1,20 @@
+http:
+  middlewares:
+    security-headers:
+      headers:
+        frameDeny: true
+        contentTypeNosniff: true
+        browserXssFilter: true
+        referrerPolicy: "same-origin"
+        customResponseHeaders:
+          X-Robots-Tag: "none,noarchive,nosnippet,notranslate,noimageindex"
+
+    api-ratelimit:
+      rateLimit:
+        average: 100
+        burst: 50
+
+    webhook-ratelimit:
+      rateLimit:
+        average: 50
+        burst: 20
