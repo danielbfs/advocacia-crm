@@ -1,10 +1,13 @@
 ---
-tags: [openclinic, modules]
+tags: [advocacia-crm, modules]
 created: 2026-04-23
-status: draft
+updated: 2026-07-02
+status: alvo
 ---
 
-# Módulos — Open Clinic AI
+# Módulos — AdvocacIA CRM
+
+> Estado-alvo. Mapeamento dos módulos atuais → alvo em [[10-transformation-plan]] §3.4.
 
 ## Estrutura de Diretórios
 
@@ -12,10 +15,10 @@ status: draft
 backend/app/modules/
 ├── auth/           Autenticação e autorização
 ├── messaging/      Gateway de mensagens (Telegram, WhatsApp)
-├── ai/             Engine de IA (LLM + function calling)
-├── scheduling/     Serviço de agendamento (abstração + adapters)
-├── crm/            Pacientes e histórico
-├── leads/          Gestão de leads, SLA, pipeline, relatórios
+├── ai/             IA Comercial (LLM + function calling)
+├── scheduling/     Agenda de consultas (abstração + adapters)
+├── clients/        Clientes convertidos e histórico
+├── leads/          Pipeline de vendas, SLA, relatórios
 ├── followup/       Follow-up automático (Celery tasks)
 └── admin/          Configurações e setup wizard
 ```
@@ -30,12 +33,13 @@ backend/app/modules/
 |---|---|
 | `router.py` | Endpoints: `/auth/login`, `/auth/refresh`, `/auth/logout` |
 | `service.py` | Geração e validação de JWT, hash de senha |
-| `models.py` | `User` (id, email, full_name, role, is_active) |
+| `models.py` | `User` (id, username, full_name, role, is_active) |
 | `schemas.py` | `LoginRequest`, `TokenResponse` |
 
 **Roles:**
 - `admin` — acesso total, incluindo setup e relatórios
-- `secretary` — acesso ao calendário, leads e agendamentos
+- `secretary` (label "Comercial") — kanban de leads, agenda, caixa de WhatsApp
+- `lawyer` — própria agenda e clientes
 
 ---
 
@@ -50,7 +54,7 @@ backend/app/modules/
 | `schemas.py` | `MessagePayload` — formato normalizado independente de canal |
 | `adapters/base.py` | `AbstractMessagingAdapter` |
 | `adapters/telegram.py` | Parsing de update Telegram, envio via Bot API |
-| `adapters/evolution_api.py` | Integração com WhatsApp via Evolution API (WebSocket/Webhook) |
+| `adapters/evolution_api.py` | Integração com WhatsApp via Evolution API |
 
 **Segurança:** Webhooks validados por `secret_token` (Telegram) ou HMAC (WhatsApp).
 
@@ -58,88 +62,82 @@ backend/app/modules/
 
 ## ai
 
-**Responsabilidade:** Gerenciar sessão de conversa, chamar LLM, executar tools (function calling) e orquestrar streaming para IA Visual.
+**Responsabilidade:** IA Comercial — sessão de conversa, LLM, tools (function calling). Ver [[06-ai-design]].
 
 | Arquivo | Função |
 |---|---|
-| `engine.py` | Orquestrador: monta contexto, chama LLM, executa tools, suporte a stream para avatar |
+| `engine.py` | Orquestrador: monta contexto, chama LLM, executa tools |
 | `session.py` | Histórico de conversa no Redis (TTL 24h), fallback para DB |
-| `tools.py` | Definição das tools disponíveis (agendamento, FAQ, triagem) |
-| `prompts.py` | System prompt base + templates de personalidade do avatar |
-| `adapters/visual_ai.py` | Orquestração de tokens e sessões para HeyGen / Hume AI |
-
-**Novas Funcionalidades (Roadmap 2.0):**
-- **Streaming Mode:** Redução de latência para conversas por voz/avatar.
-- **Voice-to-Intent:** Processamento de transcrições vindas do frontend.
+| `tools.py` | Tools: qualificação, agenda de consulta, escalonamento |
+| `prompts.py` | System prompt do atendente comercial (com regras OAB/LGPD) |
+| `config_loader.py` | Carrega provider e configurações de `system_config` |
 
 **Tools disponíveis para o LLM:**
-- `check_availability(specialty_id, date_from, date_to)`
-- `book_appointment(doctor_id, starts_at, patient_notes)`
-- `cancel_appointment(appointment_id)`
-- `reschedule_appointment(appointment_id, new_starts_at)`
-- `get_patient_appointments()`
+- `check_availability(practice_area_id, date_from, date_to)`
+- `book_consultation(lawyer_id, starts_at, client_notes)`
+- `cancel_consultation(consultation_id)`
+- `reschedule_consultation(consultation_id, new_starts_at)`
+- `get_client_consultations()`
 - `escalate_to_human(reason)`
 
 ---
 
 ## scheduling
 
-**Responsabilidade:** Abstração do sistema de agendamento — interface unificada independente do provider (Google Calendar ou banco local).
+**Responsabilidade:** Abstração da agenda de consultas — interface unificada independente do provider (Google Calendar ou banco local), por advogado.
 
 | Arquivo | Função |
 |---|---|
-| `service.py` | `SchedulingService`: `get_available_slots()`, `book_appointment()`, `cancel_appointment()`, `reschedule_appointment()` |
+| `service.py` | `SchedulingService`: `get_available_slots()`, `book_consultation()`, `cancel_consultation()`, `reschedule_consultation()` |
 | `router.py` | Endpoints de slots, calendário, bloqueios |
-| `availability.py` | Algoritmo de cálculo de slots livres |
-| `conflict.py` | Detecção de conflito + lock otimista |
-| `adapters/base.py` | `AbstractSchedulingAdapter` |
-| `adapters/google_calendar.py` | freebusy query, OAuth, criação de eventos |
-| `adapters/local_db.py` | Leitura de `doctor_schedules` + `appointments` |
+| `models.py` | `Lawyer`, `PracticeArea`, `Consultation`, `LawyerSchedule`, `ScheduleBlock` |
+| `adapters/` | `AbstractSchedulingAdapter`, `google_calendar`, `local_db` |
 
 ---
 
-## crm
+## clients
 
-**Responsabilidade:** Cadastro e histórico de pacientes (já convertidos — tiveram ao menos um agendamento).
+**Responsabilidade:** Cadastro e histórico de clientes (leads já convertidos — fecharam contrato ou tiveram ao menos uma consulta).
 
 | Arquivo | Função |
 |---|---|
-| `router.py` | CRUD de pacientes, histórico de conversas e agendamentos |
-| `service.py` | get_or_create_patient (por telefone), atualização de status |
-| `models.py` | `Patient` |
-| `schemas.py` | `PatientCreate`, `PatientUpdate`, `PatientResponse` |
+| `router.py` | CRUD de clientes, histórico de conversas e consultas |
+| `service.py` | `get_or_create_client` (por telefone), atualização de status |
+| `models.py` | `Client`, `ClientContact` |
+| `schemas.py` | `ClientCreate`, `ClientUpdate`, `ClientResponse` |
 
 ---
 
 ## leads
 
-**Responsabilidade:** Pipeline de leads pré-agendamento, SLA de retorno, interações da equipe, conversão, webhook de entrada externa, relatórios.
+**Responsabilidade:** Pipeline de vendas pré-contrato, SLA de retorno, interações da equipe, conversão, webhook de entrada externa, relatórios, IA de qualificação.
 
 | Arquivo | Função |
 |---|---|
-| `router.py` | CRUD leads, pipeline actions, interações, webhook inbound, relatórios |
-| `service.py` | Regras de negócio: SLA calc, conversão lead→paciente, atribuição |
+| `router.py` | CRUD leads, ações de pipeline, interações, webhook inbound, relatórios |
+| `service.py` | Regras de negócio: SLA, conversão lead→cliente, atribuição |
 | `models.py` | `Lead`, `LeadInteraction` |
-| `schemas.py` | Schemas de entrada/saída |
+| `pipeline.py` | Máquina de estados do funil (transições válidas, motivos de perda) |
 | `sla.py` | Celery task: verifica leads vencidos a cada 15 min, notifica responsável |
-| `reports.py` | Queries SQL de relatório (funil, origem, conversão, SLA, campanhas) |
+| `ai_engine.py` / `ai_tools.py` / `ai_tasks.py` | IA Comercial no contexto do lead |
+| `schedule.py` | Agendamento de follow-ups de lead |
 
-**Pipeline:** `novo → em_contato → orcamento_enviado → negociando → convertido | perdido`
+**Pipeline:** `novo → em_contato → qualificado → proposta_enviada → negociando → convertido | perdido`
 
 ---
 
 ## followup
 
-**Responsabilidade:** Envio automático de mensagens baseado em eventos de agendamento.
+**Responsabilidade:** Envio automático de mensagens baseado em eventos de consulta.
 
 | Arquivo | Função |
 |---|---|
 | `tasks.py` | Celery tasks: `send_followup_message(job_id)` |
-| `scheduler.py` | Ao criar/alterar agendamento, agenda jobs conforme regras |
+| `service.py` | Ao criar/alterar consulta, agenda jobs conforme regras |
 | `router.py` | CRUD de regras e histórico de execuções |
 | `models.py` | `FollowupRule`, `FollowupJob` |
 
-**Triggers suportados:** `appointment_scheduled`, `appointment_confirmed`, `appointment_cancelled`, `no_show`
+**Triggers suportados:** `consultation_scheduled`, `consultation_confirmed`, `consultation_cancelled`, `no_show`
 
 ---
 
@@ -150,12 +148,12 @@ backend/app/modules/
 | Arquivo | Função |
 |---|---|
 | `router.py` | Endpoints de setup, settings, OAuth Google, audit logs |
-| `setup_wizard.py` | Validação e persistência de cada etapa do wizard |
+| `setup_router.py` | Validação e persistência de cada etapa do wizard |
 | `schemas.py` | Schemas de configuração por módulo |
 
 **Configurações gerenciadas:**
-- Informações da clínica (nome, timezone, SLA hours)
-- Integração Telegram / WhatsApp
+- Informações do escritório (nome, timezone, SLA hours)
+- Integração Telegram / WhatsApp (Evolution API)
 - Provider de LLM (OpenAI ou Local)
 - Provider de agenda (Google Calendar ou Local)
 - Regras de follow-up

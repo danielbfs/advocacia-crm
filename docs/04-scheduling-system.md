@@ -1,16 +1,19 @@
 ---
-tags: [openclinic, scheduling]
+tags: [advocacia-crm, scheduling]
 created: 2026-04-23
-status: draft
+updated: 2026-07-02
+status: alvo
 ---
 
-# Sistema de Agendamento — Open Clinic AI
+# Sistema de Agenda — AdvocacIA CRM
+
+> Estado-alvo. Mecânica idêntica à herdada do Open Clinic; muda a terminologia (médico → advogado, consulta médica → consulta jurídica).
 
 ## Visão Geral
 
-O `SchedulingService` é uma camada de abstração que oferece interface unificada para agendamento, independentemente do provider configurado por médico.
+O `SchedulingService` é uma camada de abstração que oferece interface unificada para agendamento de consultas, independentemente do provider configurado por advogado.
 
-Cada médico tem:
+Cada advogado tem:
 - `scheduling_provider`: `google_calendar` ou `local_db`
 - `provider_config`: JSON com configurações específicas do provider
 - `slot_duration_minutes`: duração padrão de cada consulta
@@ -23,7 +26,7 @@ Cada médico tem:
 class AbstractSchedulingAdapter:
     async def get_availability(self, date_from, date_to) -> list[TimeRange]: ...
     async def get_booked_slots(self, date_from, date_to) -> list[TimeRange]: ...
-    async def create_event(self, patient_id, starts_at, ends_at, notes) -> ExternalEvent: ...
+    async def create_event(self, client_id, starts_at, ends_at, notes) -> ExternalEvent: ...
     async def cancel_event(self, external_event_id) -> None: ...
     async def reschedule_event(self, external_event_id, new_starts_at, new_ends_at) -> None: ...
 ```
@@ -33,9 +36,9 @@ class AbstractSchedulingAdapter:
 ## Algoritmo de Disponibilidade
 
 ```
-Entrada: doctor_id, date_from, date_to, slot_duration (minutos)
+Entrada: lawyer_id, date_from, date_to, slot_duration (minutos)
 
-1. Busca regras recorrentes (doctor_schedules)
+1. Busca regras recorrentes (lawyer_schedules)
    → Expande para lista de janelas no período: [(seg 09:00, seg 18:00), ...]
 
 2. Gera todos os slots possíveis dentro das janelas
@@ -43,7 +46,7 @@ Entrada: doctor_id, date_from, date_to, slot_duration (minutos)
 
 3. Remove bloqueios (schedule_blocks) que sobrepõem ao slot
 
-4. Remove agendamentos existentes com status != 'cancelled'
+4. Remove consultas existentes com status != 'cancelled'
    → Busca no DB (local_db) ou via freebusy API (Google Calendar)
 
 5. Remove slots no passado
@@ -59,33 +62,33 @@ Entrada: doctor_id, date_from, date_to, slot_duration (minutos)
 ```sql
 -- Constraint EXCLUDE previne overlap em nível de DB
 CONSTRAINT no_overlap EXCLUDE USING gist (
-    doctor_id WITH =,
+    lawyer_id WITH =,
     tstzrange(starts_at, ends_at) WITH &&
 ) WHERE (status NOT IN ('cancelled'))
 ```
 
 ### Nível Aplicação (Race Condition)
 ```python
-async def book_appointment(self, doctor_id, starts_at, ends_at, ...):
+async def book_consultation(self, lawyer_id, starts_at, ends_at, ...):
     async with db.begin():
         # SELECT FOR UPDATE — bloqueia a linha durante a transação
         existing = await db.execute(
-            select(Appointment)
-            .where(Appointment.doctor_id == doctor_id)
-            .where(Appointment.starts_at < ends_at)
-            .where(Appointment.ends_at > starts_at)
-            .where(Appointment.status != 'cancelled')
+            select(Consultation)
+            .where(Consultation.lawyer_id == lawyer_id)
+            .where(Consultation.starts_at < ends_at)
+            .where(Consultation.ends_at > starts_at)
+            .where(Consultation.status != 'cancelled')
             .with_for_update()
         )
         if existing.scalar():
             raise SlotNotAvailableError("Horário já ocupado")
-        # Cria o agendamento
+        # Cria a consulta
         ...
 ```
 
 ### Cache de Slots (Redis)
-- Slot exibido para o paciente: reservado em cache Redis por 5 minutos
-- Chave: `slot_lock:{doctor_id}:{starts_at_iso}`
+- Slot exibido para o lead/cliente: reservado em cache Redis por 5 minutos
+- Chave: `slot_lock:{lawyer_id}:{starts_at_iso}`
 - Se expirado antes da confirmação: slot liberado automaticamente
 
 ---
@@ -99,7 +102,7 @@ Admin acessa /admin/google/oauth
   → Callback em /admin/google/callback?code=...
     → Troca code por access_token + refresh_token
     → Salva criptografado no DB (key: env ENCRYPTION_KEY)
-    → Associa credentials ao doctor.provider_config
+    → Associa credentials ao lawyer.provider_config
 ```
 
 ### Leitura de Disponibilidade
@@ -108,24 +111,22 @@ Admin acessa /admin/google/oauth
 response = calendar_service.freebusy().query({
     "timeMin": date_from.isoformat(),
     "timeMax": date_to.isoformat(),
-    "items": [{"id": doctor.provider_config["calendar_id"]}]
+    "items": [{"id": lawyer.provider_config["calendar_id"]}]
 }).execute()
 
 busy_slots = response["calendars"][calendar_id]["busy"]
-# [{start: "...", end: "..."}, ...]
 ```
 
 ### Criação de Evento
 ```python
 event = {
-    "summary": f"Consulta — {patient.full_name}",
-    "start": {"dateTime": starts_at.isoformat(), "timeZone": CLINIC_TIMEZONE},
-    "end":   {"dateTime": ends_at.isoformat(),   "timeZone": CLINIC_TIMEZONE},
-    "colorId": "2",  # cor padrão para eventos Open Clinic
+    "summary": f"Consulta — {client.full_name}",
+    "start": {"dateTime": starts_at.isoformat(), "timeZone": FIRM_TIMEZONE},
+    "end":   {"dateTime": ends_at.isoformat(),   "timeZone": FIRM_TIMEZONE},
     "extendedProperties": {
         "private": {
-            "openclinic_appointment_id": str(appointment_id),
-            "openclinic_patient_phone": patient.phone
+            "advocacia_crm_consultation_id": str(consultation_id),
+            "advocacia_crm_client_phone": client.phone
         }
     }
 }
@@ -135,21 +136,20 @@ event = {
 
 ## Local DB Adapter
 
-### Leitura de Disponibilidade
 ```python
-# Busca diretamente nas tabelas doctor_schedules e appointments
+# Busca diretamente nas tabelas lawyer_schedules e consultations
 schedules = await db.execute(
-    select(DoctorSchedule)
-    .where(DoctorSchedule.doctor_id == doctor_id)
-    .where(DoctorSchedule.is_active == True)
+    select(LawyerSchedule)
+    .where(LawyerSchedule.lawyer_id == lawyer_id)
+    .where(LawyerSchedule.is_active == True)
 )
 
 booked = await db.execute(
-    select(Appointment)
-    .where(Appointment.doctor_id == doctor_id)
-    .where(Appointment.starts_at >= date_from)
-    .where(Appointment.ends_at <= date_to)
-    .where(Appointment.status != 'cancelled')
+    select(Consultation)
+    .where(Consultation.lawyer_id == lawyer_id)
+    .where(Consultation.starts_at >= date_from)
+    .where(Consultation.ends_at <= date_to)
+    .where(Consultation.status != 'cancelled')
 )
 ```
 
@@ -159,15 +159,15 @@ booked = await db.execute(
 
 ```
 GET /api/v1/scheduling/slots
-  Params: doctor_id | specialty_id, date_from, date_to
-  Returns: list[{starts_at, ends_at, doctor_id, doctor_name}]
+  Params: lawyer_id | practice_area_id, date_from, date_to
+  Returns: list[{starts_at, ends_at, lawyer_id, lawyer_name}]
 
 GET /api/v1/scheduling/calendar
   Params: date_from, date_to
-  Returns: visão consolidada de todos os médicos
+  Returns: visão consolidada de todos os advogados
 
 POST /api/v1/scheduling/blocks
-  Body: {doctor_id, starts_at, ends_at, reason}
+  Body: {lawyer_id, starts_at, ends_at, reason}
 
 DELETE /api/v1/scheduling/blocks/{id}
 ```

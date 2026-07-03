@@ -1,10 +1,13 @@
 ---
-tags: [openclinic, architecture]
+tags: [advocacia-crm, architecture]
 created: 2026-04-23
-status: draft
+updated: 2026-07-02
+status: alvo
 ---
 
-# Arquitetura — Open Clinic AI
+# Arquitetura — AdvocacIA CRM
+
+> Estado-alvo. A arquitetura é herdada do Open Clinic AI sem mudanças estruturais — muda a terminologia de domínio ([[10-transformation-plan]] §3).
 
 ## Decisões de Stack
 
@@ -17,15 +20,15 @@ status: draft
 
 ### Frontend: Next.js 14 + TypeScript
 - App Router com React Server Components
-- Shadcn/ui + TailwindCSS
-- Roles: `admin` e `secretary` com rotas protegidas
+- TailwindCSS com o design system "Cartório Noturno" ([[11-design-system]])
+- Roles: `admin`, `secretary` (Comercial) e `lawyer`, com rotas protegidas
 
 ### Infra
-- **PostgreSQL 16** — dados primários
+- **PostgreSQL 16** — dados primários (Neon DB em produção)
 - **Redis 7** — fila Celery + cache de sessão de conversa (TTL 24h)
 - **Celery** — workers assíncronos + beat scheduler
 - **Traefik v3** — reverse proxy + SSL automático via Let's Encrypt
-- **Docker + Docker Compose** — deploy em VPS
+- **Docker + Docker Compose** — deploy em VPS, imagens via ghcr.io ([[12-cicd-pipeline]])
 
 ---
 
@@ -34,7 +37,7 @@ status: draft
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │                        CLIENTES EXTERNOS                          │
-│   Paciente                    Admin / Secretária                  │
+│   Lead/Cliente                Admin / Comercial / Advogado        │
 │ [Telegram] [WhatsApp]         [Browser → Next.js]                │
 └──────┬──────────┬──────────────────────┬───────────────────────┘
        │          │                      │
@@ -55,7 +58,7 @@ status: draft
 │  └────────────┘  └────────────┘  │  ┌────────┐ ┌─────────┐ │   │
 │                                  │  │ GCal   │ │ LocalDB │ │   │
 │  ┌────────────┐  ┌────────────┐  │  │ Adapter│ │ Adapter │ │   │
-│  │    CRM     │  │  Leads     │  │  └────────┘ └─────────┘ │   │
+│  │  Clients   │  │  Leads     │  │  └────────┘ └─────────┘ │   │
 │  │   Module   │  │  Module    │  └──────────────────────────┘   │
 │  └────────────┘  └────────────┘                                  │
 │                                  ┌──────────────────────────┐   │
@@ -69,7 +72,7 @@ status: draft
            ▼                   ▼                    ▼
    ┌──────────────┐   ┌──────────────┐   ┌───────────────────────┐
    │ PostgreSQL   │   │    Redis     │   │   APIs Externas        │
-   │  (port 5432) │   │  Queue+Cache │   │   Google Calendar      │
+   │ (Neon/local) │   │  Queue+Cache │   │   Google Calendar      │
    └──────────────┘   └──────────────┘   │   OpenAI / Local LLM  │
                                │          │   Meta Ads / Google Ads│
                      ┌─────────┴───────┐  └───────────────────────┘
@@ -83,35 +86,35 @@ status: draft
 
 ---
 
-## Fluxo Principal: Paciente → Agendamento
+## Fluxo Principal: Lead → Consulta agendada (via IA)
 
 ```
-[Paciente envia mensagem no Telegram]
-  → Webhook POST /api/v1/webhooks/telegram/{token}
+[Interessado envia mensagem no WhatsApp]
+  → Webhook POST /api/v1/webhooks/whatsapp/{token}
     → MessagingGateway normaliza para MessagePayload
-      → Cria/atualiza Patient no CRM
+      → Lead criado/atualizado no pipeline
         → Sessão de conversa carregada do Redis
           → AI Engine: histórico + nova mensagem → LLM
-            → LLM classifica intent "agendar"
-              → tool: check_availability()
+            → LLM qualifica (área de atuação, resumo do caso)
+              → tool: check_availability(practice_area_id)
                 → SchedulingService → Adapter → slots livres
-              → LLM monta resposta com horários disponíveis
-          → Resposta enviada via Telegram
+              → LLM oferece horários de consulta
+          → Resposta enviada via WhatsApp
           → Conversa salva no Redis (TTL 24h) e PostgreSQL
 ```
 
-## Fluxo Principal: Lead → Conversão
+## Fluxo Principal: Lead → Conversão (pipeline comercial)
 
 ```
 [Lead entra via Google Ads]
   → POST /api/v1/leads/webhook/inbound (X-API-Key)
     → Lead criado com status "novo"
-    → SLA calculado (created_at + CLINIC_SLA_HOURS)
-    → Secretária notificada via Telegram
-      → Secretária acessa Kanban → abre lead → registra contato
+    → SLA calculado (created_at + FIRM_SLA_HOURS)
+    → Equipe comercial notificada
+      → Comercial acessa Kanban → abre lead → registra contato
         → status: "em_contato" → contacted_at registrado
-          → Envia orçamento → status: "orcamento_enviado"
-            → Paciente aceita → Convert Lead
-              → Patient criado → Appointment criado
+          → Envia proposta de honorários → status: "proposta_enviada"
+            → Lead aceita → Convert Lead
+              → Client criado → Consultation agendada
                 → status: "convertido" → KPI atualizado
 ```

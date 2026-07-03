@@ -1,97 +1,71 @@
 ---
-tags: [openclinic, risks]
+tags: [advocacia-crm, risks]
 created: 2026-04-23
-status: draft
+updated: 2026-07-02
+status: alvo
 ---
 
-# Riscos e Mitigações — Open Clinic AI
+# Riscos e Mitigações — AdvocacIA CRM
+
+> Riscos do produto em operação. Riscos específicos do processo de transformação estão em [[10-transformation-plan]] §7.
 
 ## Tabela de Riscos
 
 | # | Risco | Prob. | Impacto | Mitigação |
 |---|---|---|---|---|
-| 1 | Race condition em agendamentos simultâneos | Média | Alto | EXCLUDE constraint + SELECT FOR UPDATE + Redis lock de 5min no slot |
-| 2 | Token Google Calendar expirado em produção | Alta | Alto | Refresh automático + alerta admin + health check periódico |
-| 3 | LLM alucinar horários disponíveis | Média | Alto | Tool obrigatória — LLM nunca inventa horário sem chamar check_availability |
-| 4 | Webhook Telegram cair (bot offline) | Baixa | Alto | Health check + alerta admin + re-registro automático do webhook |
-| 5 | LGPD — dados de saúde dos pacientes | Alta | Crítico | Encryption at rest (PG), audit log de acesso, política de retenção, backup seguro |
-| 6 | Custo OpenAI elevado com alto volume | Média | Médio | Cache de respostas, modelo menor default (gpt-4o-mini), suporte a Local LLM |
-| 7 | Conflito ao migrar de local_db para Google Calendar | Baixa | Alto | Wizard de migração com verificação de conflitos antes da troca |
-| 8 | VPS sem recursos para Ollama/Local LLM | Alta | Médio | Requisitos documentados; default é OpenAI API |
-| 9 | Lead não atribuído fica sem retorno (SLA vence) | Média | Alto | Atribuição automática round-robin + alerta por Telegram ao admin |
-| 10 | Webhook de leads externos aberto na internet | Alta | Médio | API key obrigatória + rate limiting via Traefik + validação de payload |
+| 1 | **IA dar aconselhamento jurídico ou prometer resultado** (violação Código de Ética/Provimento 205-2021 OAB) | Média | Crítico | Regras rígidas no system prompt + testes adversariais + escalate_to_human + revisão periódica de conversas |
+| 2 | LGPD — dados sensíveis de leads (relatos de casos) | Alta | Crítico | Encryption at rest, audit log, política de retenção, aviso de registro na conversa, backup criptografado |
+| 3 | Race condition em consultas simultâneas | Média | Alto | EXCLUDE constraint + SELECT FOR UPDATE + Redis lock de 5min no slot |
+| 4 | LLM alucinar horários disponíveis | Média | Alto | Tool obrigatória — LLM nunca confirma horário sem check_availability |
+| 5 | Lead urgente (flagrante, prazo fatal) tratado como lead comum | Média | Crítico | Regra de escalonamento imediato no prompt + alerta sonoro/visual na caixa compartilhada |
+| 6 | Webhook de leads externos aberto na internet | Alta | Médio | API key obrigatória + rate limiting Traefik + validação Pydantic estrita |
+| 7 | Lead não atribuído fica sem retorno (SLA vence) | Média | Alto | Atribuição automática round-robin + alerta ao admin |
+| 8 | Token Google Calendar expirado em produção | Alta | Alto | Refresh automático + health check periódico + alerta admin |
+| 9 | Custo OpenAI elevado com alto volume | Média | Médio | Modelo menor default (gpt-4o-mini), cache de sessão, suporte a Local LLM |
+| 10 | Deploy automático quebrar produção | Baixa | Alto | CI bloqueante em PR + healthcheck pós-deploy + rollback automático ([[12-cicd-pipeline]]) |
+| 11 | Banco Neon indisponível (dependência externa) | Baixa | Alto | Retry/backoff na conexão + monitoramento + dump diário para restauração em Postgres local |
 
 ---
 
-## Detalhamento
+## Detalhamento dos riscos críticos
 
-### 1. Race Condition em Agendamentos
+### 1. IA e ética profissional (OAB)
 
-**Cenário real:** Dois pacientes diferentes escolhem o mesmo horário do mesmo médico ao mesmo tempo. Sem proteção, ambos confirmam e o médico recebe dois agendamentos sobrepostos.
+**Cenário real:** lead pergunta "tenho direito à revisão da aposentadoria? quanto vou receber?" e a IA responde com uma análise de mérito ou estimativa de valor. Isso pode caracterizar exercício irregular, publicidade vedada e captação indevida de clientela.
 
 **Mitigação em camadas:**
-1. **Redis lock** (5 min) ao exibir slot — slot não é ofertado para outro paciente enquanto o primeiro está confirmando
-2. **SELECT FOR UPDATE** na transação de criação — bloqueia a linha no banco durante a inserção
-3. **EXCLUDE constraint** PostgreSQL — última barreira, rejeita no banco se tudo mais falhar
+1. System prompt com proibições explícitas (ver [[06-ai-design]])
+2. Bateria de testes adversariais antes de cada mudança de prompt
+3. Disclaimer padrão: "essa avaliação será feita pelo advogado na consulta"
+4. Botão de assumir conversa (humano) sempre visível na caixa compartilhada
+5. Registro integral das conversas para auditoria
 
----
+### 2. LGPD — relatos de casos
 
-### 2. Token Google Calendar Expirado
-
-**Cenário real:** O médico configurou o Google Calendar, mas o refresh token expirou (inativo >6 meses ou permissão revogada). Sistema começa a falhar silenciosamente nos agendamentos via Google.
-
-**Mitigação:**
-- Celery Beat: health check diário por médico com GCal configurado
-- Se falhar: alerta para admin via Telegram + marca provider como "offline" no painel
-- Admin pode revogar e reconfigar OAuth sem downtime
-
----
-
-### 3. LLM Alucinação de Horários
-
-**Cenário real:** O LLM responde "você pode agendar amanhã às 14h" sem verificar disponibilidade, e o paciente confirma — mas o slot está ocupado.
-
-**Mitigação:**
-- System prompt com regra explícita: "NUNCA confirme horários sem usar check_availability"
-- Validação na tool `book_appointment`: sempre verifica disponibilidade antes de criar
-- Se conflito: LLM recebe erro e oferece alternativas
-
----
-
-### 5. LGPD — Dados de Saúde
-
-**Dados sensíveis armazenados:**
-- Nome, telefone, e-mail dos pacientes
-- Histórico de mensagens (pode conter queixas clínicas)
-- Notas de consultas
+**Dados sensíveis armazenados:** nome, telefone, e-mail e o **relato do caso** (pode conter dados de saúde, processos criminais, relações familiares).
 
 **Medidas:**
-- Encryption at rest no PostgreSQL (via pgcrypto ou disk-level na VPS)
-- Audit log de todo acesso a dados de pacientes
-- Política de retenção de dados (configurável pelo admin — ex: apagar dados após X anos)
-- Backup criptografado
-- Documentação de DPA (Data Processing Agreement) para clínicas
+- Encryption at rest (Neon já criptografa; disk-level na VPS)
+- Audit log de todo acesso a dados de leads/clientes
+- Política de retenção configurável (ex.: expurgo de leads perdidos após X meses)
+- Aviso na primeira interação de que a conversa é registrada
+- Sigilo profissional se estende à equipe comercial (termo de confidencialidade)
 
----
+### 5. Urgências jurídicas
 
-### 9. SLA de Leads Vencendo sem Responsável
-
-**Cenário real:** Lead entra às 22h. Secretária responsável só vê na manhã seguinte. SLA de 2h venceu.
+**Cenário real:** às 2h da manhã chega "meu filho foi preso em flagrante". Um fluxo comercial padrão (qualificar, agendar consulta para daqui 3 dias) é inaceitável.
 
 **Mitigação:**
-- Atribuição automática ao abrir horário (round-robin entre secretárias ativas)
-- SLA configurável por horário (ex: leads fora do horário comercial têm SLA contado a partir das 8h)
-- Notificação ao admin se lead ficar sem contato por X horas além do SLA
-- Relatório diário automático de leads vencidos
+- Prompt detecta urgência → `escalate_to_human` imediato + resposta com telefone de plantão (configurável)
+- Notificação push/Telegram para o responsável de plantão
+- Lead marcado com etiqueta "URGENTE" no topo do kanban
 
----
+### 10. Deploy automático
 
-### 10. Webhook de Leads Externos
+**Cenário real:** merge em `main` com migration defeituosa derruba a API em produção.
 
-**Cenário real:** Endpoint público `/leads/webhook/inbound` recebe spam ou ataque DDoS.
-
-**Mitigações:**
-- Header `X-API-Key` obrigatório (chave gerada por clínica, rotacionável)
-- Rate limiting via Traefik: máx 100 req/min por IP
-- Validação estrita do payload (Pydantic rejeita campos extras)
-- Log de todas as tentativas (válidas e inválidas) no audit_log
+**Mitigação:**
+- `ci.yml` bloqueia merge sem build verde
+- Healthcheck pós-deploy com 10 tentativas; falhou → rollback automático para a tag anterior
+- Environment `production` pode exigir aprovação manual antes do job de deploy
+- Banco Neon permite branch/restore point-in-time antes de migrations arriscadas

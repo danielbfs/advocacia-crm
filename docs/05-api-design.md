@@ -1,10 +1,13 @@
 ---
-tags: [openclinic, api]
+tags: [advocacia-crm, api]
 created: 2026-04-23
-status: draft
+updated: 2026-07-02
+status: alvo
 ---
 
-# Design da API — Open Clinic AI
+# Design da API — AdvocacIA CRM
+
+> Estado-alvo. Endpoints atuais → alvo seguem o dicionário de [[10-transformation-plan]] §3.
 
 ## Convenções
 
@@ -43,7 +46,7 @@ status: draft
 
 ```
 POST /auth/login
-  Body: {email, password}
+  Body: {username, password}
   Returns: {access_token, refresh_token, user: {id, name, role}}
 
 POST /auth/refresh
@@ -71,19 +74,19 @@ POST /webhooks/whatsapp/{token}
 
 ---
 
-## Patients / CRM
+## Clients
 
 ```
-GET    /patients
+GET    /clients
   Params: status, phone, name, page, page_size
   Auth: admin | secretary
 
-GET    /patients/{id}
-GET    /patients/{id}/conversations
-GET    /patients/{id}/appointments
+GET    /clients/{id}
+GET    /clients/{id}/conversations
+GET    /clients/{id}/consultations
 
-PATCH  /patients/{id}
-  Body: {crm_status?, notes?}
+PATCH  /clients/{id}
+  Body: {client_status?, notes?}
 ```
 
 ---
@@ -93,27 +96,27 @@ PATCH  /patients/{id}
 ```
 GET    /leads
   Params: status, channel, assigned_to, is_overdue,
-          specialty_id, created_from, created_to,
+          practice_area_id, created_from, created_to,
           utm_campaign, utm_source, page, page_size
 
 POST   /leads
-  Body: {full_name, phone, email?, channel, specialty_id?,
+  Body: {full_name, phone, email?, channel, practice_area_id?,
          description?, utm_source?, utm_medium?, utm_campaign?,
          utm_content?, utm_term?, assigned_to?}
 
 GET    /leads/{id}
 PATCH  /leads/{id}
   Body: {status?, assigned_to?, next_followup_at?,
-         quote_value?, description?, lost_reason?}
+         proposal_value?, description?, lost_reason?}
 
 DELETE /leads/{id}    (admin only — soft delete)
 
-# Pipeline actions
+# Ações de pipeline
 POST   /leads/{id}/contact
   Body: {note?}                    → seta contacted_at, status → em_contato
 
 POST   /leads/{id}/convert
-  Body: {doctor_id, starts_at, notes?}   → cria patient + appointment
+  Body: {lawyer_id, starts_at, notes?}   → cria client + consultation
 
 PATCH  /leads/{id}/assign
   Body: {user_id}
@@ -126,17 +129,17 @@ GET    /leads/{id}/interactions
 POST   /leads/{id}/interactions
   Body: {type, content, next_action?}
 
-# Entrada externa (Google Ads, Meta Ads, formulário)
+# Entrada externa (Google Ads, Meta Ads, formulário do site)
 POST   /leads/webhook/inbound
   Header: X-API-Key: {LEADS_WEBHOOK_API_KEY}
   Body: {name, phone, email?, utm_source?, utm_medium?,
-         utm_campaign?, utm_content?, utm_term?, specialty?, message?}
+         utm_campaign?, utm_content?, utm_term?, practice_area?, message?}
   Returns: {lead_id, status: "created"}
 ```
 
 ---
 
-## Relatórios de Leads
+## Relatórios
 
 ```
 GET /reports/leads/funnel
@@ -171,33 +174,34 @@ GET /reports/leads/timeline
   Params: date_from, date_to
   Returns: [{day, new_leads, converted}]
 
-GET /reports/appointments/overview
-  Params: date_from, date_to, doctor_id?
-  Returns: {total, by_status: {...}, by_doctor: [...]}
+GET /reports/consultations/overview
+  Params: date_from, date_to, lawyer_id?
+  Returns: {total, by_status: {...}, by_lawyer: [...]}
 
 GET /reports/revenue/estimates
   Params: date_from, date_to
   Returns: [{channel, converted_value, pipeline_value}]
+  # valores = propostas de honorários (proposal_value)
 ```
 
 **Export CSV:** todos os endpoints de relatório aceitam `?format=csv` → retorna `Content-Type: text/csv`.
 
 ---
 
-## Agendamentos
+## Consultations
 
 ```
-GET    /appointments
-  Params: doctor_id, date_from, date_to, status, patient_id
+GET    /consultations
+  Params: lawyer_id, date_from, date_to, status, client_id
 
-POST   /appointments
-  Body: {patient_id, doctor_id, specialty_id, starts_at, ends_at, notes?, source?}
+POST   /consultations
+  Body: {client_id, lawyer_id, practice_area_id, starts_at, ends_at, notes?, source?}
 
-GET    /appointments/{id}
-PATCH  /appointments/{id}
+GET    /consultations/{id}
+PATCH  /consultations/{id}
   Body: {status?, notes?}
 
-DELETE /appointments/{id}    → cancela (status = cancelled)
+DELETE /consultations/{id}    → cancela (status = cancelled)
 ```
 
 ---
@@ -206,45 +210,45 @@ DELETE /appointments/{id}    → cancela (status = cancelled)
 
 ```
 GET  /scheduling/slots
-  Params: doctor_id | specialty_id, date_from, date_to
-  Returns: [{starts_at, ends_at, doctor_id, doctor_name, is_available}]
+  Params: lawyer_id | practice_area_id, date_from, date_to
+  Returns: [{starts_at, ends_at, lawyer_id, lawyer_name, is_available}]
 
 GET  /scheduling/calendar
   Params: date_from, date_to
-  Returns: visão consolidada todos os médicos
+  Returns: visão consolidada de todos os advogados
 
 POST /scheduling/blocks
-  Body: {doctor_id, starts_at, ends_at, reason?}
+  Body: {lawyer_id, starts_at, ends_at, reason?}
 
 DELETE /scheduling/blocks/{id}
 ```
 
 ---
 
-## Doctors
+## Lawyers
 
 ```
-GET    /doctors
-POST   /doctors
-  Body: {full_name, crm?, specialty_id, scheduling_provider,
+GET    /lawyers
+POST   /lawyers
+  Body: {full_name, oab?, practice_area_id, scheduling_provider,
          provider_config?, slot_duration_minutes?}
-GET    /doctors/{id}
-PATCH  /doctors/{id}
-DELETE /doctors/{id}    (soft delete — is_active = false)
-GET    /doctors/{id}/schedule    → regras de disponibilidade
-PUT    /doctors/{id}/schedule    → substituir regras
+GET    /lawyers/{id}
+PATCH  /lawyers/{id}
+DELETE /lawyers/{id}    (soft delete — is_active = false)
+GET    /lawyers/{id}/schedule    → regras de disponibilidade
+PUT    /lawyers/{id}/schedule    → substituir regras
   Body: [{day_of_week, start_time, end_time}]
 ```
 
 ---
 
-## Specialties
+## Practice Areas
 
 ```
-GET    /specialties
-POST   /specialties
-PATCH  /specialties/{id}
-DELETE /specialties/{id}
+GET    /practice-areas
+POST   /practice-areas
+PATCH  /practice-areas/{id}
+DELETE /practice-areas/{id}
 ```
 
 ---
@@ -266,7 +270,7 @@ GET    /followup/jobs
 
 ```
 GET  /admin/setup/status
-  Returns: {messaging: bool, ai: bool, scheduling: bool, clinic_info: bool}
+  Returns: {messaging: bool, ai: bool, scheduling: bool, firm_info: bool}
 
 POST /admin/setup/messaging
   Body: {provider: "telegram"|"whatsapp", config: {...}}
@@ -278,7 +282,7 @@ POST /admin/setup/scheduling
   Body: {default_provider: "local_db"|"google_calendar"}
 
 GET  /admin/settings
-PATCH /admin/settings/clinic
+PATCH /admin/settings/firm
   Body: {name, timezone, sla_hours, leads_webhook_api_key?}
 
 POST /admin/google/oauth      → inicia fluxo OAuth
