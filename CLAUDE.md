@@ -16,7 +16,7 @@ Os docs `00`–`09` descrevem o **estado-alvo** do sistema, não necessariamente
 
 ## Regras críticas
 
-- **NUNCA faça push enquanto o `origin` apontar para `danielbfs/openclinic`** — esse é o produto de clínicas em produção. A Fase 0 do plano troca o remote para `danielbfs/advocacia-crm`; confira com `git remote -v`.
+- O `origin` deste repositório é `https://github.com/danielbfs/advocacia-crm` (push liberado). **NUNCA aponte o remote de volta para `danielbfs/openclinic`** — esse é o produto de clínicas em produção; confira com `git remote -v` em caso de dúvida.
 - Todo rename de domínio deve seguir o dicionário de `docs/10-transformation-plan.md` §3 — não crie sinônimos próprios.
 - A IA Comercial NUNCA pode dar aconselhamento jurídico, prometer resultado ou citar honorários não configurados (compliance OAB — ver `docs/06-ai-design.md`).
 - Banco de dados de produção é novo (Neon, database `advocacia_crm`) — nunca apontar para o banco do openclinic.
