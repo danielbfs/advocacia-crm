@@ -1,5 +1,5 @@
 # ============================================================
-# Open Clinic AI — docker-compose.dev.yml (DEV LOCAL)
+# AdvocacIA CRM — docker-compose.dev.yml (DEV LOCAL)
 #
 # NÃO é aplicado automaticamente. Usar com:
 #   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# Open Clinic AI — Script de Pós-Deploy (AWS Lightsail + Neon DB)
+# AdvocacIA CRM — Script de Pós-Deploy (AWS Lightsail + Neon DB)
 # Executar APÓS: docker compose -f docker-compose.lightsail.yml up -d
 # Inicializa Git, roda migrations e cria o admin inicial.
 # ============================================================
@@ -18,7 +18,7 @@ error()   { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
 
 echo ""
 echo "╔══════════════════════════════════════════╗"
-echo "║  Open Clinic AI — Lightsail Post-Deploy   ║"
+echo "║  AdvocacIA CRM — Lightsail Post-Deploy    ║"
 echo "╚══════════════════════════════════════════╝"
 echo ""
 
@@ -30,7 +30,7 @@ docker compose version >/dev/null 2>&1 || error "Docker Compose v2 não encontra
 if [ ! -d ".git" ]; then
     info "Inicializando repositório Git..."
     git init
-    git remote add origin https://github.com/danielbfs/openclinic.git
+    git remote add origin https://github.com/danielbfs/advocacia-crm.git
     git fetch origin main
     git reset --hard origin/main
     info "Repositório Git configurado."

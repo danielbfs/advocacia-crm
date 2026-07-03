@@ -9,25 +9,27 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
-        primary: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          500: '#3b82f6',
-          600: '#2563eb', // Blue interactives
-          700: '#1d4ed8',
+        ink: { DEFAULT: "#16140f", 2: "#211d16", 3: "#2c2720" },
+        line: "#3a342b",
+        parchment: { DEFAULT: "#ede6d6", dim: "#b3a993", faint: "#6f685a" },
+        carimbo: { DEFAULT: "#d6492f", bright: "#e85c42" },
+        selo: "#b8915a",
+        info: "#3e5c6b",
+        jade: "#5b8a72",
+      },
+      fontFamily: {
+        display: ["var(--font-display)", "Georgia", "serif"],
+        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "monospace"],
+      },
+      keyframes: {
+        rise: {
+          from: { opacity: "0", transform: "translateY(14px)" },
+          to: { opacity: "1", transform: "none" },
         },
-        sidebar: {
-          DEFAULT: '#4A6B8C', // Deep grayish blue
-          hover: '#3a5775',
-          text: '#ffffff',
-          muted: '#cbd5e1',
-        },
-        accent: {
-          500: '#10b981', // Emerald green
-          600: '#059669',
-        }
+      },
+      animation: {
+        rise: "rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both",
       },
     },
   },

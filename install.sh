@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# Open Clinic AI — Script de Pós-Deploy
+# AdvocacIA CRM — Script de Pós-Deploy
 # Executar APÓS: docker compose up -d
 # Inicializa Git, roda migrations e cria o admin inicial.
 # ============================================================
@@ -18,7 +18,7 @@ error()   { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
 
 echo ""
 echo "╔══════════════════════════════════════════╗"
-echo "║     Open Clinic AI — Pós-Deploy          ║"
+echo "║     AdvocacIA CRM — Pós-Deploy           ║"
 echo "╚══════════════════════════════════════════╝"
 echo ""
 
@@ -30,7 +30,7 @@ docker compose version >/dev/null 2>&1 || error "Docker Compose v2 não encontra
 if [ ! -d ".git" ]; then
     info "Inicializando repositório Git para futuras atualizações..."
     git init
-    git remote add origin https://github.com/danielbfs/openclinic.git
+    git remote add origin https://github.com/danielbfs/advocacia-crm.git
     git fetch origin main
     git reset --hard origin/main
     info "Repositório Git configurado. Use 'git pull origin main' para atualizar."
@@ -41,7 +41,7 @@ fi
 # Aguardar banco de dados
 info "Aguardando banco de dados ficar pronto..."
 RETRIES=30
-until docker compose exec -T db pg_isready -U openclinic -q 2>/dev/null; do
+until docker compose exec -T db pg_isready -U advocacia_crm -q 2>/dev/null; do
     RETRIES=$((RETRIES-1))
     [ $RETRIES -eq 0 ] && error "Banco de dados não respondeu após 30 tentativas."
     sleep 2

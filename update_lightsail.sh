@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# Open Clinic AI — Script de Atualização (AWS Lightsail)
+# AdvocacIA CRM — Script de Atualização (AWS Lightsail)
 # Puxa a versão mais recente do GitHub e reinicia os serviços
 # ============================================================
 
@@ -12,7 +12,7 @@ info() { echo -e "${GREEN}[INFO]${NC} $1"; }
 
 echo ""
 echo "╔══════════════════════════════════════════╗"
-echo "║     Open Clinic AI — Lightsail Update    ║"
+echo "║     AdvocacIA CRM — Lightsail Update      ║"
 echo "╚══════════════════════════════════════════╝"
 echo ""
 

@@ -1,5 +1,5 @@
 # ============================================================
-# Open Clinic AI — docker-compose.lightsail.yml (AWS LIGHTSAIL)
+# AdvocacIA CRM — docker-compose.lightsail.yml (AWS LIGHTSAIL)
 #
 # Deploy via AWS Lightsail:
 # 1. Clone this repo to Lightsail VPS
@@ -17,17 +17,17 @@ x-backend-env: &backend-env
   OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
   TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
   EVOLUTION_API_URL: http://evolution_api:8080
-  EVOLUTION_API_KEY: ${EVOLUTION_API_KEY:-openclinic-evo-key}
-  EVOLUTION_INSTANCE_NAME: ${EVOLUTION_INSTANCE_NAME:-openclinic}
-  CLINIC_TIMEZONE: ${CLINIC_TIMEZONE:-America/Sao_Paulo}
-  CLINIC_SLA_HOURS: ${CLINIC_SLA_HOURS:-2}
+  EVOLUTION_API_KEY: ${EVOLUTION_API_KEY:-advocacia-crm-evo-key}
+  EVOLUTION_INSTANCE_NAME: ${EVOLUTION_INSTANCE_NAME:-advocacia-crm}
+  FIRM_TIMEZONE: ${FIRM_TIMEZONE:-America/Sao_Paulo}
+  FIRM_SLA_HOURS: ${FIRM_SLA_HOURS:-2}
   ENVIRONMENT: production
   DOMAIN: ${DOMAIN}
   DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
 
 networks:
   internal:
-    name: openclinic_internal
+    name: advocacia_crm_internal
 
 volumes:
   redis_data:
@@ -57,7 +57,7 @@ services:
       - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
-      - "--providers.docker.network=openclinic_internal"
+      - "--providers.docker.network=advocacia_crm_internal"
       - "--providers.file.directory=/etc/traefik/dynamic"
       - "--providers.file.watch=true"
     volumes:
@@ -91,11 +91,11 @@ services:
       - internal
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.openclinic-backend.rule=Host(`${DOMAIN}`) && (PathPrefix(`/api`) || PathPrefix(`/webhooks`) || PathPrefix(`/health`))"
-      - "traefik.http.routers.openclinic-backend.tls=true"
-      - "traefik.http.routers.openclinic-backend.tls.certresolver=letsencrypt"
-      - "traefik.http.services.openclinic-backend.loadbalancer.server.port=8000"
-      - "traefik.http.routers.openclinic-backend.middlewares=security-headers@file,api-ratelimit@file"
+      - "traefik.http.routers.advocacia-crm-backend.rule=Host(`${DOMAIN}`) && (PathPrefix(`/api`) || PathPrefix(`/webhooks`) || PathPrefix(`/health`))"
+      - "traefik.http.routers.advocacia-crm-backend.tls=true"
+      - "traefik.http.routers.advocacia-crm-backend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.advocacia-crm-backend.loadbalancer.server.port=8000"
+      - "traefik.http.routers.advocacia-crm-backend.middlewares=security-headers@file,api-ratelimit@file"
 
   # ── FRONTEND ─────────────────────────────────────────────
   frontend:
@@ -109,12 +109,12 @@ services:
       - internal
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.openclinic-frontend.rule=Host(`${DOMAIN}`)"
-      - "traefik.http.routers.openclinic-frontend.tls=true"
-      - "traefik.http.routers.openclinic-frontend.tls.certresolver=letsencrypt"
-      - "traefik.http.services.openclinic-frontend.loadbalancer.server.port=3000"
-      - "traefik.http.routers.openclinic-frontend.priority=1"
-      - "traefik.http.routers.openclinic-frontend.middlewares=security-headers@file"
+      - "traefik.http.routers.advocacia-crm-frontend.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.advocacia-crm-frontend.tls=true"
+      - "traefik.http.routers.advocacia-crm-frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.advocacia-crm-frontend.loadbalancer.server.port=3000"
+      - "traefik.http.routers.advocacia-crm-frontend.priority=1"
+      - "traefik.http.routers.advocacia-crm-frontend.middlewares=security-headers@file"
 
   # ── WORKERS CELERY ───────────────────────────────────────
   celery_worker:
@@ -150,7 +150,7 @@ services:
     restart: unless-stopped
     environment:
       SERVER_PORT: "8080"
-      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY:-openclinic-evo-key}
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY:-advocacia-crm-evo-key}
       DATABASE_ENABLED: "true"
       DATABASE_PROVIDER: postgresql
       DATABASE_CONNECTION_URI: ${EVOLUTION_DATABASE_URL}
