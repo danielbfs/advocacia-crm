@@ -49,12 +49,12 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  novo: "bg-blue-500",
-  em_contato: "bg-yellow-500",
-  orcamento_enviado: "bg-purple-500",
-  negociando: "bg-orange-500",
-  convertido: "bg-green-500",
-  perdido: "bg-gray-400",
+  novo: "bg-info",
+  em_contato: "bg-selo",
+  orcamento_enviado: "bg-selo",
+  negociando: "bg-carimbo/70",
+  convertido: "bg-jade",
+  perdido: "bg-parchment-faint",
 };
 
 const PERIODS = [
@@ -105,7 +105,7 @@ export default function ReportsPage() {
   return (
     <main className="p-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Relatórios</h1>
+        <h1 className="text-2xl font-display font-semibold text-parchment">Relatórios</h1>
         <div className="flex gap-1">
           {PERIODS.map((p) => (
             <button
@@ -113,8 +113,8 @@ export default function ReportsPage() {
               onClick={() => setPeriod(p.value)}
               className={`px-3 py-1.5 text-xs rounded-full font-medium border transition-colors ${
                 period === p.value
-                  ? "bg-blue-600 text-white border-blue-600"
-                  : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+                  ? "bg-carimbo text-parchment border-carimbo"
+                  : "bg-ink-2 text-parchment-dim border-line hover:bg-ink-3"
               }`}
             >
               {p.label}
@@ -124,7 +124,7 @@ export default function ReportsPage() {
       </div>
 
       {loading ? (
-        <div className="text-gray-400">Carregando...</div>
+        <div className="text-parchment-faint">Carregando...</div>
       ) : (
         <div className="space-y-6">
           {/* Summary Cards */}

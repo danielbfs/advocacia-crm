@@ -49,7 +49,7 @@ export default function AdminPage() {
   }, []);
 
   if (loading) {
-    return <div className="p-8 text-gray-400">Carregando painel...</div>;
+    return <div className="p-8 text-parchment-faint">Carregando painel...</div>;
   }
 
   const overdueLeads = data.leads.filter((l) => l.is_overdue);
@@ -63,17 +63,17 @@ export default function AdminPage() {
     <main className="p-8 max-w-7xl mx-auto space-y-8">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Painel Administrativo</h1>
-          <p className="text-gray-500 mt-1">Resumo geral das métricas da clínica</p>
+          <h1 className="text-3xl font-display font-semibold text-parchment tracking-tight">Painel Administrativo</h1>
+          <p className="text-parchment-dim mt-1">Resumo geral das métricas da clínica</p>
         </div>
       </div>
 
       {/* Cards resumo */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card title="Usuários" value={data.users.length} subtitle={`${data.users.filter(u => u.is_active).length} ativos`} href="/admin/users" icon={<Users className="text-primary-500" size={24} />} />
-        <Card title="Especialidades" value={data.specialties.length} href="/admin/specialties" icon={<Activity className="text-accent-500" size={24} />} />
-        <Card title="Médicos" value={data.doctors.length} subtitle={`${data.doctors.filter(d => d.is_active).length} ativos`} href="/admin/doctors" icon={<Stethoscope className="text-purple-500" size={24} />} />
-        <Card title="Leads" value={data.leads.length} subtitle={`${newLeads.length} novos`} href="/admin/leads" icon={<LeadsIcon className="text-orange-500" size={24} />} />
+        <Card title="Usuários" value={data.users.length} subtitle={`${data.users.filter(u => u.is_active).length} ativos`} href="/admin/users" icon={<Users className="text-carimbo" size={24} />} />
+        <Card title="Especialidades" value={data.specialties.length} href="/admin/specialties" icon={<Activity className="text-jade" size={24} />} />
+        <Card title="Médicos" value={data.doctors.length} subtitle={`${data.doctors.filter(d => d.is_active).length} ativos`} href="/admin/doctors" icon={<Stethoscope className="text-selo" size={24} />} />
+        <Card title="Leads" value={data.leads.length} subtitle={`${newLeads.length} novos`} href="/admin/leads" icon={<LeadsIcon className="text-info" size={24} />} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -81,45 +81,45 @@ export default function AdminPage() {
         <div className="lg:col-span-8 space-y-8">
           {/* Funil de Vendas */}
           {data.pipeline.length > 0 && (
-            <div className="bg-white rounded-2xl p-6 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100">
+            <div className="bg-ink-2/30 rounded-sm p-6 border border-line">
               <div className="flex items-center gap-2 mb-6">
-                <div className="p-2 bg-blue-50 rounded-lg"><TrendingUp className="text-primary-600" size={20} /></div>
-                <h2 className="text-lg font-bold text-gray-900">Performance do Funil (30 dias)</h2>
+                <div className="p-2 bg-selo/10 rounded-sm"><TrendingUp className="text-selo" size={20} /></div>
+                <h2 className="text-lg font-display font-semibold text-parchment">Performance do Funil (30 dias)</h2>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
                 <Stat label="Total Recebido" value={totalPipeline} />
-                <Stat label="Conversão" value={`${conversionRate}%`} color="text-primary-600" />
-                <Stat label="Novos" value={data.pipeline.find(p => p.status === "novo")?.total || 0} color="text-orange-500" />
-                <Stat label="Convertidos" value={totalConverted} color="text-accent-600" />
+                <Stat label="Conversão" value={`${conversionRate}%`} color="text-selo" />
+                <Stat label="Novos" value={data.pipeline.find(p => p.status === "novo")?.total || 0} color="text-info" />
+                <Stat label="Convertidos" value={totalConverted} color="text-jade" />
               </div>
             </div>
           )}
 
           {/* Leads vencidos */}
           {overdueLeads.length > 0 && (
-            <div className="bg-white rounded-2xl p-6 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-red-100">
+            <div className="bg-ink-2/30 rounded-sm p-6 border border-carimbo/30">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 bg-red-50 rounded-lg"><AlertCircle className="text-red-500" size={20} /></div>
-                  <h2 className="text-lg font-bold text-gray-900">Atenção Imediata</h2>
+                  <div className="p-2 bg-carimbo/10 rounded-sm"><AlertCircle className="text-carimbo-bright" size={20} /></div>
+                  <h2 className="text-lg font-display font-semibold text-parchment">Atenção Imediata</h2>
                 </div>
-                <span className="bg-red-100 text-red-700 py-1 px-3 rounded-full text-xs font-bold">{overdueLeads.length} Vencidos</span>
+                <span className="bg-carimbo/10 text-carimbo-bright py-1 px-3 rounded-full text-xs font-bold">{overdueLeads.length} Vencidos</span>
               </div>
-              
+
               <div className="space-y-2 mt-4">
                 {overdueLeads.slice(0, 5).map((lead) => (
-                  <Link 
-                    href={`/admin/leads/${lead.id}`} 
-                    key={lead.id} 
-                    className="flex items-center justify-between text-sm hover:bg-gray-50 p-3 rounded-xl transition-colors border border-gray-50"
+                  <Link
+                    href={`/admin/leads/${lead.id}`}
+                    key={lead.id}
+                    className="flex items-center justify-between text-sm hover:bg-ink-3 p-3 rounded-sm transition-colors border border-line"
                   >
-                    <span className="text-gray-900 font-medium">{lead.full_name || lead.phone}</span>
-                    <span className="text-gray-500 text-xs bg-gray-100 px-3 py-1 rounded-full">{lead.channel}</span>
+                    <span className="text-parchment font-medium">{lead.full_name || lead.phone}</span>
+                    <span className="text-parchment-dim text-xs bg-ink-3 px-3 py-1 rounded-full">{lead.channel}</span>
                   </Link>
                 ))}
               </div>
               {overdueLeads.length > 5 && (
-                <Link href="/admin/leads?is_overdue=true" className="text-sm text-primary-600 font-medium hover:text-primary-700 mt-4 inline-block">
+                <Link href="/admin/leads?is_overdue=true" className="text-sm text-carimbo font-medium hover:text-carimbo-bright mt-4 inline-block">
                   Ver todos os vencidos &rarr;
                 </Link>
               )}
@@ -131,38 +131,38 @@ export default function AdminPage() {
         <div className="lg:col-span-4 space-y-8">
           {/* SLA */}
           {data.sla && (
-            <div className="bg-white rounded-2xl p-6 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 h-full">
+            <div className="bg-ink-2/30 rounded-sm p-6 border border-line h-full">
               <div className="flex items-center gap-2 mb-6">
-                <div className="p-2 bg-green-50 rounded-lg"><Clock className="text-accent-600" size={20} /></div>
-                <h2 className="text-lg font-bold text-gray-900">SLA de Atendimento</h2>
+                <div className="p-2 bg-jade/15 rounded-sm"><Clock className="text-jade" size={20} /></div>
+                <h2 className="text-lg font-display font-semibold text-parchment">SLA de Atendimento</h2>
               </div>
-              
+
               <div className="flex items-center justify-center py-6">
                 <div className="relative">
                   <svg className="w-32 h-32 transform -rotate-90">
-                    <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-gray-100" />
-                    <circle 
-                      cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="12" fill="transparent" 
-                      className={data.sla.sla_rate >= 80 ? "text-accent-500" : "text-red-500"} 
-                      strokeDasharray={351.858} 
+                    <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-line" />
+                    <circle
+                      cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="12" fill="transparent"
+                      className={data.sla.sla_rate >= 80 ? "text-jade" : "text-carimbo-bright"}
+                      strokeDasharray={351.858}
                       strokeDashoffset={351.858 - (351.858 * data.sla.sla_rate) / 100}
                       strokeLinecap="round"
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-2xl font-bold text-gray-900">{data.sla.sla_rate.toFixed(0)}%</span>
+                    <span className="text-2xl font-bold text-parchment">{data.sla.sla_rate.toFixed(0)}%</span>
                   </div>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4 mt-2">
-                <div className="text-center p-3 bg-gray-50 rounded-xl">
-                  <p className="text-xs text-gray-500 mb-1">No prazo</p>
-                  <p className="font-bold text-accent-600">{data.sla.within_sla}</p>
+                <div className="text-center p-3 bg-ink-3 rounded-sm">
+                  <p className="text-xs text-parchment-dim mb-1">No prazo</p>
+                  <p className="font-bold text-jade">{data.sla.within_sla}</p>
                 </div>
-                <div className="text-center p-3 bg-gray-50 rounded-xl">
-                  <p className="text-xs text-gray-500 mb-1">Vencidos</p>
-                  <p className="font-bold text-red-500">{data.sla.overdue}</p>
+                <div className="text-center p-3 bg-ink-3 rounded-sm">
+                  <p className="text-xs text-parchment-dim mb-1">Vencidos</p>
+                  <p className="font-bold text-carimbo-bright">{data.sla.overdue}</p>
                 </div>
               </div>
             </div>
@@ -175,16 +175,16 @@ export default function AdminPage() {
 
 function Card({ title, value, subtitle, href, icon }: { title: string; value: number; subtitle?: string; href?: string; icon?: React.ReactNode }) {
   const content = (
-    <div className={`bg-white rounded-2xl p-6 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 h-full flex flex-col ${href ? "hover:border-primary-200 hover:shadow-md transition-all cursor-pointer group" : ""}`}>
+    <div className={`bg-ink-2/30 rounded-sm p-6 border border-line h-full flex flex-col ${href ? "hover:border-selo/50 transition-all cursor-pointer group" : ""}`}>
       <div className="flex justify-between items-start mb-4">
-        <div className={`p-3 rounded-xl bg-gray-50 ${href ? 'group-hover:bg-primary-50 transition-colors' : ''}`}>
+        <div className={`p-3 rounded-sm bg-ink-3 ${href ? 'group-hover:bg-carimbo/10 transition-colors' : ''}`}>
           {icon}
         </div>
       </div>
       <div>
-        <p className="text-3xl font-bold text-gray-900 mb-1">{value}</p>
-        <p className="text-sm font-medium text-gray-500">{title}</p>
-        {subtitle && <p className="text-xs text-gray-400 mt-2">{subtitle}</p>}
+        <p className="text-3xl font-bold text-parchment mb-1">{value}</p>
+        <p className="text-sm font-medium text-parchment-dim">{title}</p>
+        {subtitle && <p className="text-xs text-parchment-faint mt-2">{subtitle}</p>}
       </div>
     </div>
   );
@@ -198,8 +198,8 @@ function Card({ title, value, subtitle, href, icon }: { title: string; value: nu
 function Stat({ label, value, color }: { label: string; value: number | string; color?: string }) {
   return (
     <div className="flex flex-col">
-      <p className="text-xs font-medium text-gray-500 mb-1 uppercase tracking-wider">{label}</p>
-      <p className={`text-2xl font-bold ${color || "text-gray-900"}`}>{value}</p>
+      <p className="text-xs font-medium text-parchment-dim mb-1 uppercase tracking-wider">{label}</p>
+      <p className={`text-2xl font-bold ${color || "text-parchment"}`}>{value}</p>
     </div>
   );
 }

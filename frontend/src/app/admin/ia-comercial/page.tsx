@@ -72,16 +72,16 @@ function Toggle({
       <div
         onClick={() => onChange(!checked)}
         className={`relative w-10 h-5 rounded-full transition-colors ${
-          checked ? "bg-blue-600" : "bg-gray-300"
+          checked ? "bg-carimbo" : "bg-ink-3"
         }`}
       >
         <span
-          className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+          className={`absolute top-0.5 left-0.5 w-4 h-4 bg-parchment rounded-full transition-transform ${
             checked ? "translate-x-5" : "translate-x-0"
           }`}
         />
       </div>
-      <span className="text-sm text-gray-700">{label}</span>
+      <span className="text-sm text-parchment-dim">{label}</span>
     </label>
   );
 }
@@ -167,7 +167,7 @@ function WeeklyGrid({
                 key={h}
                 onClick={() => toggleWholeHour(h)}
                 title={`${h}h — clique para alternar coluna`}
-                className="w-7 text-[9px] text-gray-400 font-normal text-center cursor-pointer hover:text-blue-600 pb-0.5"
+                className="w-7 text-[9px] text-parchment-faint font-normal text-center cursor-pointer hover:text-carimbo pb-0.5"
               >
                 {h}
               </th>
@@ -180,7 +180,7 @@ function WeeklyGrid({
               <td
                 onClick={() => toggleWholeDay(key)}
                 title="Clique para alternar o dia inteiro"
-                className="text-xs font-medium text-gray-500 pr-2 cursor-pointer hover:text-blue-600 whitespace-nowrap text-right"
+                className="text-xs font-medium text-parchment-dim pr-2 cursor-pointer hover:text-carimbo whitespace-nowrap text-right"
               >
                 {label}
               </td>
@@ -192,8 +192,8 @@ function WeeklyGrid({
                   title={`${label} ${h}h`}
                   className={`w-7 h-6 rounded cursor-pointer transition-colors ${
                     isOn(key, h)
-                      ? "bg-blue-500 hover:bg-blue-400"
-                      : "bg-gray-100 hover:bg-gray-200 border border-gray-200"
+                      ? "bg-carimbo hover:bg-carimbo-bright"
+                      : "bg-ink-2 hover:bg-ink-3 border border-line"
                   }`}
                 />
               ))}
@@ -201,7 +201,7 @@ function WeeklyGrid({
           ))}
         </tbody>
       </table>
-      <p className="text-[10px] text-gray-400 mt-1.5">
+      <p className="text-[10px] text-parchment-faint mt-1.5">
         Azul = permitido · Clique ou arraste para marcar/desmarcar ·
         Clique no dia ou hora para alternar a linha/coluna inteira
       </p>
@@ -242,29 +242,29 @@ function HolidaysManager({
           type="date"
           value={newDate}
           onChange={(e) => setNewDate(e.target.value)}
-          className="border rounded-lg px-3 py-2 text-sm"
+          className="rounded-sm border border-line bg-ink-2 px-3 py-2 text-sm text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
         />
         <button
           onClick={add}
           disabled={!newDate}
-          className="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-40"
+          className="bg-carimbo text-parchment px-3 py-2 rounded-sm text-sm font-medium hover:bg-carimbo-bright disabled:opacity-40"
         >
           + Adicionar feriado
         </button>
       </div>
       {holidays.length === 0 ? (
-        <p className="text-xs text-gray-400">Nenhum feriado cadastrado.</p>
+        <p className="text-xs text-parchment-faint">Nenhum feriado cadastrado.</p>
       ) : (
         <div className="flex flex-wrap gap-2">
           {holidays.map((date) => (
             <span
               key={date}
-              className="inline-flex items-center gap-1.5 text-xs bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full"
+              className="inline-flex items-center gap-1.5 text-xs bg-ink-3 text-parchment-dim px-3 py-1.5 rounded-full"
             >
               {fmt(date)}
               <button
                 onClick={() => remove(date)}
-                className="text-gray-400 hover:text-red-500 font-bold leading-none"
+                className="text-parchment-faint hover:text-carimbo-bright font-bold leading-none"
               >
                 ×
               </button>
@@ -311,29 +311,29 @@ function StatusConfigCard({
   }
 
   return (
-    <div className="bg-white border rounded-xl overflow-hidden">
+    <div className="bg-ink-2 border border-line rounded-sm overflow-hidden">
       <div
-        className="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-gray-50"
+        className="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-ink-3"
         onClick={() => setOpen((o) => !o)}
       >
         <div className="flex items-center gap-3">
           <span
             className={`w-2.5 h-2.5 rounded-full ${
-              form.is_active ? "bg-green-500" : "bg-gray-300"
+              form.is_active ? "bg-jade" : "bg-ink-3"
             }`}
           />
-          <span className="font-medium text-gray-800">{label}</span>
+          <span className="font-medium text-parchment">{label}</span>
           {form.is_active && (
-            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+            <span className="text-xs bg-jade/15 text-jade px-2 py-0.5 rounded-full font-medium">
               IA ativa
             </span>
           )}
         </div>
-        <span className="text-gray-400 text-sm">{open ? "▲" : "▼"}</span>
+        <span className="text-parchment-faint text-sm">{open ? "▲" : "▼"}</span>
       </div>
 
       {open && (
-        <div className="border-t px-5 py-4 space-y-4">
+        <div className="border-t border-line px-5 py-4 space-y-4">
           <Toggle
             checked={form.is_active}
             onChange={(v) => set("is_active", v)}
@@ -348,25 +348,25 @@ function StatusConfigCard({
 
           {form.auto_send_on_enter && (
             <div>
-              <label className="block text-xs text-gray-500 mb-1">
+              <label className="block text-xs text-parchment-dim mb-1">
                 Instrução para a IA no primeiro contato
-                <span className="ml-1 text-gray-400">(ex: apresente a clínica e pergunte sobre o interesse)</span>
+                <span className="ml-1 text-parchment-faint">(ex: apresente a clínica e pergunte sobre o interesse)</span>
               </label>
               <textarea
                 rows={2}
                 value={form.initial_message || ""}
                 onChange={(e) => set("initial_message", e.target.value)}
                 placeholder="Ex: Apresente-se como atendente da clínica, seja acolhedor e pergunte qual especialidade o cliente busca."
-                className="w-full border rounded-lg px-3 py-2 text-sm"
+                className="w-full rounded-sm border border-line bg-ink-2 px-3 py-2 text-sm text-parchment placeholder:text-parchment-faint focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
               />
-              <p className="text-[10px] text-gray-400 mt-1">
+              <p className="text-[10px] text-parchment-faint mt-1">
                 A IA usará esta instrução para gerar uma mensagem personalizada — não é um texto fixo.
               </p>
             </div>
           )}
 
           <div>
-            <label className="block text-xs text-gray-500 mb-1">
+            <label className="block text-xs text-parchment-dim mb-1">
               Prompt customizado (deixe vazio para usar o padrão)
             </label>
             <textarea
@@ -374,13 +374,13 @@ function StatusConfigCard({
               value={form.system_prompt || ""}
               onChange={(e) => set("system_prompt", e.target.value || null)}
               placeholder="Instruções adicionais para a IA neste status..."
-              className="w-full border rounded-lg px-3 py-2 text-sm font-mono text-xs"
+              className="w-full rounded-sm border border-line bg-ink-2 px-3 py-2 text-sm text-parchment placeholder:text-parchment-faint focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none font-mono text-xs"
             />
           </div>
 
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">
+              <label className="block text-xs text-parchment-dim mb-1">
                 Atraso inicial da IA (min)
               </label>
               <input
@@ -391,14 +391,14 @@ function StatusConfigCard({
                 onChange={(e) =>
                   set("proactive_delay_minutes", Math.max(0, parseInt(e.target.value) || 0))
                 }
-                className="w-full border rounded-lg px-3 py-2 text-sm"
+                className="w-full rounded-sm border border-line bg-ink-2 px-3 py-2 text-sm text-parchment placeholder:text-parchment-faint focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
               />
-              <p className="text-[10px] text-gray-400 mt-1">
+              <p className="text-[10px] text-parchment-faint mt-1">
                 Espera antes da mensagem proativa ao entrar neste status.
               </p>
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">
+              <label className="block text-xs text-parchment-dim mb-1">
                 Follow-up após inatividade (horas)
               </label>
               <input
@@ -408,11 +408,11 @@ function StatusConfigCard({
                 onChange={(e) =>
                   set("inactivity_hours", parseInt(e.target.value) || 24)
                 }
-                className="w-full border rounded-lg px-3 py-2 text-sm"
+                className="w-full rounded-sm border border-line bg-ink-2 px-3 py-2 text-sm text-parchment placeholder:text-parchment-faint focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">
+              <label className="block text-xs text-parchment-dim mb-1">
                 Máx. follow-ups por inatividade
               </label>
               <input
@@ -423,11 +423,11 @@ function StatusConfigCard({
                 onChange={(e) =>
                   set("max_inactivity_followups", parseInt(e.target.value) || 2)
                 }
-                className="w-full border rounded-lg px-3 py-2 text-sm"
+                className="w-full rounded-sm border border-line bg-ink-2 px-3 py-2 text-sm text-parchment placeholder:text-parchment-faint focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">
+              <label className="block text-xs text-parchment-dim mb-1">
                 Marcar perdido após (horas)
               </label>
               <input
@@ -437,15 +437,15 @@ function StatusConfigCard({
                 onChange={(e) =>
                   set("auto_lost_after_hours", parseInt(e.target.value) || 72)
                 }
-                className="w-full border rounded-lg px-3 py-2 text-sm"
+                className="w-full rounded-sm border border-line bg-ink-2 px-3 py-2 text-sm text-parchment placeholder:text-parchment-faint focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs text-gray-500 mb-1">
+            <label className="block text-xs text-parchment-dim mb-1">
               Mensagem de follow-up por inatividade
-              <span className="ml-1 text-gray-400">
+              <span className="ml-1 text-parchment-faint">
                 (use {"{nome}"} para o nome do lead)
               </span>
             </label>
@@ -456,14 +456,14 @@ function StatusConfigCard({
                 set("inactivity_followup_message", e.target.value || null)
               }
               placeholder="Ex: Olá {nome}, ainda podemos ajudar?"
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full rounded-sm border border-line bg-ink-2 px-3 py-2 text-sm text-parchment placeholder:text-parchment-faint focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
             />
           </div>
 
           <button
             onClick={save}
             disabled={saving}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+            className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-medium hover:bg-carimbo-bright disabled:opacity-50"
           >
             {saving ? "Salvando..." : saved ? "✓ Salvo" : "Salvar"}
           </button>
@@ -507,7 +507,7 @@ function PricingTable({
       {items.length > 0 && (
         <div className="border rounded-lg overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
+            <thead className="bg-gray-50 text-xs text-parchment-dim uppercase">
               <tr>
                 <th className="px-3 py-2 text-left">Especialidade</th>
                 <th className="px-3 py-2 text-left">Serviço</th>
@@ -527,7 +527,7 @@ function PricingTable({
                       currency: "BRL",
                     })}
                   </td>
-                  <td className="px-3 py-2 text-gray-500 text-xs">
+                  <td className="px-3 py-2 text-parchment-dim text-xs">
                     {item.notes || "—"}
                   </td>
                   <td className="px-3 py-2">
@@ -546,7 +546,7 @@ function PricingTable({
       )}
 
       <div className="border rounded-lg p-3 bg-gray-50">
-        <p className="text-xs font-medium text-gray-600 mb-2">Adicionar item</p>
+        <p className="text-xs font-medium text-parchment-dim mb-2">Adicionar item</p>
         <div className="grid grid-cols-2 gap-2 mb-2">
           <select
             value={newItem.specialty}
@@ -735,13 +735,13 @@ export default function IaComercialPage() {
     }
   }
 
-  if (loading) return <div className="p-8 text-gray-400">Carregando...</div>;
+  if (loading) return <div className="p-8 text-parchment-faint">Carregando...</div>;
 
   return (
     <main className="p-8 max-w-3xl space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">IA Comercial</h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <h1 className="text-2xl font-bold text-parchment">IA Comercial</h1>
+        <p className="text-sm text-parchment-dim mt-1">
           Configure o agente de IA que negocia automaticamente com os leads via
           WhatsApp.
         </p>
@@ -780,12 +780,12 @@ export default function IaComercialPage() {
       </div>
 
       {/* Section 1: Global Config */}
-      <section className="bg-white border rounded-xl p-5 space-y-4">
+      <section className="bg-ink-2 border border-line rounded-sm p-5 space-y-4">
         <div>
-          <h2 className="text-base font-semibold text-gray-700">
+          <h2 className="text-base font-semibold text-parchment-dim">
             Configuração Global
           </h2>
-          <p className="text-xs text-gray-400 mt-0.5">
+          <p className="text-xs text-parchment-faint mt-0.5">
             Esta configuração vale para qualquer etapa do funil quando a conversa
             resultar em agendamento.
           </p>
@@ -797,12 +797,12 @@ export default function IaComercialPage() {
           }
           label="Converter lead em paciente automaticamente ao agendar consulta"
         />
-        <p className="text-xs text-gray-400 -mt-2 ml-12">
+        <p className="text-xs text-parchment-faint -mt-2 ml-12">
           Quando ativado, ao confirmar agendamento o lead é convertido para
           paciente em qualquer status.
         </p>
         <div className="max-w-xs">
-          <label className="block text-xs text-gray-500 mb-1">
+          <label className="block text-xs text-parchment-dim mb-1">
             Delay global entre leads (min)
           </label>
           <input
@@ -816,16 +816,16 @@ export default function IaComercialPage() {
                 delay_between_leads_minutes: Math.max(0, parseInt(e.target.value) || 0),
               }))
             }
-            className="w-full border rounded-lg px-3 py-2 text-sm"
+            className="w-full rounded-sm border border-line bg-ink-2 px-3 py-2 text-sm text-parchment placeholder:text-parchment-faint focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
           />
-          <p className="text-[10px] text-gray-400 mt-1">
+          <p className="text-[10px] text-parchment-faint mt-1">
             Atraso base aplicado antes da primeira mensagem proativa.
           </p>
         </div>
         <button
           onClick={saveGlobalConfig}
           disabled={globalSaving}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+          className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-medium hover:bg-carimbo-bright disabled:opacity-50"
         >
           {globalSaving ? "Salvando..." : globalSaved ? "✓ Salvo" : "Salvar"}
         </button>
@@ -833,7 +833,7 @@ export default function IaComercialPage() {
 
       {/* Section 2: Status Configs */}
       <section>
-        <h2 className="text-base font-semibold text-gray-700 mb-3">
+        <h2 className="text-base font-semibold text-parchment-dim mb-3">
           Configuração por Status
         </h2>
         <div className="space-y-3">
@@ -865,10 +865,10 @@ export default function IaComercialPage() {
       </section>
 
       {/* Section 3: Supervisor */}
-      <section className="bg-white border rounded-xl p-5 space-y-4">
+      <section className="bg-ink-2 border border-line rounded-sm p-5 space-y-4">
         <div>
-          <h2 className="text-base font-semibold text-gray-700">Supervisor</h2>
-          <p className="text-xs text-gray-400 mt-0.5">
+          <h2 className="text-base font-semibold text-parchment-dim">Supervisor</h2>
+          <p className="text-xs text-parchment-faint mt-0.5">
             Quando a IA não conseguir resolver (desconto, serviço fora da
             tabela, etc.), envia a pergunta para este número via WhatsApp. O
             supervisor responde diretamente pelo celular.
@@ -877,7 +877,7 @@ export default function IaComercialPage() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs text-gray-500 mb-1">
+            <label className="block text-xs text-parchment-dim mb-1">
               Número do Supervisor (WhatsApp)
             </label>
             <input
@@ -889,15 +889,15 @@ export default function IaComercialPage() {
                 })
               }
               placeholder="Ex: 5511999999999"
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full rounded-sm border border-line bg-ink-2 px-3 py-2 text-sm text-parchment placeholder:text-parchment-faint focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
             />
-            <p className="text-[10px] text-gray-400 mt-1">
+            <p className="text-[10px] text-parchment-faint mt-1">
               Código do país + DDD + número, sem espaços ou traços.
             </p>
           </div>
 
           <div>
-            <label className="block text-xs text-gray-500 mb-1">
+            <label className="block text-xs text-parchment-dim mb-1">
               Timeout sem resposta (horas)
             </label>
             <input
@@ -910,12 +910,12 @@ export default function IaComercialPage() {
                   timeout_hours: parseInt(e.target.value) || 4,
                 })
               }
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full rounded-sm border border-line bg-ink-2 px-3 py-2 text-sm text-parchment placeholder:text-parchment-faint focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
             />
           </div>
 
           <div className="col-span-2">
-            <label className="block text-xs text-gray-500 mb-1">
+            <label className="block text-xs text-parchment-dim mb-1">
               Mensagem ao cliente enquanto aguarda resposta do supervisor
             </label>
             <input
@@ -926,12 +926,12 @@ export default function IaComercialPage() {
                   awaiting_message: e.target.value,
                 })
               }
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full rounded-sm border border-line bg-ink-2 px-3 py-2 text-sm text-parchment placeholder:text-parchment-faint focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
             />
           </div>
 
           <div className="col-span-2">
-            <label className="block text-xs text-gray-500 mb-1">
+            <label className="block text-xs text-parchment-dim mb-1">
               Ação ao atingir o timeout
             </label>
             <select
@@ -942,7 +942,7 @@ export default function IaComercialPage() {
                   on_timeout: e.target.value as "escalate_human" | "close_ai",
                 })
               }
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full rounded-sm border border-line bg-ink-2 px-3 py-2 text-sm text-parchment placeholder:text-parchment-faint focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
             >
               <option value="escalate_human">
                 Escalar para atendente humano
@@ -955,19 +955,19 @@ export default function IaComercialPage() {
         <button
           onClick={saveSupervisor}
           disabled={supSaving}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+          className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-medium hover:bg-carimbo-bright disabled:opacity-50"
         >
           {supSaving ? "Salvando..." : supSaved ? "✓ Salvo" : "Salvar"}
         </button>
       </section>
 
       {/* Section 4: Pricing */}
-      <section className="bg-white border rounded-xl p-5 space-y-4">
+      <section className="bg-ink-2 border border-line rounded-sm p-5 space-y-4">
         <div>
-          <h2 className="text-base font-semibold text-gray-700">
+          <h2 className="text-base font-semibold text-parchment-dim">
             Tabela de Preços
           </h2>
-          <p className="text-xs text-gray-400 mt-0.5">
+          <p className="text-xs text-parchment-faint mt-0.5">
             A IA consulta esta tabela antes de informar valores ao cliente.
           </p>
         </div>
@@ -979,21 +979,21 @@ export default function IaComercialPage() {
         />
 
         <div>
-          <label className="block text-xs text-gray-500 mb-1">
+          <label className="block text-xs text-parchment-dim mb-1">
             Observação geral (exibida à IA junto com a tabela)
           </label>
           <input
             value={pricingNotes}
             onChange={(e) => setPricingNotes(e.target.value)}
             placeholder="Ex: Valores sujeitos a alteração sem aviso prévio."
-            className="w-full border rounded-lg px-3 py-2 text-sm"
+            className="w-full rounded-sm border border-line bg-ink-2 px-3 py-2 text-sm text-parchment placeholder:text-parchment-faint focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
           />
         </div>
 
         <button
           onClick={savePricing}
           disabled={pricingSaving}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+          className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-medium hover:bg-carimbo-bright disabled:opacity-50"
         >
           {pricingSaving
             ? "Salvando..."
@@ -1004,12 +1004,12 @@ export default function IaComercialPage() {
       </section>
 
       {/* Section 5: Messaging Schedule */}
-      <section className="bg-white border rounded-xl p-5 space-y-5">
+      <section className="bg-ink-2 border border-line rounded-sm p-5 space-y-5">
         <div>
-          <h2 className="text-base font-semibold text-gray-700">
+          <h2 className="text-base font-semibold text-parchment-dim">
             Horários de envio
           </h2>
-          <p className="text-xs text-gray-400 mt-0.5">
+          <p className="text-xs text-parchment-faint mt-0.5">
             Restrinja os horários em que a IA e as mensagens agendadas podem
             ser enviadas. Fora dos horários marcados em azul, nenhuma mensagem
             automática é disparada.
@@ -1025,7 +1025,7 @@ export default function IaComercialPage() {
         {schedule.enabled && (
           <>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">
+              <label className="block text-xs text-parchment-dim mb-1">
                 Fuso horário
               </label>
               <select
@@ -1051,7 +1051,7 @@ export default function IaComercialPage() {
             </div>
 
             <div>
-              <p className="text-xs font-medium text-gray-600 mb-3">
+              <p className="text-xs font-medium text-parchment-dim mb-3">
                 Grade semanal — marque em azul os horários permitidos
               </p>
               <WeeklyGrid
@@ -1063,7 +1063,7 @@ export default function IaComercialPage() {
             </div>
 
             <div>
-              <p className="text-xs font-medium text-gray-600 mb-2">
+              <p className="text-xs font-medium text-parchment-dim mb-2">
                 Feriados — nenhuma mensagem é enviada nestes dias
               </p>
               <HolidaysManager
@@ -1079,7 +1079,7 @@ export default function IaComercialPage() {
         <button
           onClick={saveSchedule}
           disabled={schedSaving}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+          className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-medium hover:bg-carimbo-bright disabled:opacity-50"
         >
           {schedSaving
             ? "Salvando..."

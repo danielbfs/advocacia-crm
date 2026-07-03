@@ -39,10 +39,10 @@ const CHANNELS = [
 ];
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-700",
-  sent: "bg-green-100 text-green-700",
-  failed: "bg-red-100 text-red-700",
-  cancelled: "bg-gray-100 text-gray-500",
+  pending: "bg-selo/15 text-selo",
+  sent: "bg-jade/15 text-jade",
+  failed: "bg-carimbo/10 text-carimbo-bright",
+  cancelled: "bg-ink-3 text-parchment-faint",
 };
 
 export default function FollowUpsPage() {
@@ -201,22 +201,22 @@ export default function FollowUpsPage() {
     return TRIGGER_EVENTS.find((e) => e.value === event)?.label || event;
   }
 
-  if (loading) return <div className="p-8 text-gray-400">Carregando...</div>;
+  if (loading) return <div className="p-8 text-parchment-faint">Carregando...</div>;
 
   return (
     <main className="p-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Follow-ups</h1>
+        <h1 className="text-2xl font-display font-semibold text-parchment">Follow-ups</h1>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 border-b">
+      <div className="flex gap-1 mb-6 border-b border-line">
         <button
           onClick={() => setTab("rules")}
           className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
             tab === "rules"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-gray-500 hover:text-gray-700"
+              ? "border-carimbo text-carimbo"
+              : "border-transparent text-parchment-dim hover:text-parchment"
           }`}
         >
           Regras
@@ -228,8 +228,8 @@ export default function FollowUpsPage() {
           }}
           className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
             tab === "jobs"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-gray-500 hover:text-gray-700"
+              ? "border-carimbo text-carimbo"
+              : "border-transparent text-parchment-dim hover:text-parchment"
           }`}
         >
           Execuções
@@ -242,34 +242,34 @@ export default function FollowUpsPage() {
           <div className="flex justify-end mb-4">
             <button
               onClick={showForm ? cancelForm : openCreate}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
+              className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-medium hover:bg-carimbo-bright"
             >
               {showForm ? "Cancelar" : "Nova Regra"}
             </button>
           </div>
 
           {showForm && (
-            <form onSubmit={handleSubmit} className="bg-white border rounded-lg p-4 mb-6 space-y-3">
-              <h3 className="text-sm font-semibold text-gray-700">
+            <form onSubmit={handleSubmit} className="bg-ink-2/30 border border-line rounded-sm p-4 mb-6 space-y-3">
+              <h3 className="text-sm font-semibold text-parchment-dim">
                 {editingId ? "Editar Regra" : "Nova Regra de Follow-up"}
               </h3>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+                  <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-parchment-dim mb-1">Nome</label>
                   <input
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                     required
                     placeholder="Ex: Lembrete 24h antes"
-                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-line rounded-sm px-3 py-2 text-sm bg-ink text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Evento gatilho</label>
+                  <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-parchment-dim mb-1">Evento gatilho</label>
                   <select
                     value={form.trigger_event}
                     onChange={(e) => setForm({ ...form, trigger_event: e.target.value })}
-                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-line rounded-sm px-3 py-2 text-sm bg-ink text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo"
                   >
                     {TRIGGER_EVENTS.map((te) => (
                       <option key={te.value} value={te.value}>
@@ -279,25 +279,25 @@ export default function FollowUpsPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-parchment-dim mb-1">
                     Offset (minutos)
                   </label>
                   <input
                     type="number"
                     value={form.offset_minutes}
                     onChange={(e) => setForm({ ...form, offset_minutes: Number(e.target.value) })}
-                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-line rounded-sm px-3 py-2 text-sm bg-ink text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo"
                   />
-                  <p className="text-xs text-gray-400 mt-1">
+                  <p className="text-xs text-parchment-faint mt-1">
                     Negativo = antes do evento. Ex: -1440 = 24h antes, 60 = 1h depois
                   </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Canal de envio</label>
+                  <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-parchment-dim mb-1">Canal de envio</label>
                   <select
                     value={form.channel}
                     onChange={(e) => setForm({ ...form, channel: e.target.value })}
-                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-line rounded-sm px-3 py-2 text-sm bg-ink text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo"
                   >
                     {CHANNELS.map((ch) => (
                       <option key={ch.value} value={ch.value}>
@@ -309,10 +309,10 @@ export default function FollowUpsPage() {
               </div>
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-parchment-dim">
                     Template da mensagem
                   </label>
-                  <span className="text-xs text-gray-400">Clique numa variável para inserir no cursor</span>
+                  <span className="text-xs text-parchment-faint">Clique numa variável para inserir no cursor</span>
                 </div>
                 <div className="flex flex-wrap gap-1.5 mb-2">
                   {[
@@ -325,7 +325,7 @@ export default function FollowUpsPage() {
                       key={tag}
                       type="button"
                       onClick={() => insertVariable(tag)}
-                      className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs rounded-md border border-blue-200 transition-colors font-mono"
+                      className="inline-flex items-center gap-1 px-2 py-1 bg-info/15 hover:bg-info/25 text-info text-xs rounded-sm border border-info/30 transition-colors font-mono"
                       title={label}
                     >
                       {tag}
@@ -338,7 +338,7 @@ export default function FollowUpsPage() {
                   onChange={(e) => setForm({ ...form, message_template: e.target.value })}
                   required
                   rows={4}
-                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                  className="w-full border border-line rounded-sm px-3 py-2 text-sm bg-ink text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo"
                   placeholder="Ex: Olá {patient_name}! Sua consulta com {doctor_name} ({specialty}) está marcada para {appointment_date}."
                 />
               </div>
@@ -350,7 +350,7 @@ export default function FollowUpsPage() {
                   id="is_active"
                   className="rounded"
                 />
-                <label htmlFor="is_active" className="text-sm text-gray-700">
+                <label htmlFor="is_active" className="text-sm text-parchment-dim">
                   Regra ativa
                 </label>
               </div>
@@ -358,49 +358,49 @@ export default function FollowUpsPage() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                  className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-medium hover:bg-carimbo-bright disabled:opacity-50"
                 >
                   {saving ? "Salvando..." : editingId ? "Salvar" : "Criar"}
                 </button>
-                <button type="button" onClick={cancelForm} className="text-sm text-gray-500 px-4 py-2">
+                <button type="button" onClick={cancelForm} className="text-sm text-parchment-dim px-4 py-2">
                   Cancelar
                 </button>
               </div>
             </form>
           )}
 
-          <div className="bg-white border rounded-lg overflow-hidden">
+          <div className="bg-ink-2/30 border border-line rounded-sm overflow-hidden">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b">
+              <thead className="bg-ink-2 border-b border-line">
                 <tr>
-                  <th className="text-left px-4 py-3 text-gray-500 font-medium">Nome</th>
-                  <th className="text-left px-4 py-3 text-gray-500 font-medium">Evento</th>
-                  <th className="text-left px-4 py-3 text-gray-500 font-medium">Offset</th>
-                  <th className="text-left px-4 py-3 text-gray-500 font-medium">Canal</th>
-                  <th className="text-left px-4 py-3 text-gray-500 font-medium">Status</th>
-                  <th className="text-left px-4 py-3 text-gray-500 font-medium">Ações</th>
+                  <th className="text-left px-4 py-3 text-parchment-dim font-medium">Nome</th>
+                  <th className="text-left px-4 py-3 text-parchment-dim font-medium">Evento</th>
+                  <th className="text-left px-4 py-3 text-parchment-dim font-medium">Offset</th>
+                  <th className="text-left px-4 py-3 text-parchment-dim font-medium">Canal</th>
+                  <th className="text-left px-4 py-3 text-parchment-dim font-medium">Status</th>
+                  <th className="text-left px-4 py-3 text-parchment-dim font-medium">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y">
+              <tbody className="divide-y divide-line">
                 {rules.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
+                    <td colSpan={6} className="px-4 py-8 text-center text-parchment-faint">
                       Nenhuma regra de follow-up cadastrada.
                     </td>
                   </tr>
                 ) : (
                   rules.map((rule) => (
-                    <tr key={rule.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-medium text-gray-900">{rule.name}</td>
-                      <td className="px-4 py-3 text-gray-500">{triggerLabel(rule.trigger_event)}</td>
-                      <td className="px-4 py-3 text-gray-500">{formatOffset(rule.offset_minutes)}</td>
-                      <td className="px-4 py-3 text-gray-500">{rule.channel || "Paciente"}</td>
+                    <tr key={rule.id} className="hover:bg-ink-3">
+                      <td className="px-4 py-3 font-medium text-parchment">{rule.name}</td>
+                      <td className="px-4 py-3 text-parchment-dim">{triggerLabel(rule.trigger_event)}</td>
+                      <td className="px-4 py-3 text-parchment-dim">{formatOffset(rule.offset_minutes)}</td>
+                      <td className="px-4 py-3 text-parchment-dim">{rule.channel || "Paciente"}</td>
                       <td className="px-4 py-3">
                         <span
                           className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                             rule.is_active
-                              ? "bg-green-100 text-green-700"
-                              : "bg-gray-100 text-gray-500"
+                              ? "bg-jade/15 text-jade"
+                              : "bg-ink-3 text-parchment-faint"
                           }`}
                         >
                           {rule.is_active ? "Ativa" : "Inativa"}
@@ -410,19 +410,19 @@ export default function FollowUpsPage() {
                         <div className="flex gap-3">
                           <button
                             onClick={() => openEdit(rule)}
-                            className="text-xs text-blue-600 hover:underline"
+                            className="text-xs text-carimbo hover:underline"
                           >
                             Editar
                           </button>
                           <button
                             onClick={() => toggleActive(rule)}
-                            className="text-xs text-yellow-600 hover:underline"
+                            className="text-xs text-selo hover:underline"
                           >
                             {rule.is_active ? "Desativar" : "Ativar"}
                           </button>
                           <button
                             onClick={() => deleteRule(rule)}
-                            className="text-xs text-red-600 hover:underline"
+                            className="text-xs text-carimbo-bright hover:underline"
                           >
                             Excluir
                           </button>
@@ -450,8 +450,8 @@ export default function FollowUpsPage() {
                 }}
                 className={`px-3 py-1.5 text-xs rounded-full font-medium border transition-colors ${
                   jobFilter === s
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+                    ? "bg-carimbo text-parchment border-carimbo"
+                    : "bg-ink-2/30 text-parchment-dim border-line hover:bg-ink-3"
                 }`}
               >
                 {s === "" ? "Todos" : s === "pending" ? "Pendentes" : s === "sent" ? "Enviados" : s === "failed" ? "Falhas" : "Cancelados"}
@@ -459,44 +459,44 @@ export default function FollowUpsPage() {
             ))}
           </div>
 
-          <div className="bg-white border rounded-lg overflow-hidden">
+          <div className="bg-ink-2/30 border border-line rounded-sm overflow-hidden">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b">
+              <thead className="bg-ink-2 border-b border-line">
                 <tr>
-                  <th className="text-left px-4 py-3 text-gray-500 font-medium">Agendado para</th>
-                  <th className="text-left px-4 py-3 text-gray-500 font-medium">Status</th>
-                  <th className="text-left px-4 py-3 text-gray-500 font-medium">Executado em</th>
-                  <th className="text-left px-4 py-3 text-gray-500 font-medium">Erro</th>
+                  <th className="text-left px-4 py-3 text-parchment-dim font-medium">Agendado para</th>
+                  <th className="text-left px-4 py-3 text-parchment-dim font-medium">Status</th>
+                  <th className="text-left px-4 py-3 text-parchment-dim font-medium">Executado em</th>
+                  <th className="text-left px-4 py-3 text-parchment-dim font-medium">Erro</th>
                 </tr>
               </thead>
-              <tbody className="divide-y">
+              <tbody className="divide-y divide-line">
                 {jobs.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-gray-400">
+                    <td colSpan={4} className="px-4 py-8 text-center text-parchment-faint">
                       Nenhuma execução encontrada.
                     </td>
                   </tr>
                 ) : (
                   jobs.map((job) => (
-                    <tr key={job.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-gray-900">
+                    <tr key={job.id} className="hover:bg-ink-3">
+                      <td className="px-4 py-3 text-parchment">
                         {new Date(job.scheduled_for).toLocaleString("pt-BR")}
                       </td>
                       <td className="px-4 py-3">
                         <span
                           className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                            STATUS_COLORS[job.status] || "bg-gray-100 text-gray-500"
+                            STATUS_COLORS[job.status] || "bg-ink-3 text-parchment-faint"
                           }`}
                         >
                           {job.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-gray-500">
+                      <td className="px-4 py-3 text-parchment-dim">
                         {job.executed_at
                           ? new Date(job.executed_at).toLocaleString("pt-BR")
                           : "—"}
                       </td>
-                      <td className="px-4 py-3 text-gray-500 text-xs max-w-xs truncate">
+                      <td className="px-4 py-3 text-parchment-dim text-xs max-w-xs truncate">
                         {job.error_message || "—"}
                       </td>
                     </tr>

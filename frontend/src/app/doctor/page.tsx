@@ -144,7 +144,7 @@ export default function DoctorCalendarPage() {
   if (!user?.doctor_id) {
     return (
       <main className="p-8">
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-yellow-800">
+        <div className="rounded-sm border border-selo/40 bg-selo/15 p-6 text-selo">
           Seu usuário não está vinculado a nenhum médico. Contate o administrador.
         </div>
       </main>
@@ -156,26 +156,26 @@ export default function DoctorCalendarPage() {
   return (
     <main className="p-8">
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <h1 className="text-2xl font-bold text-gray-900">Minha Agenda</h1>
+        <h1 className="text-2xl font-display font-semibold text-parchment">Minha Agenda</h1>
         <div className="flex items-center gap-2">
-          <button onClick={() => setWeekStart(addDays(weekStart, -7))} className="border px-3 py-2 rounded-lg text-sm hover:bg-gray-50">← Anterior</button>
-          <button onClick={() => setWeekStart(startOfWeek(new Date()))} className="border px-3 py-2 rounded-lg text-sm hover:bg-gray-50">Hoje</button>
-          <button onClick={() => setWeekStart(addDays(weekStart, 7))} className="border px-3 py-2 rounded-lg text-sm hover:bg-gray-50">Próxima →</button>
+          <button onClick={() => setWeekStart(addDays(weekStart, -7))} className="border border-line bg-ink/40 px-3 py-2 rounded-sm text-sm hover:border-selo/50 hover:bg-ink-3">← Anterior</button>
+          <button onClick={() => setWeekStart(startOfWeek(new Date()))} className="border border-line bg-ink/40 px-3 py-2 rounded-sm text-sm hover:border-selo/50 hover:bg-ink-3">Hoje</button>
+          <button onClick={() => setWeekStart(addDays(weekStart, 7))} className="border border-line bg-ink/40 px-3 py-2 rounded-sm text-sm hover:border-selo/50 hover:bg-ink-3">Próxima →</button>
         </div>
       </div>
 
-      <p className="text-sm text-gray-500 mb-4">Semana de {weekLabel}</p>
+      <p className="text-sm text-parchment-dim mb-4">Semana de {weekLabel}</p>
 
       {loading ? (
-        <p className="text-gray-400">Carregando...</p>
+        <p className="text-parchment-faint">Carregando...</p>
       ) : (
-        <div className="bg-white border rounded-lg overflow-hidden">
-          <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b">
-            <div className="p-2 border-r" />
+        <div className="bg-ink-2 border border-line rounded-sm overflow-hidden">
+          <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-line">
+            <div className="p-2 border-r border-line" />
             {days.map((d, i) => {
               const isToday = d.toDateString() === new Date().toDateString();
               return (
-                <div key={i} className={`p-2 border-r last:border-r-0 text-center text-xs ${isToday ? "bg-blue-50 font-semibold text-blue-700" : "text-gray-600"}`}>
+                <div key={i} className={`p-2 border-r border-line last:border-r-0 text-center text-xs ${isToday ? "bg-carimbo/10 font-semibold text-carimbo" : "text-parchment-dim"}`}>
                   <div>{DAY_LABELS[d.getDay()]}</div>
                   <div>{d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</div>
                 </div>
@@ -183,16 +183,16 @@ export default function DoctorCalendarPage() {
             })}
           </div>
           <div className="grid grid-cols-[60px_repeat(7,1fr)]">
-            <div className="border-r">
+            <div className="border-r border-line">
               {HOURS.map((h) => (
-                <div key={h} className="h-12 border-b text-xs text-gray-400 text-right pr-2 pt-1">
+                <div key={h} className="h-12 border-b border-line text-xs text-parchment-faint text-right pr-2 pt-1">
                   {String(h).padStart(2, "0")}:00
                 </div>
               ))}
             </div>
             {days.map((day, di) => (
-              <div key={di} className="border-r last:border-r-0 relative" style={{ height: `${HOURS.length * 48}px` }}>
-                {HOURS.map((h) => <div key={h} className="h-12 border-b" />)}
+              <div key={di} className="border-r border-line last:border-r-0 relative" style={{ height: `${HOURS.length * 48}px` }}>
+                {HOURS.map((h) => <div key={h} className="h-12 border-b border-line" />)}
                 {appointmentsForDay(day).map((a) => {
                   const { top, height } = gridPos(a);
                   if (top < 0 || top > HOURS.length * 48) return null;
@@ -201,7 +201,7 @@ export default function DoctorCalendarPage() {
                     <button
                       key={a.id}
                       onClick={() => setSelected(a)}
-                      className="absolute left-1 right-1 rounded text-left p-1 text-[10px] text-white shadow-sm overflow-hidden hover:opacity-90"
+                      className="absolute left-1 right-1 rounded-sm text-left p-1 text-[10px] text-white overflow-hidden hover:opacity-90"
                       style={{ top, height, backgroundColor: color }}
                     >
                       <div className="font-semibold truncate">
@@ -216,10 +216,10 @@ export default function DoctorCalendarPage() {
         </div>
       )}
 
-      <div className="mt-4 flex gap-4 text-xs text-gray-500 flex-wrap">
+      <div className="mt-4 flex gap-4 text-xs text-parchment-dim flex-wrap">
         {Object.entries(STATUS_LABELS).map(([k, label]) => (
           <span key={k} className="flex items-center gap-1.5">
-            <span className="inline-block w-3 h-3 rounded" style={{ backgroundColor: STATUS_COLORS[k] }} />
+            <span className="inline-block w-3 h-3 rounded-sm" style={{ backgroundColor: STATUS_COLORS[k] }} />
             {label}
           </span>
         ))}
@@ -227,33 +227,33 @@ export default function DoctorCalendarPage() {
 
       {selected && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
+          <div className="bg-ink-2 border border-line rounded-sm p-6 w-full max-w-md">
             <div className="flex items-start justify-between mb-3">
-              <h2 className="text-lg font-bold text-gray-900">{patientLabel(selected.patient_id)}</h2>
+              <h2 className="text-lg font-display font-semibold text-parchment">{patientLabel(selected.patient_id)}</h2>
               <span className="text-xs px-2 py-0.5 rounded-full font-medium text-white" style={{ backgroundColor: STATUS_COLORS[selected.status] || "#6b7280" }}>
                 {STATUS_LABELS[selected.status] || selected.status}
               </span>
             </div>
-            <p className="text-sm text-gray-700 mb-4">
+            <p className="text-sm text-parchment-dim mb-4">
               {new Date(selected.starts_at).toLocaleString("pt-BR")} — {new Date(selected.ends_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
             </p>
             {selected.notes && (
-              <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3 mb-4">{selected.notes}</p>
+              <p className="text-sm text-parchment-dim bg-ink rounded-sm p-3 mb-4">{selected.notes}</p>
             )}
             <div className="flex flex-wrap gap-2 mb-2">
               {selected.status === "scheduled" && (
-                <button onClick={() => changeStatus(selected.id, "confirmed")} className="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700">Confirmar</button>
+                <button onClick={() => changeStatus(selected.id, "confirmed")} className="text-xs bg-jade/15 text-jade px-3 py-1.5 rounded-sm hover:bg-jade/25">Confirmar</button>
               )}
               {(selected.status === "scheduled" || selected.status === "confirmed") && (
                 <>
-                  <button onClick={() => changeStatus(selected.id, "completed")} className="text-xs bg-gray-600 text-white px-3 py-1.5 rounded-lg">Concluir</button>
-                  <button onClick={() => changeStatus(selected.id, "no_show")} className="text-xs bg-orange-500 text-white px-3 py-1.5 rounded-lg">Não compareceu</button>
+                  <button onClick={() => changeStatus(selected.id, "completed")} className="text-xs border border-line bg-ink/40 text-parchment px-3 py-1.5 rounded-sm hover:bg-ink-3">Concluir</button>
+                  <button onClick={() => changeStatus(selected.id, "no_show")} className="text-xs bg-selo/15 text-selo px-3 py-1.5 rounded-sm hover:bg-selo/25">Não compareceu</button>
                 </>
               )}
               {selected.status !== "cancelled" && (
-                <button onClick={() => cancelAppt(selected.id)} className="text-xs bg-red-500 text-white px-3 py-1.5 rounded-lg">Cancelar</button>
+                <button onClick={() => cancelAppt(selected.id)} className="text-xs bg-carimbo/10 text-carimbo-bright px-3 py-1.5 rounded-sm hover:bg-carimbo/20">Cancelar</button>
               )}
-              <button onClick={() => setSelected(null)} className="text-xs text-gray-500 ml-auto px-3 py-1.5">Fechar</button>
+              <button onClick={() => setSelected(null)} className="text-xs text-parchment-dim ml-auto px-3 py-1.5">Fechar</button>
             </div>
           </div>
         </div>

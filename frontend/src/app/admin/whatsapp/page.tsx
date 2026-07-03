@@ -154,39 +154,39 @@ export default function WhatsAppPage() {
     }
   }
 
-  if (loading) return <div className="p-8 text-gray-400">Carregando...</div>;
+  if (loading) return <div className="p-8 text-parchment-faint">Carregando...</div>;
 
   return (
     <main className="p-8 max-w-2xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">WhatsApp</h1>
+      <h1 className="text-2xl font-display font-semibold text-parchment mb-6">WhatsApp</h1>
 
       <div className="space-y-6">
 
         {/* Status do serviço */}
-        <div className="bg-white border rounded-lg p-6">
+        <div className="bg-ink-2 border border-line rounded-sm p-6">
           <div className="flex justify-between items-center mb-3">
-            <h2 className="text-lg font-semibold text-gray-900">Evolution API</h2>
+            <h2 className="text-lg font-semibold text-parchment">Evolution API</h2>
             <button
               onClick={fetchAll}
-              className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1"
+              className="text-xs text-parchment-faint hover:text-parchment-dim flex items-center gap-1"
             >
               <RefreshCw size={12} /> Verificar
             </button>
           </div>
           {online === null ? (
-            <span className="text-sm text-gray-400">Verificando...</span>
+            <span className="text-sm text-parchment-faint">Verificando...</span>
           ) : online ? (
-            <div className="flex items-center gap-2 text-green-700">
-              <Wifi size={18} className="text-green-500" />
+            <div className="flex items-center gap-2 text-jade">
+              <Wifi size={18} className="text-jade" />
               <span className="text-sm font-medium">Serviço online</span>
             </div>
           ) : (
-            <div className="flex items-start gap-2 text-red-600">
-              <WifiOff size={18} className="text-red-400 mt-0.5 shrink-0" />
+            <div className="flex items-start gap-2 text-carimbo-bright">
+              <WifiOff size={18} className="text-carimbo-bright mt-0.5 shrink-0" />
               <div>
                 <p className="text-sm font-medium">Serviço offline</p>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Aguarde o container <code className="bg-gray-100 px-1 rounded">evolution_api</code> iniciar
+                <p className="text-xs text-parchment-faint mt-0.5">
+                  Aguarde o container <code className="bg-ink-3 px-1 rounded-sm">evolution_api</code> iniciar
                   (pode levar ~30s na primeira vez).
                 </p>
               </div>
@@ -196,9 +196,9 @@ export default function WhatsAppPage() {
 
         {/* Criar instância */}
         {online && (
-          <div className="bg-white border rounded-lg p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-1">Nova Instância</h2>
-            <p className="text-sm text-gray-500 mb-4">
+          <div className="bg-ink-2 border border-line rounded-sm p-6">
+            <h2 className="text-lg font-semibold text-parchment mb-1">Nova Instância</h2>
+            <p className="text-sm text-parchment-dim mb-4">
               Crie uma instância e escaneie o QR Code com o WhatsApp da clínica.
             </p>
             <div className="flex gap-3">
@@ -208,13 +208,13 @@ export default function WhatsAppPage() {
                 onChange={(e) => setNewName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && createInstance()}
                 placeholder="Nome da instância (ex: openclinic)"
-                className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="flex-1 border border-line rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-carimbo focus:border-carimbo"
                 disabled={creating}
               />
               <button
                 onClick={createInstance}
                 disabled={creating || !newName.trim()}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
+                className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-medium hover:bg-carimbo-bright disabled:opacity-50 flex items-center gap-2"
               >
                 <Plus size={16} />
                 {creating ? "Criando..." : "Criar"}
@@ -223,21 +223,21 @@ export default function WhatsAppPage() {
 
             {/* QR Code Display Area */}
             {qrInstance && (
-              <div className="mt-8 pt-8 border-t flex flex-col items-center">
+              <div className="mt-8 pt-8 border-t border-line flex flex-col items-center">
                 <div className="text-center mb-4">
-                  <h3 className="font-semibold text-gray-900">Conectar: {qrInstance}</h3>
-                  <p className="text-sm text-gray-500">Escaneie o código abaixo com seu WhatsApp</p>
+                  <h3 className="font-semibold text-parchment">Conectar: {qrInstance}</h3>
+                  <p className="text-sm text-parchment-dim">Escaneie o código abaixo com seu WhatsApp</p>
                 </div>
 
                 {connected ? (
                   <div className="flex flex-col items-center gap-3 py-8 animate-in fade-in zoom-in duration-500">
-                    <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
+                    <div className="w-16 h-16 bg-jade/15 text-jade rounded-full flex items-center justify-center">
                       <CheckCircle size={32} />
                     </div>
-                    <p className="text-lg font-bold text-green-700">WhatsApp Conectado!</p>
+                    <p className="text-lg font-display font-semibold text-jade">WhatsApp Conectado!</p>
                     <button
                       onClick={() => { setQrCode(null); setQrInstance(null); }}
-                      className="text-sm text-gray-500 underline"
+                      className="text-sm text-parchment-dim underline"
                     >
                       Fechar
                     </button>
@@ -246,25 +246,25 @@ export default function WhatsAppPage() {
                   <div className="flex flex-col items-center">
                     <div className="relative group">
                       {!qrCode ? (
-                        <div className="w-60 h-60 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-3">
-                          <RefreshCw size={24} className="text-gray-300 animate-spin" />
-                          <p className="text-xs text-gray-400">Gerando QR Code...</p>
+                        <div className="w-60 h-60 bg-ink-3 border-2 border-dashed border-line rounded-sm flex flex-col items-center justify-center gap-3">
+                          <RefreshCw size={24} className="text-parchment-faint animate-spin" />
+                          <p className="text-xs text-parchment-faint">Gerando QR Code...</p>
                         </div>
                       ) : (
                         <img
                           src={qrCode.startsWith("data:") ? qrCode : `data:image/png;base64,${qrCode}`}
                           alt="QR Code WhatsApp"
-                          className="w-60 h-60 border-4 border-white shadow-xl rounded-xl"
+                          className="w-60 h-60 border-4 border-parchment rounded-sm"
                         />
                       )}
                     </div>
                     <button
                       onClick={refreshQr}
-                      className="mt-4 text-sm text-green-600 hover:text-green-700 font-medium flex items-center gap-2 px-4 py-2 bg-green-50 rounded-full transition-colors"
+                      className="mt-4 text-sm text-jade hover:text-jade font-medium flex items-center gap-2 px-4 py-2 bg-jade/15 rounded-full transition-colors"
                     >
                       <RefreshCw size={14} /> Atualizar QR Code
                     </button>
-                    <p className="text-xs text-gray-400 mt-4 animate-pulse">
+                    <p className="text-xs text-parchment-faint mt-4 animate-pulse">
                       Aguardando leitura no celular...
                     </p>
                   </div>
@@ -276,12 +276,12 @@ export default function WhatsAppPage() {
 
         {/* Lista de instâncias */}
         {instances.length > 0 && (
-          <div className="bg-white border rounded-lg p-6">
+          <div className="bg-ink-2 border border-line rounded-sm p-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Instâncias</h2>
+              <h2 className="text-lg font-semibold text-parchment">Instâncias</h2>
               <button
                 onClick={fetchAll}
-                className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1"
+                className="text-xs text-parchment-faint hover:text-parchment-dim flex items-center gap-1"
               >
                 <RefreshCw size={12} /> Atualizar
               </button>
@@ -290,27 +290,27 @@ export default function WhatsAppPage() {
               {instances.map((inst) => (
                 <div
                   key={inst.name}
-                  className="flex items-center justify-between p-3 border rounded-lg"
+                  className="flex items-center justify-between p-3 border border-line rounded-sm"
                 >
                   <div className="flex items-center gap-3">
                     <div
                       className={`w-2.5 h-2.5 rounded-full shrink-0 ${
                         inst.status === "open"
-                          ? "bg-green-500"
+                          ? "bg-jade"
                           : inst.status === "connecting"
-                          ? "bg-yellow-400"
-                          : "bg-gray-300"
+                          ? "bg-selo"
+                          : "bg-parchment-faint"
                       }`}
                     />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{inst.name}</p>
+                      <p className="text-sm font-medium text-parchment">{inst.name}</p>
                       {inst.phone && (
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-parchment-dim">
                           +{inst.phone}
                           {inst.profile_name && ` · ${inst.profile_name}`}
                         </p>
                       )}
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-parchment-faint">
                         {inst.status === "open"
                           ? "Conectado"
                           : inst.status === "connecting"
@@ -323,7 +323,7 @@ export default function WhatsAppPage() {
                     {inst.status !== "open" && (
                       <button
                         onClick={() => showQr(inst.name)}
-                        className="text-xs bg-green-50 text-green-600 px-3 py-1 rounded-full font-medium hover:bg-green-100 transition-colors"
+                        className="text-xs bg-jade/15 text-jade px-3 py-1 rounded-full font-medium hover:bg-jade/25 transition-colors"
                       >
                         Conectar
                       </button>
@@ -331,7 +331,7 @@ export default function WhatsAppPage() {
                     <button
                       onClick={() => deleteInstance(inst.name)}
                       disabled={deleting === inst.name}
-                      className="p-2 text-gray-300 hover:text-red-500 transition-colors disabled:opacity-40"
+                      className="p-2 text-parchment-faint hover:text-carimbo-bright transition-colors disabled:opacity-40"
                       title="Remover instância"
                     >
                       <Trash2 size={16} />
@@ -344,14 +344,14 @@ export default function WhatsAppPage() {
         )}
 
         {/* Guia */}
-        <div className="bg-gray-50 border rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">Como configurar</h2>
-          <ol className="text-sm text-gray-600 space-y-2 list-decimal list-inside">
+        <div className="bg-ink-2/30 border border-line rounded-sm p-6">
+          <h2 className="text-lg font-semibold text-parchment mb-3">Como configurar</h2>
+          <ol className="text-sm text-parchment-dim space-y-2 list-decimal list-inside">
             <li>Aguarde o serviço Evolution API ficar online (até ~30s na primeira inicialização)</li>
             <li>
               Crie uma instância com o nome{" "}
-              <code className="bg-gray-200 px-1 rounded">openclinic</code>{" "}
-              (ou o valor de <code className="bg-gray-200 px-1 rounded">EVOLUTION_INSTANCE_NAME</code> no .env)
+              <code className="bg-ink-3 px-1 rounded-sm">openclinic</code>{" "}
+              (ou o valor de <code className="bg-ink-3 px-1 rounded-sm">EVOLUTION_INSTANCE_NAME</code> no .env)
             </li>
             <li>Escaneie o QR Code com o WhatsApp do número da clínica</li>
             <li>

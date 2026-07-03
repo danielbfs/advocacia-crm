@@ -203,15 +203,15 @@ export default function DoctorsPage() {
 
   const specName = (id: string | null) => (id ? specialties.find((s) => s.id === id)?.name : null) || "—";
 
-  if (loading) return <div className="p-8 text-gray-400">Carregando...</div>;
+  if (loading) return <div className="p-8 text-parchment-faint">Carregando...</div>;
 
   return (
     <main className="p-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Médicos</h1>
+        <h1 className="text-2xl font-display font-semibold text-parchment">Médicos</h1>
         <button
           onClick={showForm ? cancelForm : openCreate}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
+          className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-medium hover:bg-carimbo-bright"
         >
           {showForm ? "Cancelar" : "Novo Médico"}
         </button>
@@ -219,35 +219,35 @@ export default function DoctorsPage() {
 
       {/* Create/Edit Form */}
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-white border rounded-lg p-4 mb-6 space-y-3">
-          <h3 className="text-sm font-semibold text-gray-700">
+        <form onSubmit={handleSubmit} className="bg-ink-2/30 border border-line rounded-sm p-4 mb-6 space-y-3">
+          <h3 className="text-sm font-semibold text-parchment-dim">
             {editingId ? "Editar Médico" : "Novo Médico"}
           </h3>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nome completo</label>
+              <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-parchment-dim mb-1">Nome completo</label>
               <input
                 value={form.full_name}
                 onChange={(e) => setForm({ ...form, full_name: e.target.value })}
                 required
-                className="w-full border rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-line rounded-sm px-3 py-2 text-sm bg-ink text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">CRM</label>
+              <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-parchment-dim mb-1">CRM</label>
               <input
                 value={form.crm}
                 onChange={(e) => setForm({ ...form, crm: e.target.value })}
-                className="w-full border rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-line rounded-sm px-3 py-2 text-sm bg-ink text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo"
                 placeholder="Opcional"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Especialidade</label>
+              <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-parchment-dim mb-1">Especialidade</label>
               <select
                 value={form.specialty_id}
                 onChange={(e) => setForm({ ...form, specialty_id: e.target.value })}
-                className="w-full border rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-line rounded-sm px-3 py-2 text-sm bg-ink text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo"
               >
                 <option value="">Sem especialidade</option>
                 {specialties.filter((s) => s.is_active).map((s) => (
@@ -256,14 +256,14 @@ export default function DoctorsPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Duração do slot (min)</label>
+              <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-parchment-dim mb-1">Duração do slot (min)</label>
               <input
                 type="number"
                 value={form.slot_duration_minutes}
                 onChange={(e) => setForm({ ...form, slot_duration_minutes: Number(e.target.value) })}
                 min={10}
                 max={120}
-                className="w-full border rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-line rounded-sm px-3 py-2 text-sm bg-ink text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo"
               />
             </div>
           </div>
@@ -271,11 +271,11 @@ export default function DoctorsPage() {
             <button
               type="submit"
               disabled={saving}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+              className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-medium hover:bg-carimbo-bright disabled:opacity-50"
             >
               {saving ? "Salvando..." : editingId ? "Salvar" : "Criar"}
             </button>
-            <button type="button" onClick={cancelForm} className="text-sm text-gray-500 px-4 py-2">
+            <button type="button" onClick={cancelForm} className="text-sm text-parchment-dim px-4 py-2">
               Cancelar
             </button>
           </div>
@@ -285,14 +285,14 @@ export default function DoctorsPage() {
       {/* Schedule Modal */}
       {scheduleDoctor && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <h2 className="text-lg font-bold text-gray-900 mb-1">
+          <div className="bg-ink-2 rounded-sm p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto border border-line">
+            <h2 className="text-lg font-display font-semibold text-parchment mb-1">
               Horários — {scheduleDoctor.full_name}
             </h2>
-            <p className="text-sm text-gray-500 mb-4">Configure os horários de atendimento recorrentes.</p>
+            <p className="text-sm text-parchment-dim mb-4">Configure os horários de atendimento recorrentes.</p>
 
             {scheduleItems.length === 0 ? (
-              <p className="text-sm text-gray-400 mb-4">Nenhum horário cadastrado.</p>
+              <p className="text-sm text-parchment-faint mb-4">Nenhum horário cadastrado.</p>
             ) : (
               <div className="space-y-2 mb-4">
                 {scheduleItems.map((item, idx) => (
@@ -300,7 +300,7 @@ export default function DoctorsPage() {
                     <select
                       value={item.day_of_week}
                       onChange={(e) => updateScheduleRow(idx, "day_of_week", Number(e.target.value))}
-                      className="border rounded px-2 py-1.5 text-sm flex-1"
+                      className="border border-line rounded-sm px-2 py-1.5 text-sm flex-1 bg-ink text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo"
                     >
                       {DAYS.map((d, i) => (
                         <option key={i} value={i}>{d}</option>
@@ -310,18 +310,18 @@ export default function DoctorsPage() {
                       type="time"
                       value={item.start_time}
                       onChange={(e) => updateScheduleRow(idx, "start_time", e.target.value)}
-                      className="border rounded px-2 py-1.5 text-sm"
+                      className="border border-line rounded-sm px-2 py-1.5 text-sm bg-ink text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo"
                     />
-                    <span className="text-gray-400">—</span>
+                    <span className="text-parchment-faint">—</span>
                     <input
                       type="time"
                       value={item.end_time}
                       onChange={(e) => updateScheduleRow(idx, "end_time", e.target.value)}
-                      className="border rounded px-2 py-1.5 text-sm"
+                      className="border border-line rounded-sm px-2 py-1.5 text-sm bg-ink text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo"
                     />
                     <button
                       onClick={() => removeScheduleRow(idx)}
-                      className="text-red-500 hover:text-red-700 text-sm px-1"
+                      className="text-carimbo-bright hover:text-carimbo text-sm px-1"
                     >
                       X
                     </button>
@@ -330,21 +330,21 @@ export default function DoctorsPage() {
               </div>
             )}
 
-            <button onClick={addScheduleRow} className="text-sm text-blue-600 hover:underline mb-4 block">
+            <button onClick={addScheduleRow} className="text-sm text-carimbo hover:underline mb-4 block">
               + Adicionar horário
             </button>
 
-            <div className="flex gap-2 justify-end border-t pt-4">
+            <div className="flex gap-2 justify-end border-t border-line pt-4">
               <button
                 onClick={() => setScheduleDoctor(null)}
-                className="text-sm text-gray-500 px-4 py-2"
+                className="text-sm text-parchment-dim px-4 py-2"
               >
                 Cancelar
               </button>
               <button
                 onClick={saveSchedule}
                 disabled={savingSchedule}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-medium hover:bg-carimbo-bright disabled:opacity-50"
               >
                 {savingSchedule ? "Salvando..." : "Salvar Horários"}
               </button>
@@ -356,34 +356,34 @@ export default function DoctorsPage() {
       {/* Blocks Modal */}
       {blocksDoctor && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <h2 className="text-lg font-bold text-gray-900 mb-1">
+          <div className="bg-ink-2 rounded-sm p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto border border-line">
+            <h2 className="text-lg font-display font-semibold text-parchment mb-1">
               Bloqueios — {blocksDoctor.full_name}
             </h2>
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-sm text-parchment-dim mb-4">
               Férias, reuniões, feriados ou qualquer período em que o médico não atende.
             </p>
 
             {/* Existing blocks */}
             {blocks.length === 0 ? (
-              <p className="text-sm text-gray-400 mb-4">Nenhum bloqueio cadastrado.</p>
+              <p className="text-sm text-parchment-faint mb-4">Nenhum bloqueio cadastrado.</p>
             ) : (
               <div className="space-y-2 mb-4">
                 {blocks.map((block) => (
-                  <div key={block.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+                  <div key={block.id} className="flex items-center justify-between bg-ink-3 rounded-sm px-3 py-2">
                     <div>
-                      <div className="text-sm text-gray-900">
+                      <div className="text-sm text-parchment">
                         {new Date(block.starts_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                         {" — "}
                         {new Date(block.ends_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                       </div>
                       {block.reason && (
-                        <div className="text-xs text-gray-500">{block.reason}</div>
+                        <div className="text-xs text-parchment-dim">{block.reason}</div>
                       )}
                     </div>
                     <button
                       onClick={() => removeBlock(block.id)}
-                      className="text-red-500 hover:text-red-700 text-sm px-2"
+                      className="text-carimbo-bright hover:text-carimbo text-sm px-2"
                     >
                       Remover
                     </button>
@@ -393,25 +393,25 @@ export default function DoctorsPage() {
             )}
 
             {/* Add block form */}
-            <div className="border-t pt-4 mb-4">
-              <h3 className="text-sm font-semibold text-gray-700 mb-2">Novo Bloqueio</h3>
+            <div className="border-t border-line pt-4 mb-4">
+              <h3 className="text-sm font-semibold text-parchment-dim mb-2">Novo Bloqueio</h3>
               <div className="grid grid-cols-2 gap-2 mb-2">
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">In��cio</label>
+                  <label className="block text-xs text-parchment-dim mb-1">Início</label>
                   <input
                     type="datetime-local"
                     value={blockForm.starts_at}
                     onChange={(e) => setBlockForm({ ...blockForm, starts_at: e.target.value })}
-                    className="w-full border rounded px-2 py-1.5 text-sm"
+                    className="w-full border border-line rounded-sm px-2 py-1.5 text-sm bg-ink text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">Fim</label>
+                  <label className="block text-xs text-parchment-dim mb-1">Fim</label>
                   <input
                     type="datetime-local"
                     value={blockForm.ends_at}
                     onChange={(e) => setBlockForm({ ...blockForm, ends_at: e.target.value })}
-                    className="w-full border rounded px-2 py-1.5 text-sm"
+                    className="w-full border border-line rounded-sm px-2 py-1.5 text-sm bg-ink text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo"
                   />
                 </div>
               </div>
@@ -419,21 +419,21 @@ export default function DoctorsPage() {
                 value={blockForm.reason}
                 onChange={(e) => setBlockForm({ ...blockForm, reason: e.target.value })}
                 placeholder="Motivo (opcional)"
-                className="w-full border rounded px-2 py-1.5 text-sm mb-2"
+                className="w-full border border-line rounded-sm px-2 py-1.5 text-sm bg-ink text-parchment mb-2 focus:border-carimbo focus:ring-1 focus:ring-carimbo"
               />
               <button
                 onClick={addBlock}
                 disabled={savingBlock || !blockForm.starts_at || !blockForm.ends_at}
-                className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                className="bg-carimbo text-parchment px-3 py-1.5 rounded-sm text-sm font-medium hover:bg-carimbo-bright disabled:opacity-50"
               >
                 {savingBlock ? "Salvando..." : "Adicionar Bloqueio"}
               </button>
             </div>
 
-            <div className="flex justify-end border-t pt-4">
+            <div className="flex justify-end border-t border-line pt-4">
               <button
                 onClick={() => setBlocksDoctor(null)}
-                className="text-sm text-gray-500 px-4 py-2"
+                className="text-sm text-parchment-dim px-4 py-2"
               >
                 Fechar
               </button>
@@ -443,36 +443,36 @@ export default function DoctorsPage() {
       )}
 
       {/* Doctors Table */}
-      <div className="bg-white border rounded-lg overflow-hidden">
+      <div className="bg-ink-2/30 border border-line rounded-sm overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b">
+          <thead className="bg-ink-2 border-b border-line">
             <tr>
-              <th className="text-left px-4 py-3 text-gray-500 font-medium">Nome</th>
-              <th className="text-left px-4 py-3 text-gray-500 font-medium">CRM</th>
-              <th className="text-left px-4 py-3 text-gray-500 font-medium">Especialidade</th>
-              <th className="text-left px-4 py-3 text-gray-500 font-medium">Slot</th>
-              <th className="text-left px-4 py-3 text-gray-500 font-medium">Status</th>
-              <th className="text-left px-4 py-3 text-gray-500 font-medium">Ações</th>
+              <th className="text-left px-4 py-3 text-parchment-dim font-medium">Nome</th>
+              <th className="text-left px-4 py-3 text-parchment-dim font-medium">CRM</th>
+              <th className="text-left px-4 py-3 text-parchment-dim font-medium">Especialidade</th>
+              <th className="text-left px-4 py-3 text-parchment-dim font-medium">Slot</th>
+              <th className="text-left px-4 py-3 text-parchment-dim font-medium">Status</th>
+              <th className="text-left px-4 py-3 text-parchment-dim font-medium">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody className="divide-y divide-line">
             {doctors.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
+                <td colSpan={6} className="px-4 py-8 text-center text-parchment-faint">
                   Nenhum médico cadastrado.
                 </td>
               </tr>
             ) : (
               doctors.map((doc) => (
-                <tr key={doc.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium text-gray-900">{doc.full_name}</td>
-                  <td className="px-4 py-3 text-gray-500">{doc.crm || "—"}</td>
-                  <td className="px-4 py-3 text-gray-500">{specName(doc.specialty_id)}</td>
-                  <td className="px-4 py-3 text-gray-500">{doc.slot_duration_minutes} min</td>
+                <tr key={doc.id} className="hover:bg-ink-3">
+                  <td className="px-4 py-3 font-medium text-parchment">{doc.full_name}</td>
+                  <td className="px-4 py-3 text-parchment-dim">{doc.crm || "—"}</td>
+                  <td className="px-4 py-3 text-parchment-dim">{specName(doc.specialty_id)}</td>
+                  <td className="px-4 py-3 text-parchment-dim">{doc.slot_duration_minutes} min</td>
                   <td className="px-4 py-3">
                     <span
                       className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                        doc.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+                        doc.is_active ? "bg-jade/15 text-jade" : "bg-ink-3 text-parchment-faint"
                       }`}
                     >
                       {doc.is_active ? "Ativo" : "Inativo"}
@@ -480,16 +480,16 @@ export default function DoctorsPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-3">
-                      <button onClick={() => openEdit(doc)} className="text-xs text-blue-600 hover:underline">
+                      <button onClick={() => openEdit(doc)} className="text-xs text-carimbo hover:underline">
                         Editar
                       </button>
-                      <button onClick={() => openSchedule(doc)} className="text-xs text-purple-600 hover:underline">
+                      <button onClick={() => openSchedule(doc)} className="text-xs text-info hover:underline">
                         Horários
                       </button>
-                      <button onClick={() => openBlocks(doc)} className="text-xs text-red-600 hover:underline">
+                      <button onClick={() => openBlocks(doc)} className="text-xs text-carimbo-bright hover:underline">
                         Bloqueios
                       </button>
-                      <button onClick={() => toggleActive(doc)} className="text-xs text-yellow-600 hover:underline">
+                      <button onClick={() => toggleActive(doc)} className="text-xs text-selo hover:underline">
                         {doc.is_active ? "Desativar" : "Ativar"}
                       </button>
                     </div>

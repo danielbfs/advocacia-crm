@@ -139,39 +139,39 @@ export default function SetupPage() {
     }
   }
 
-  if (loading) return <div className="p-8 text-gray-400">Carregando...</div>;
+  if (loading) return <div className="p-8 text-parchment-faint">Carregando...</div>;
 
   return (
     <main className="p-8 max-w-2xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Configurações</h1>
+      <h1 className="text-2xl font-display font-semibold text-parchment mb-6">Configurações</h1>
 
       {savedMsg && (
-        <div className="mb-4 bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-2 rounded-lg">
+        <div className="mb-4 bg-jade/15 border border-jade/40 text-jade text-sm px-4 py-2 rounded-sm">
           {savedMsg}
         </div>
       )}
 
       <div className="space-y-6">
         {/* Clinic Info */}
-        <div className="bg-white border rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Dados da Clínica</h2>
+        <div className="bg-ink-2 border border-line rounded-sm p-6">
+          <h2 className="text-lg font-semibold text-parchment mb-4">Dados da Clínica</h2>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-parchment-dim mb-1">
                 Nome da Clínica
               </label>
               <input
                 value={clinic.name}
                 onChange={(e) => setClinic({ ...clinic, name: e.target.value })}
-                className="w-full border rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-line rounded-sm px-3 py-2 text-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Fuso horário</label>
+              <label className="block text-sm font-medium text-parchment-dim mb-1">Fuso horário</label>
               <select
                 value={clinic.timezone}
                 onChange={(e) => setClinic({ ...clinic, timezone: e.target.value })}
-                className="w-full border rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-line rounded-sm px-3 py-2 text-sm"
               >
                 {TIMEZONES.map((tz) => (
                   <option key={tz} value={tz}>
@@ -181,41 +181,41 @@ export default function SetupPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+              <label className="block text-sm font-medium text-parchment-dim mb-1">Telefone</label>
               <input
                 value={clinic.phone}
                 onChange={(e) => setClinic({ ...clinic, phone: e.target.value })}
                 placeholder="(11) 99999-9999"
-                className="w-full border rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-line rounded-sm px-3 py-2 text-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
+              <label className="block text-sm font-medium text-parchment-dim mb-1">Endereço</label>
               <input
                 value={clinic.address}
                 onChange={(e) => setClinic({ ...clinic, address: e.target.value })}
-                className="w-full border rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-line rounded-sm px-3 py-2 text-sm"
               />
             </div>
             <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-parchment-dim mb-1">
                 Logo da Clínica (URL da imagem)
               </label>
               <input
                 value={clinic.logo_url}
                 onChange={(e) => setClinic({ ...clinic, logo_url: e.target.value })}
                 placeholder="https://exemplo.com/logo.png"
-                className="w-full border rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-line rounded-sm px-3 py-2 text-sm"
               />
               {clinic.logo_url && (
                 <img
                   src={clinic.logo_url}
                   alt="Preview"
-                  className="mt-2 h-10 w-auto object-contain rounded"
+                  className="mt-2 h-10 w-auto object-contain rounded-sm"
                   onError={(e) => (e.currentTarget.style.display = "none")}
                 />
               )}
-              <p className="mt-1 text-xs text-gray-400">
+              <p className="mt-1 text-xs text-parchment-faint">
                 Aparece no cabeçalho de todas as telas. Recomendado: fundo transparente, altura 32–48 px.
               </p>
             </div>
@@ -223,16 +223,16 @@ export default function SetupPage() {
           <button
             onClick={saveClinic}
             disabled={savingClinic}
-            className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+            className="mt-4 bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-medium hover:bg-carimbo-bright disabled:opacity-50"
           >
             {savingClinic ? "Salvando..." : "Salvar Dados da Clínica"}
           </button>
         </div>
 
         {/* SLA */}
-        <div className="bg-white border rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">SLA de Leads</h2>
-          <p className="text-sm text-gray-500 mb-4">
+        <div className="bg-ink-2 border border-line rounded-sm p-6">
+          <h2 className="text-lg font-semibold text-parchment mb-2">SLA de Leads</h2>
+          <p className="text-sm text-parchment-dim mb-4">
             Tempo máximo para a equipe realizar o primeiro contato com um novo lead.
           </p>
           <div className="flex items-center gap-3">
@@ -242,13 +242,13 @@ export default function SetupPage() {
               onChange={(e) => setSla({ hours: Number(e.target.value) })}
               min={1}
               max={72}
-              className="w-24 border rounded-lg px-3 py-2 text-sm"
+              className="w-24 border border-line rounded-sm px-3 py-2 text-sm"
             />
-            <span className="text-sm text-gray-600">horas</span>
+            <span className="text-sm text-parchment-dim">horas</span>
             <button
               onClick={saveSla}
               disabled={savingSla}
-              className="ml-4 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+              className="ml-4 bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-medium hover:bg-carimbo-bright disabled:opacity-50"
             >
               {savingSla ? "Salvando..." : "Salvar SLA"}
             </button>
@@ -256,10 +256,10 @@ export default function SetupPage() {
         </div>
 
         {/* Integration Status */}
-        <div className="bg-white border rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Status das Integrações</h2>
-          <p className="text-sm text-gray-500 mb-4">
-            Essas integrações são configuradas via variáveis de ambiente no <code className="bg-gray-200 px-1 rounded">.env</code>.
+        <div className="bg-ink-2 border border-line rounded-sm p-6">
+          <h2 className="text-lg font-semibold text-parchment mb-4">Status das Integrações</h2>
+          <p className="text-sm text-parchment-dim mb-4">
+            Essas integrações são configuradas via variáveis de ambiente no <code className="bg-ink-3 px-1 rounded-sm">.env</code>.
             Para alterar, edite o arquivo e reinicie os containers.
           </p>
           <div className="space-y-3">
@@ -285,65 +285,65 @@ export default function SetupPage() {
               ok={!!status?.whatsapp_configured}
             />
           </div>
-          <p className="text-xs text-gray-400 mt-3">
+          <p className="text-xs text-parchment-faint mt-3">
             O modelo de IA e o provedor podem ser escolhidos na aba "Chatbot / IA".
           </p>
         </div>
 
         {/* WhatsApp Webhook */}
         {status?.whatsapp_configured && (
-          <div className="bg-white border rounded-lg p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">WhatsApp Webhook (Evolution API)</h2>
-            <p className="text-sm text-gray-500 mb-4">
+          <div className="bg-ink-2 border border-line rounded-sm p-6">
+            <h2 className="text-lg font-semibold text-parchment mb-2">WhatsApp Webhook (Evolution API)</h2>
+            <p className="text-sm text-parchment-dim mb-4">
               Registre o webhook para que a instância do WhatsApp receba mensagens dos pacientes.
               Esse registro precisa ser feito apenas uma vez (ou ao trocar de domínio/instância).
             </p>
             <button
               onClick={setupWhatsAppWebhook}
               disabled={settingWhatsappWebhook}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50"
+              className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-medium hover:bg-carimbo-bright disabled:opacity-50"
             >
               {settingWhatsappWebhook ? "Registrando..." : "Registrar Webhook WhatsApp"}
             </button>
             {whatsappWebhookResult && (
-              <p className="mt-3 text-sm text-gray-600">{whatsappWebhookResult}</p>
+              <p className="mt-3 text-sm text-parchment-dim">{whatsappWebhookResult}</p>
             )}
           </div>
         )}
 
         {/* Telegram Webhook */}
         {status?.telegram_configured && (
-          <div className="bg-white border rounded-lg p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">Telegram Webhook</h2>
-            <p className="text-sm text-gray-500 mb-4">
+          <div className="bg-ink-2 border border-line rounded-sm p-6">
+            <h2 className="text-lg font-semibold text-parchment mb-2">Telegram Webhook</h2>
+            <p className="text-sm text-parchment-dim mb-4">
               Registre o webhook para que o bot Telegram receba mensagens dos pacientes.
               Esse registro precisa ser feito apenas uma vez (ou ao trocar de domínio).
             </p>
             <button
               onClick={setupTelegramWebhook}
               disabled={settingWebhook}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+              className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-medium hover:bg-carimbo-bright disabled:opacity-50"
             >
               {settingWebhook ? "Registrando..." : "Registrar Webhook Telegram"}
             </button>
             {webhookResult && (
-              <p className="mt-3 text-sm text-gray-600">{webhookResult}</p>
+              <p className="mt-3 text-sm text-parchment-dim">{webhookResult}</p>
             )}
           </div>
         )}
 
         {/* Instructions */}
-        <div className="bg-gray-50 border rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Guia Rápido</h2>
-          <ol className="text-sm text-gray-600 space-y-2 list-decimal list-inside">
+        <div className="bg-ink-2/30 border border-line rounded-sm p-6">
+          <h2 className="text-lg font-semibold text-parchment mb-2">Guia Rápido</h2>
+          <ol className="text-sm text-parchment-dim space-y-2 list-decimal list-inside">
             <li>
               Configure as variáveis de ambiente no{" "}
-              <code className="bg-gray-200 px-1 rounded">.env</code>{" "}
+              <code className="bg-ink-3 px-1 rounded-sm">.env</code>{" "}
               (TELEGRAM_BOT_TOKEN, OPENAI_API_KEY)
             </li>
             <li>
               Reinicie os containers:{" "}
-              <code className="bg-gray-200 px-1 rounded">docker compose up -d</code>
+              <code className="bg-ink-3 px-1 rounded-sm">docker compose up -d</code>
             </li>
             <li>Preencha os dados da clínica acima e salve</li>
             <li>Vá em "Chatbot / IA" para escolher o modelo e personalizar o prompt</li>
@@ -359,10 +359,10 @@ export default function SetupPage() {
 function StatusRow({ label, value, ok }: { label: string; value: string; ok: boolean }) {
   return (
     <div className="flex items-center justify-between">
-      <span className="text-sm text-gray-600">{label}</span>
+      <span className="text-sm text-parchment-dim">{label}</span>
       <div className="flex items-center gap-2">
-        <span className="text-sm font-medium text-gray-900">{value}</span>
-        <span className={`w-2.5 h-2.5 rounded-full ${ok ? "bg-green-500" : "bg-gray-300"}`} />
+        <span className="text-sm font-medium text-parchment">{value}</span>
+        <span className={`w-2.5 h-2.5 rounded-full ${ok ? "bg-jade" : "bg-parchment-faint"}`} />
       </div>
     </div>
   );

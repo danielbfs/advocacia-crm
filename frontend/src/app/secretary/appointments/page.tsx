@@ -32,11 +32,11 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  scheduled: "bg-blue-100 text-blue-700",
-  confirmed: "bg-green-100 text-green-700",
-  completed: "bg-gray-100 text-gray-700",
-  cancelled: "bg-red-100 text-red-500",
-  no_show: "bg-orange-100 text-orange-700",
+  scheduled: "bg-info/15 text-info",
+  confirmed: "bg-jade/15 text-jade",
+  completed: "bg-parchment-dim/15 text-parchment-dim",
+  cancelled: "bg-carimbo/10 text-carimbo-bright",
+  no_show: "bg-selo/15 text-selo",
 };
 
 export default function AppointmentsPage() {
@@ -169,9 +169,9 @@ export default function AppointmentsPage() {
   return (
     <main className="p-8">
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <h1 className="text-2xl font-bold text-gray-900">Agendamentos</h1>
+        <h1 className="text-2xl font-display font-semibold text-parchment">Agendamentos</h1>
         <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+          <label className="flex items-center gap-2 text-sm text-parchment-dim cursor-pointer select-none">
             <input
               type="checkbox"
               checked={hideCancelled}
@@ -187,7 +187,7 @@ export default function AppointmentsPage() {
               setSlots([]);
               setSelectedSlot(null);
             }}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
+            className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-semibold hover:bg-carimbo-bright"
           >
             {showCreate ? "Cancelar" : "Novo Agendamento"}
           </button>
@@ -196,27 +196,27 @@ export default function AppointmentsPage() {
 
       {/* Create Appointment Flow */}
       {showCreate && (
-        <div className="bg-white border rounded-lg p-4 mb-6">
+        <div className="bg-ink-2 border border-line rounded-sm p-4 mb-6">
           {createStep === 1 ? (
             <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-gray-700">1. Selecione médico e data</h3>
+              <h3 className="text-sm font-semibold text-parchment-dim">1. Selecione médico e data</h3>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">Telefone do Paciente *</label>
+                  <label className="block text-xs text-parchment-dim mb-1">Telefone do Paciente *</label>
                   <input
                     value={createForm.patient_phone}
                     onChange={(e) => setCreateForm({ ...createForm, patient_phone: e.target.value })}
                     required
-                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-line rounded-sm px-3 py-2 text-sm"
                     placeholder="11999999999"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">Médico *</label>
+                  <label className="block text-xs text-parchment-dim mb-1">Médico *</label>
                   <select
                     value={createForm.doctor_id}
                     onChange={(e) => setCreateForm({ ...createForm, doctor_id: e.target.value })}
-                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-line rounded-sm px-3 py-2 text-sm"
                   >
                     <option value="">Selecione...</option>
                     {doctors.map((d) => (
@@ -225,20 +225,20 @@ export default function AppointmentsPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">Data *</label>
+                  <label className="block text-xs text-parchment-dim mb-1">Data *</label>
                   <input
                     type="date"
                     value={createForm.date}
                     onChange={(e) => setCreateForm({ ...createForm, date: e.target.value })}
-                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-line rounded-sm px-3 py-2 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">Observações</label>
+                  <label className="block text-xs text-parchment-dim mb-1">Observações</label>
                   <input
                     value={createForm.notes}
                     onChange={(e) => setCreateForm({ ...createForm, notes: e.target.value })}
-                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-line rounded-sm px-3 py-2 text-sm"
                     placeholder="Opcional"
                   />
                 </div>
@@ -246,7 +246,7 @@ export default function AppointmentsPage() {
               <button
                 onClick={searchSlots}
                 disabled={!createForm.doctor_id || !createForm.date || !createForm.patient_phone || loadingSlots}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-semibold hover:bg-carimbo-bright disabled:opacity-50"
               >
                 {loadingSlots ? "Buscando..." : "Ver Horários Disponíveis"}
               </button>
@@ -254,13 +254,13 @@ export default function AppointmentsPage() {
           ) : (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gray-700">2. Selecione o horário</h3>
-                <button onClick={() => setCreateStep(1)} className="text-xs text-blue-600 hover:underline">
+                <h3 className="text-sm font-semibold text-parchment-dim">2. Selecione o horário</h3>
+                <button onClick={() => setCreateStep(1)} className="text-xs text-carimbo hover:underline">
                   &larr; Voltar
                 </button>
               </div>
               {slots.length === 0 ? (
-                <p className="text-sm text-gray-400">Nenhum horário disponível nesta data.</p>
+                <p className="text-sm text-parchment-faint">Nenhum horário disponível nesta data.</p>
               ) : (
                 <div className="grid grid-cols-4 gap-2">
                   {slots.map((slot, idx) => {
@@ -273,10 +273,10 @@ export default function AppointmentsPage() {
                       <button
                         key={idx}
                         onClick={() => setSelectedSlot(slot)}
-                        className={`px-3 py-2 rounded-lg border text-sm transition-colors ${
+                        className={`px-3 py-2 rounded-sm border text-sm transition-colors ${
                           isSelected
-                            ? "bg-blue-600 text-white border-blue-600"
-                            : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                            ? "bg-carimbo text-parchment border-carimbo"
+                            : "bg-ink-2 text-parchment-dim border-line hover:bg-ink-3"
                         }`}
                       >
                         {time}
@@ -289,7 +289,7 @@ export default function AppointmentsPage() {
                 <button
                   onClick={createAppointment}
                   disabled={saving}
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50"
+                  className="bg-jade text-ink px-4 py-2 rounded-sm text-sm font-semibold hover:opacity-90 disabled:opacity-50"
                 >
                   {saving ? "Agendando..." : "Confirmar Agendamento"}
                 </button>
@@ -301,49 +301,49 @@ export default function AppointmentsPage() {
 
       {/* Appointments List */}
       {loading ? (
-        <p className="text-gray-400">Carregando...</p>
+        <p className="text-parchment-faint">Carregando...</p>
       ) : visibleAppointments.length === 0 ? (
-        <p className="text-gray-400">
+        <p className="text-parchment-faint">
           {hideCancelled && appointments.some((a) => a.status === "cancelled")
             ? "Nenhum agendamento ativo. Desmarque \"Ocultar cancelados\" para ver todos."
             : "Nenhum agendamento encontrado."}
         </p>
       ) : (
-        <div className="bg-white border rounded-lg overflow-hidden">
+        <div className="bg-ink-2 border border-line rounded-sm overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-ink-3 border-b border-line">
               <tr>
-                <th className="text-left px-4 py-3 text-gray-500 font-medium">Data / Hora</th>
-                <th className="text-left px-4 py-3 text-gray-500 font-medium">Médico</th>
-                <th className="text-left px-4 py-3 text-gray-500 font-medium">Status</th>
-                <th className="text-left px-4 py-3 text-gray-500 font-medium">Origem</th>
-                <th className="text-left px-4 py-3 text-gray-500 font-medium">Ações</th>
+                <th className="text-left px-4 py-3 text-parchment-dim font-medium">Data / Hora</th>
+                <th className="text-left px-4 py-3 text-parchment-dim font-medium">Médico</th>
+                <th className="text-left px-4 py-3 text-parchment-dim font-medium">Status</th>
+                <th className="text-left px-4 py-3 text-parchment-dim font-medium">Origem</th>
+                <th className="text-left px-4 py-3 text-parchment-dim font-medium">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y divide-line">
               {visibleAppointments.map((appt) => (
-                <tr key={appt.id} className="hover:bg-gray-50">
+                <tr key={appt.id} className="hover:bg-ink-3">
                   <td className="px-4 py-3">
-                    <div className="font-medium text-gray-900">
+                    <div className="font-medium text-parchment">
                       {new Date(appt.starts_at).toLocaleDateString("pt-BR", {
                         weekday: "short",
                         day: "2-digit",
                         month: "2-digit",
                       })}
                     </div>
-                    <div className="text-gray-400">
+                    <div className="text-parchment-faint">
                       {new Date(appt.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                       {" — "}
                       {new Date(appt.ends_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-gray-600">{doctorName(appt.doctor_id)}</td>
+                  <td className="px-4 py-3 text-parchment-dim">{doctorName(appt.doctor_id)}</td>
                   <td className="px-4 py-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[appt.status] || "bg-gray-100"}`}>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[appt.status] || "bg-ink-3 text-parchment-dim"}`}>
                       {STATUS_LABELS[appt.status] || appt.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-gray-500">
+                  <td className="px-4 py-3 text-parchment-dim">
                     {appt.source === "ai_chat" ? "IA" : appt.source === "secretary" ? "Secretária" : appt.source || "—"}
                   </td>
                   <td className="px-4 py-3">
@@ -353,13 +353,13 @@ export default function AppointmentsPage() {
                           <button
                             onClick={() => updateStatus(appt.id, "confirmed")}
                             disabled={changingStatus === appt.id}
-                            className="text-xs text-green-600 hover:underline"
+                            className="text-xs text-jade hover:underline"
                           >
                             Confirmar
                           </button>
                           <button
                             onClick={() => cancelAppointment(appt.id)}
-                            className="text-xs text-red-600 hover:underline"
+                            className="text-xs text-carimbo-bright hover:underline"
                           >
                             Cancelar
                           </button>
@@ -370,20 +370,20 @@ export default function AppointmentsPage() {
                           <button
                             onClick={() => updateStatus(appt.id, "completed")}
                             disabled={changingStatus === appt.id}
-                            className="text-xs text-blue-600 hover:underline"
+                            className="text-xs text-carimbo hover:underline"
                           >
                             Concluir
                           </button>
                           <button
                             onClick={() => updateStatus(appt.id, "no_show")}
                             disabled={changingStatus === appt.id}
-                            className="text-xs text-orange-600 hover:underline"
+                            className="text-xs text-selo hover:underline"
                           >
                             No-show
                           </button>
                           <button
                             onClick={() => cancelAppointment(appt.id)}
-                            className="text-xs text-red-600 hover:underline"
+                            className="text-xs text-carimbo-bright hover:underline"
                           >
                             Cancelar
                           </button>

@@ -149,14 +149,14 @@ export default function ChatbotPage() {
     }
   }
 
-  if (loading) return <div className="p-8 text-gray-400">Carregando...</div>;
+  if (loading) return <div className="p-8 text-parchment-faint">Carregando...</div>;
 
   return (
     <main className="p-8 max-w-3xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Chatbot / Assistente IA</h1>
+      <h1 className="text-2xl font-display font-semibold text-parchment mb-6">Chatbot / Assistente IA</h1>
 
       {savedMsg && (
-        <div className="mb-4 bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-2 rounded-lg">
+        <div className="mb-4 bg-jade/15 border border-jade/40 text-jade text-sm px-4 py-2 rounded-sm">
           {savedMsg}
         </div>
       )}
@@ -164,13 +164,13 @@ export default function ChatbotPage() {
       <div className="space-y-6">
 
         {/* ── Provedor de IA ───────────────────────────────────── */}
-        <div className="bg-white border rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Provedor de IA</h2>
-          <p className="text-sm text-gray-500 mb-4">
+        <div className="bg-ink-2 border border-line rounded-sm p-6">
+          <h2 className="text-lg font-semibold text-parchment mb-2">Provedor de IA</h2>
+          <p className="text-sm text-parchment-dim mb-4">
             Escolha qual serviço de IA o chatbot usará para conversar com os pacientes.
           </p>
 
-          <div className="flex items-center gap-3 mb-4 p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center gap-3 mb-4 p-3 bg-ink-3 rounded-sm">
             <input
               type="checkbox"
               checked={ai.use_local_llm}
@@ -178,98 +178,98 @@ export default function ChatbotPage() {
               id="use_local"
               className="rounded"
             />
-            <label htmlFor="use_local" className="text-sm text-gray-700">
+            <label htmlFor="use_local" className="text-sm text-parchment-dim">
               <span className="font-medium">Usar LLM Local (Ollama)</span>
-              <span className="block text-xs text-gray-500">Requer VPS com 8+ vCPU e 16GB RAM. Sem custo de API, mas mais lento.</span>
+              <span className="block text-xs text-parchment-dim">Requer VPS com 8+ vCPU e 16GB RAM. Sem custo de API, mas mais lento.</span>
             </label>
           </div>
 
           {ai.use_local_llm ? (
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">URL do Ollama</label>
+                <label className="block text-sm font-medium text-parchment-dim mb-1">URL do Ollama</label>
                 <input value={ai.local_llm_url} onChange={(e) => setAi({ ...ai, local_llm_url: e.target.value })}
-                  placeholder="http://ollama:11434/v1" className="w-full border rounded-lg px-3 py-2 text-sm" />
-                <p className="text-xs text-gray-400 mt-1">Se Ollama está no mesmo Docker Compose, use http://ollama:11434/v1</p>
+                  placeholder="http://ollama:11434/v1" className="w-full border border-line rounded-sm px-3 py-2 text-sm" />
+                <p className="text-xs text-parchment-faint mt-1">Se Ollama está no mesmo Docker Compose, use http://ollama:11434/v1</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Modelo</label>
+                <label className="block text-sm font-medium text-parchment-dim mb-1">Modelo</label>
                 <select value={ai.local_llm_model} onChange={(e) => setAi({ ...ai, local_llm_model: e.target.value })}
-                  className="w-full border rounded-lg px-3 py-2 text-sm">
+                  className="w-full border border-line rounded-sm px-3 py-2 text-sm">
                   <option value="">Selecione...</option>
                   {LOCAL_MODELS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
                 </select>
                 <input value={ai.local_llm_model} onChange={(e) => setAi({ ...ai, local_llm_model: e.target.value })}
-                  placeholder="nome-do-modelo" className="w-full border rounded-lg px-3 py-2 text-sm mt-1" />
+                  placeholder="nome-do-modelo" className="w-full border border-line rounded-sm px-3 py-2 text-sm mt-1" />
               </div>
             </div>
           ) : (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Modelo OpenAI</label>
+              <label className="block text-sm font-medium text-parchment-dim mb-1">Modelo OpenAI</label>
               <select value={ai.model} onChange={(e) => setAi({ ...ai, model: e.target.value })}
-                className="w-full border rounded-lg px-3 py-2 text-sm">
+                className="w-full border border-line rounded-sm px-3 py-2 text-sm">
                 {OPENAI_MODELS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
               </select>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-parchment-faint mt-1">
                 A API key é configurada no .env (OPENAI_API_KEY). O modelo selecionado aqui é usado pelo chatbot.
               </p>
             </div>
           )}
 
           <button onClick={saveAi} disabled={savingAi}
-            className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+            className="mt-4 bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-medium hover:bg-carimbo-bright disabled:opacity-50">
             {savingAi ? "Salvando..." : "Salvar Configuração de IA"}
           </button>
         </div>
 
         {/* ── Comportamento do chatbot ─────────────────────────── */}
-        <div className="bg-white border rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Comportamento do Chatbot</h2>
-          <p className="text-sm text-gray-500 mb-4">
+        <div className="bg-ink-2 border border-line rounded-sm p-6">
+          <h2 className="text-lg font-semibold text-parchment mb-2">Comportamento do Chatbot</h2>
+          <p className="text-sm text-parchment-dim mb-4">
             Personalize como o assistente virtual se comporta nas conversas com pacientes.
           </p>
 
           <div className="space-y-4">
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="block text-sm font-medium text-gray-700">Instruções do Chatbot (System Prompt)</label>
+                <label className="block text-sm font-medium text-parchment-dim">Instruções do Chatbot (System Prompt)</label>
                 <button onClick={() => setChatbot({ ...chatbot, system_prompt: DEFAULT_PROMPT })}
-                  className="text-xs text-blue-600 hover:underline">Restaurar padrão</button>
+                  className="text-xs text-carimbo hover:underline">Restaurar padrão</button>
               </div>
               <textarea value={chatbot.system_prompt} onChange={(e) => setChatbot({ ...chatbot, system_prompt: e.target.value })}
-                rows={16} className="w-full border rounded-lg px-3 py-2 text-sm font-mono leading-relaxed" />
-              <p className="text-xs text-gray-400 mt-1">
+                rows={16} className="w-full border border-line rounded-sm px-3 py-2 text-sm font-mono leading-relaxed" />
+              <p className="text-xs text-parchment-faint mt-1">
                 Edite as instruções acima para personalizar o comportamento da IA. Clique em "Restaurar padrão" para voltar ao texto original.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Temperatura</label>
+                <label className="block text-sm font-medium text-parchment-dim mb-1">Temperatura</label>
                 <input type="number" value={chatbot.temperature}
                   onChange={(e) => setChatbot({ ...chatbot, temperature: Number(e.target.value) })}
-                  min={0} max={1} step={0.1} className="w-full border rounded-lg px-3 py-2 text-sm" />
-                <p className="text-xs text-gray-400 mt-1">0 = mais preciso, 1 = mais criativo. Recomendado: 0.3</p>
+                  min={0} max={1} step={0.1} className="w-full border border-line rounded-sm px-3 py-2 text-sm" />
+                <p className="text-xs text-parchment-faint mt-1">0 = mais preciso, 1 = mais criativo. Recomendado: 0.3</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Max Tool Calls</label>
+                <label className="block text-sm font-medium text-parchment-dim mb-1">Max Tool Calls</label>
                 <input type="number" value={chatbot.max_tool_calls}
                   onChange={(e) => setChatbot({ ...chatbot, max_tool_calls: Number(e.target.value) })}
-                  min={1} max={10} className="w-full border rounded-lg px-3 py-2 text-sm" />
-                <p className="text-xs text-gray-400 mt-1">Limite de ações por mensagem (agendar, verificar, etc.)</p>
+                  min={1} max={10} className="w-full border border-line rounded-sm px-3 py-2 text-sm" />
+                <p className="text-xs text-parchment-faint mt-1">Limite de ações por mensagem (agendar, verificar, etc.)</p>
               </div>
             </div>
           </div>
 
           <button onClick={saveChatbot} disabled={savingChatbot}
-            className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+            className="mt-4 bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-medium hover:bg-carimbo-bright disabled:opacity-50">
             {savingChatbot ? "Salvando..." : "Salvar Comportamento"}
           </button>
         </div>
 
         {/* ── Resumo ativo ─────────────────────────────────────── */}
-        <div className="bg-gray-50 border rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Resumo Ativo</h2>
-          <div className="text-sm text-gray-600 space-y-1">
+        <div className="bg-ink-2/30 border border-line rounded-sm p-6">
+          <h2 className="text-lg font-semibold text-parchment mb-2">Resumo Ativo</h2>
+          <div className="text-sm text-parchment-dim space-y-1">
             <p><span className="font-medium">Provedor:</span> {ai.use_local_llm ? "LLM Local (Ollama)" : "OpenAI"}</p>
             <p><span className="font-medium">Modelo:</span> {ai.use_local_llm ? ai.local_llm_model || "não definido" : ai.model}</p>
             {ai.use_local_llm && <p><span className="font-medium">URL:</span> {ai.local_llm_url || "não definido"}</p>}
@@ -279,30 +279,30 @@ export default function ChatbotPage() {
         </div>
 
         {/* ── Chat de teste ─────────────────────────────────────── */}
-        <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-ink-2 border border-line rounded-sm overflow-hidden">
           {/* header */}
-          <div className="flex items-center justify-between px-5 py-3 border-b bg-gray-50">
+          <div className="flex items-center justify-between px-5 py-3 border-b border-line bg-ink-3">
             <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
-              <span className="text-sm font-semibold text-gray-800">Testar Chatbot</span>
-              <span className="text-xs text-gray-400 ml-1">— simulação em tempo real</span>
+              <div className="w-2.5 h-2.5 rounded-full bg-jade" />
+              <span className="text-sm font-semibold text-parchment">Testar Chatbot</span>
+              <span className="text-xs text-parchment-faint ml-1">— simulação em tempo real</span>
             </div>
             <button onClick={clearChat}
-              className="text-xs text-gray-400 hover:text-red-500 transition-colors px-2 py-1 rounded hover:bg-red-50">
+              className="text-xs text-parchment-faint hover:text-carimbo-bright transition-colors px-2 py-1 rounded-sm hover:bg-carimbo/10">
               Limpar conversa
             </button>
           </div>
 
           {/* aviso */}
-          <div className="px-5 py-2 bg-amber-50 border-b border-amber-100 text-xs text-amber-700">
+          <div className="px-5 py-2 bg-selo/15 border-b border-selo/30 text-xs text-selo">
             Esta conversa usa o engine real (mesmo prompt, ferramentas e modelo configurados acima).
             Consultas de disponibilidade funcionam normalmente. Agendamentos criados aqui são registros reais.
           </div>
 
           {/* mensagens */}
-          <div className="h-96 overflow-y-auto px-5 py-4 space-y-4 bg-gray-50/50">
+          <div className="h-96 overflow-y-auto px-5 py-4 space-y-4 bg-ink/40">
             {msgs.length === 0 && (
-              <div className="flex flex-col items-center justify-center h-full text-center text-gray-400">
+              <div className="flex flex-col items-center justify-center h-full text-center text-parchment-faint">
                 <svg className="w-10 h-10 mb-2 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                     d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
@@ -315,17 +315,17 @@ export default function ChatbotPage() {
             {msgs.map((msg, i) => (
               <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                 {msg.role !== "user" && (
-                  <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold mr-2 mt-0.5 shrink-0">
+                  <div className="w-7 h-7 rounded-full bg-carimbo flex items-center justify-center text-parchment text-xs font-bold mr-2 mt-0.5 shrink-0">
                     IA
                   </div>
                 )}
                 <div className={`
                   max-w-[78%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap
                   ${msg.role === "user"
-                    ? "bg-blue-600 text-white rounded-tr-sm"
+                    ? "bg-carimbo text-parchment rounded-tr-sm"
                     : msg.role === "error"
-                      ? "bg-red-50 text-red-700 border border-red-200 rounded-tl-sm"
-                      : "bg-white text-gray-800 border border-gray-200 shadow-sm rounded-tl-sm"
+                      ? "bg-carimbo/10 text-carimbo-bright border border-carimbo/40 rounded-tl-sm"
+                      : "bg-ink-3 text-parchment border border-line rounded-tl-sm"
                   }
                 `}>
                   {msg.content}
@@ -336,14 +336,14 @@ export default function ChatbotPage() {
             {/* indicador de digitando */}
             {sending && (
               <div className="flex justify-start">
-                <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold mr-2 mt-0.5 shrink-0">
+                <div className="w-7 h-7 rounded-full bg-carimbo flex items-center justify-center text-parchment text-xs font-bold mr-2 mt-0.5 shrink-0">
                   IA
                 </div>
-                <div className="bg-white border border-gray-200 shadow-sm rounded-2xl rounded-tl-sm px-4 py-3">
+                <div className="bg-ink-3 border border-line rounded-2xl rounded-tl-sm px-4 py-3">
                   <div className="flex gap-1 items-center">
-                    <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                    <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                    <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" />
+                    <span className="w-1.5 h-1.5 bg-parchment-faint rounded-full animate-bounce [animation-delay:-0.3s]" />
+                    <span className="w-1.5 h-1.5 bg-parchment-faint rounded-full animate-bounce [animation-delay:-0.15s]" />
+                    <span className="w-1.5 h-1.5 bg-parchment-faint rounded-full animate-bounce" />
                   </div>
                 </div>
               </div>
@@ -353,7 +353,7 @@ export default function ChatbotPage() {
           </div>
 
           {/* input */}
-          <div className="flex items-end gap-2 px-4 py-3 border-t bg-white">
+          <div className="flex items-end gap-2 px-4 py-3 border-t border-line bg-ink-2">
             <textarea
               ref={inputRef}
               value={input}
@@ -361,14 +361,14 @@ export default function ChatbotPage() {
               onKeyDown={handleKey}
               rows={1}
               placeholder="Digite uma mensagem... (Enter para enviar, Shift+Enter para nova linha)"
-              className="flex-1 resize-none border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent max-h-32 overflow-y-auto"
+              className="flex-1 resize-none border border-line rounded-sm px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-carimbo focus:border-carimbo max-h-32 overflow-y-auto"
               style={{ lineHeight: "1.5" }}
               disabled={sending}
             />
             <button
               onClick={sendMessage}
               disabled={sending || !input.trim()}
-              className="shrink-0 bg-blue-600 text-white rounded-xl w-10 h-10 flex items-center justify-center hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="shrink-0 bg-carimbo text-parchment rounded-sm w-10 h-10 flex items-center justify-center hover:bg-carimbo-bright disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
