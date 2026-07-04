@@ -11,9 +11,9 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 const ROLE_COLORS: Record<string, string> = {
-  admin: "bg-purple-100 text-purple-700",
-  secretary: "bg-blue-100 text-blue-700",
-  doctor: "bg-teal-100 text-teal-700",
+  admin: "bg-carimbo/10 text-carimbo-bright",
+  secretary: "bg-info/15 text-info",
+  doctor: "bg-jade/15 text-jade",
 };
 
 export default function UsersPage() {
@@ -122,63 +122,63 @@ export default function UsersPage() {
     return doctors.find((d) => d.id === doctorId)?.full_name || null;
   }
 
-  if (loading) return <div className="p-8 text-gray-400">Carregando...</div>;
+  if (loading) return <div className="p-8 text-parchment-faint">Carregando...</div>;
 
   return (
     <main className="p-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Usuários do Sistema</h1>
+        <h1 className="text-2xl font-display font-semibold text-parchment">Usuários do Sistema</h1>
         <button
           onClick={showForm ? cancelForm : openCreate}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
+          className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-medium hover:bg-carimbo-bright"
         >
           {showForm ? "Cancelar" : "Novo Usuário"}
         </button>
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-white border rounded-lg p-4 mb-6 space-y-3">
-          <h3 className="text-sm font-semibold text-gray-700">
+        <form onSubmit={handleSubmit} className="bg-ink-2 border border-line rounded-sm p-4 mb-6 space-y-3">
+          <h3 className="text-sm font-semibold text-parchment-dim">
             {editingId ? "Editar Usuário" : "Novo Usuário"}
           </h3>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Login (username)</label>
+              <label className="block text-xs text-parchment-dim mb-1">Login (username)</label>
               <input
                 value={form.username}
                 onChange={(e) => setForm({ ...form, username: e.target.value })}
                 required
-                className="w-full border rounded-lg px-3 py-2 text-sm"
+                className="w-full rounded-sm border border-line bg-ink-2 px-3 py-2 text-sm text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Nome completo</label>
+              <label className="block text-xs text-parchment-dim mb-1">Nome completo</label>
               <input
                 value={form.full_name}
                 onChange={(e) => setForm({ ...form, full_name: e.target.value })}
                 required
-                className="w-full border rounded-lg px-3 py-2 text-sm"
+                className="w-full rounded-sm border border-line bg-ink-2 px-3 py-2 text-sm text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
               />
             </div>
             {!editingId && (
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Senha</label>
+                <label className="block text-xs text-parchment-dim mb-1">Senha</label>
                 <input
                   type="password"
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   required={!editingId}
-                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                  className="w-full rounded-sm border border-line bg-ink-2 px-3 py-2 text-sm text-parchment placeholder:text-parchment-faint focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
                   placeholder="Mín. 6 caracteres"
                 />
               </div>
             )}
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Perfil</label>
+              <label className="block text-xs text-parchment-dim mb-1">Perfil</label>
               <select
                 value={form.role}
                 onChange={(e) => setForm({ ...form, role: e.target.value, doctor_id: "" })}
-                className="w-full border rounded-lg px-3 py-2 text-sm"
+                className="w-full rounded-sm border border-line bg-ink-2 px-3 py-2 text-sm text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
               >
                 <option value="admin">Administrador</option>
                 <option value="secretary">Secretária</option>
@@ -187,11 +187,11 @@ export default function UsersPage() {
             </div>
             {form.role === "doctor" && (
               <div className="col-span-2">
-                <label className="block text-xs text-gray-500 mb-1">Médico vinculado</label>
+                <label className="block text-xs text-parchment-dim mb-1">Médico vinculado</label>
                 <select
                   value={form.doctor_id}
                   onChange={(e) => setForm({ ...form, doctor_id: e.target.value })}
-                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                  className="w-full rounded-sm border border-line bg-ink-2 px-3 py-2 text-sm text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
                 >
                   <option value="">— Nenhum —</option>
                   {doctors.map((d) => (
@@ -200,7 +200,7 @@ export default function UsersPage() {
                     </option>
                   ))}
                 </select>
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-parchment-faint mt-1">
                   Vincule a um médico para dar acesso ao portal do médico.
                 </p>
               </div>
@@ -210,52 +210,52 @@ export default function UsersPage() {
             <button
               type="submit"
               disabled={saving}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+              className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-medium hover:bg-carimbo-bright disabled:opacity-50"
             >
               {saving ? "Salvando..." : editingId ? "Salvar" : "Criar"}
             </button>
-            <button type="button" onClick={cancelForm} className="text-sm text-gray-500 px-4 py-2">
+            <button type="button" onClick={cancelForm} className="text-sm text-parchment-dim px-4 py-2">
               Cancelar
             </button>
           </div>
         </form>
       )}
 
-      <div className="bg-white border rounded-lg overflow-hidden">
+      <div className="bg-ink-2 border border-line rounded-sm overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b">
+          <thead className="bg-ink-3 border-b border-line">
             <tr>
-              <th className="text-left px-4 py-3 text-gray-500 font-medium">Login</th>
-              <th className="text-left px-4 py-3 text-gray-500 font-medium">Nome</th>
-              <th className="text-left px-4 py-3 text-gray-500 font-medium">Perfil</th>
-              <th className="text-left px-4 py-3 text-gray-500 font-medium">Médico</th>
-              <th className="text-left px-4 py-3 text-gray-500 font-medium">Status</th>
-              <th className="text-left px-4 py-3 text-gray-500 font-medium">Ações</th>
+              <th className="text-left px-4 py-3 text-parchment-dim font-medium">Login</th>
+              <th className="text-left px-4 py-3 text-parchment-dim font-medium">Nome</th>
+              <th className="text-left px-4 py-3 text-parchment-dim font-medium">Perfil</th>
+              <th className="text-left px-4 py-3 text-parchment-dim font-medium">Médico</th>
+              <th className="text-left px-4 py-3 text-parchment-dim font-medium">Status</th>
+              <th className="text-left px-4 py-3 text-parchment-dim font-medium">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody className="divide-y divide-line">
             {users.map((user) => (
-              <tr key={user.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 font-medium text-gray-900">{user.username}</td>
-                <td className="px-4 py-3 text-gray-600">{user.full_name}</td>
+              <tr key={user.id} className="hover:bg-ink-3">
+                <td className="px-4 py-3 font-medium text-parchment">{user.username}</td>
+                <td className="px-4 py-3 text-parchment-dim">{user.full_name}</td>
                 <td className="px-4 py-3">
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${ROLE_COLORS[user.role] || "bg-gray-100 text-gray-600"}`}>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${ROLE_COLORS[user.role] || "bg-ink-3 text-parchment-dim"}`}>
                     {ROLE_LABELS[user.role] || user.role}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-gray-500 text-xs">
+                <td className="px-4 py-3 text-parchment-dim text-xs">
                   {doctorName(user.doctor_id) || "—"}
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${user.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${user.is_active ? "bg-jade/15 text-jade" : "bg-ink-3 text-parchment-faint"}`}>
                     {user.is_active ? "Ativo" : "Inativo"}
                   </span>
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex gap-3">
-                    <button onClick={() => openEdit(user)} className="text-xs text-blue-600 hover:underline">Editar</button>
-                    <button onClick={() => resetPassword(user)} className="text-xs text-orange-600 hover:underline">Reset Senha</button>
-                    <button onClick={() => toggleActive(user)} className="text-xs text-yellow-600 hover:underline">
+                    <button onClick={() => openEdit(user)} className="text-xs text-carimbo hover:underline">Editar</button>
+                    <button onClick={() => resetPassword(user)} className="text-xs text-selo hover:underline">Reset Senha</button>
+                    <button onClick={() => toggleActive(user)} className="text-xs text-selo hover:underline">
                       {user.is_active ? "Desativar" : "Ativar"}
                     </button>
                   </div>

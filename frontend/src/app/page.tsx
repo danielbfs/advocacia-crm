@@ -30,8 +30,8 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-gray-400">Carregando...</div>
+      <div className="flex min-h-screen items-center justify-center bg-ink">
+        <div className="text-parchment-faint">Carregando...</div>
       </div>
     );
   }
@@ -40,17 +40,17 @@ export default function Home() {
   if (isAuthenticated) return null;
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8">
+    <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-ink">
       <div className="text-center">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
+        <h1 className="text-4xl font-display font-semibold text-parchment mb-4">
           Open Clinic AI
         </h1>
-        <p className="text-gray-600 mb-8">
+        <p className="text-parchment-dim mb-8">
           Sistema open-source de gestão para clínicas
         </p>
         <a
           href="/login"
-          className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+          className="inline-block bg-carimbo text-parchment px-6 py-3 rounded-sm hover:bg-carimbo-bright active:translate-y-px transition-colors"
         >
           Entrar
         </a>

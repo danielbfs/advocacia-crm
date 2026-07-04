@@ -48,8 +48,8 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-gray-400">Carregando...</div>
+      <div className="flex min-h-screen items-center justify-center bg-ink">
+        <div className="text-parchment-faint">Carregando...</div>
       </div>
     );
   }

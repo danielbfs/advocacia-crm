@@ -17,33 +17,33 @@ import type {
 type ViewMode = "kanban" | "list";
 
 const STATUS_COLORS: Record<string, string> = {
-  novo: "bg-blue-500",
-  em_contato: "bg-yellow-500",
-  qualificado: "bg-cyan-500",
-  orcamento_enviado: "bg-purple-500",
-  negociando: "bg-orange-500",
-  convertido: "bg-green-500",
-  perdido: "bg-gray-400",
+  novo: "bg-info",
+  em_contato: "bg-selo",
+  qualificado: "bg-parchment-dim",
+  orcamento_enviado: "bg-selo",
+  negociando: "bg-carimbo",
+  convertido: "bg-jade",
+  perdido: "bg-parchment-faint",
 };
 
 const STATUS_BORDER: Record<string, string> = {
-  novo: "border-blue-200",
-  em_contato: "border-yellow-200",
-  qualificado: "border-cyan-200",
-  orcamento_enviado: "border-purple-200",
-  negociando: "border-orange-200",
-  convertido: "border-green-200",
-  perdido: "border-gray-200",
+  novo: "border-info/30",
+  em_contato: "border-selo/30",
+  qualificado: "border-parchment-dim/30",
+  orcamento_enviado: "border-selo/30",
+  negociando: "border-carimbo/30",
+  convertido: "border-jade/30",
+  perdido: "border-line",
 };
 
 const STATUS_BG_LIGHT: Record<string, string> = {
-  novo: "bg-blue-50",
-  em_contato: "bg-yellow-50",
-  qualificado: "bg-cyan-50",
-  orcamento_enviado: "bg-purple-50",
-  negociando: "bg-orange-50",
-  convertido: "bg-green-50",
-  perdido: "bg-gray-50",
+  novo: "bg-info/10",
+  em_contato: "bg-selo/10",
+  qualificado: "bg-ink-2/30",
+  orcamento_enviado: "bg-selo/10",
+  negociando: "bg-carimbo/10",
+  convertido: "bg-jade/10",
+  perdido: "bg-ink-2/30",
 };
 
 const CHANNEL_LABELS: Record<string, string> = {
@@ -363,18 +363,18 @@ export function LeadsListView({ basePath = "/secretary/leads" }: { basePath?: st
       {toastMessage && <ToastMessage message={toastMessage} type="success" />}
       {/* Header */}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <h1 className="text-2xl font-bold text-gray-900">Pipeline de Leads</h1>
+        <h1 className="text-2xl font-display font-semibold text-parchment">Pipeline de Leads</h1>
         <div className="flex gap-2 flex-wrap">
           <button
             onClick={exportCsv}
-            className="border px-3 py-2 rounded-lg text-sm hover:bg-gray-50"
+            className="border border-line bg-ink/40 px-3 py-2 rounded-sm text-sm text-parchment-dim hover:border-selo/50 hover:bg-ink-3"
             title="Exportar CSV com os filtros atuais"
           >
             Exportar CSV
           </button>
           <button
             onClick={() => setShowCreate(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
+            className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-semibold hover:bg-carimbo-bright active:translate-y-px shadow-[0_1px_0_0_rgba(0,0,0,0.4)]"
           >
             Novo Lead
           </button>
@@ -384,27 +384,27 @@ export function LeadsListView({ basePath = "/secretary/leads" }: { basePath?: st
       {/* Metrics */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
         <Metric label="Total no período" value={totalPipeline} />
-        <Metric label="Novos (não tratados)" value={newLeads} accent="text-blue-600" />
+        <Metric label="Novos (não tratados)" value={newLeads} accent="text-carimbo" />
         <Metric
           label="SLA vencido"
           value={overdueCount}
-          accent={overdueCount > 0 ? "text-red-600" : "text-gray-900"}
+          accent={overdueCount > 0 ? "text-carimbo-bright" : "text-parchment"}
         />
-        <Metric label="Conversão" value={`${conversionRate}%`} accent="text-green-600" />
+        <Metric label="Conversão" value={`${conversionRate}%`} accent="text-jade" />
       </div>
 
       {/* Filters */}
-      <div className="bg-white border rounded-lg p-3 mb-4 flex flex-wrap items-center gap-2 text-sm">
+      <div className="bg-ink-2 border border-line rounded-sm p-3 mb-4 flex flex-wrap items-center gap-2 text-sm">
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar nome, telefone ou e-mail..."
-          className="border rounded-lg px-3 py-1.5 flex-1 min-w-[200px]"
+          className="border border-line bg-ink/60 text-parchment placeholder:text-parchment-faint rounded-sm px-3 py-1.5 flex-1 min-w-[200px] focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
         />
         <select
           value={filterAssigned}
           onChange={(e) => setFilterAssigned(e.target.value)}
-          className="border rounded-lg px-3 py-1.5"
+          className="border border-line bg-ink/60 text-parchment rounded-sm px-3 py-1.5 focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
         >
           <option value="all">Todos os responsáveis</option>
           <option value="mine">Atribuídos a mim</option>
@@ -418,7 +418,7 @@ export function LeadsListView({ basePath = "/secretary/leads" }: { basePath?: st
         <select
           value={filterChannel}
           onChange={(e) => setFilterChannel(e.target.value)}
-          className="border rounded-lg px-3 py-1.5"
+          className="border border-line bg-ink/60 text-parchment rounded-sm px-3 py-1.5 focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
         >
           <option value="all">Todos canais</option>
           {CHANNEL_OPTIONS.map((c) => (
@@ -430,7 +430,7 @@ export function LeadsListView({ basePath = "/secretary/leads" }: { basePath?: st
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="border rounded-lg px-3 py-1.5"
+          className="border border-line bg-ink/60 text-parchment rounded-sm px-3 py-1.5 focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
         >
           <option value="all">Todos os status</option>
           {config && config.statuses.map((s) => (
@@ -442,7 +442,7 @@ export function LeadsListView({ basePath = "/secretary/leads" }: { basePath?: st
         <select
           value={period}
           onChange={(e) => setPeriod(e.target.value)}
-          className="border rounded-lg px-3 py-1.5"
+          className="border border-line bg-ink/60 text-parchment rounded-sm px-3 py-1.5 focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
           title="Período usado nos KPIs"
         >
           {PERIODS.map((p) => (
@@ -451,7 +451,7 @@ export function LeadsListView({ basePath = "/secretary/leads" }: { basePath?: st
             </option>
           ))}
         </select>
-        <label className="flex items-center gap-1.5 text-gray-600 select-none cursor-pointer">
+        <label className="flex items-center gap-1.5 text-parchment-dim select-none cursor-pointer">
           <input
             type="checkbox"
             checked={filterOverdue}
@@ -459,16 +459,16 @@ export function LeadsListView({ basePath = "/secretary/leads" }: { basePath?: st
           />
           SLA vencido
         </label>
-        <div className="ml-auto flex border rounded-lg overflow-hidden">
+        <div className="ml-auto flex border border-line rounded-sm overflow-hidden">
           <button
             onClick={() => setView("kanban")}
-            className={`px-3 py-1.5 text-sm ${view === "kanban" ? "bg-blue-600 text-white" : "bg-white text-gray-600"}`}
+            className={`px-3 py-1.5 text-sm ${view === "kanban" ? "bg-carimbo text-parchment" : "bg-ink-2 text-parchment-dim"}`}
           >
             Kanban
           </button>
           <button
             onClick={() => setView("list")}
-            className={`px-3 py-1.5 text-sm ${view === "list" ? "bg-blue-600 text-white" : "bg-white text-gray-600"}`}
+            className={`px-3 py-1.5 text-sm ${view === "list" ? "bg-carimbo text-parchment" : "bg-ink-2 text-parchment-dim"}`}
           >
             Lista
           </button>
@@ -477,19 +477,19 @@ export function LeadsListView({ basePath = "/secretary/leads" }: { basePath?: st
 
       {/* Bulk action bar */}
       {selected.size > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 flex items-center gap-3">
-          <span className="text-sm text-blue-900 font-medium">
+        <div className="bg-info/10 border border-info/40 rounded-sm p-3 mb-4 flex items-center gap-3">
+          <span className="text-sm text-parchment font-medium">
             {selected.size} selecionado(s)
           </span>
           <button
             onClick={() => setBulkAssignModal(true)}
-            className="bg-blue-600 text-white text-xs px-3 py-1.5 rounded-lg"
+            className="bg-carimbo text-parchment text-xs px-3 py-1.5 rounded-sm hover:bg-carimbo-bright"
           >
             Atribuir...
           </button>
           <button
             onClick={() => setSelected(new Set())}
-            className="text-xs text-gray-600 ml-auto"
+            className="text-xs text-parchment-dim ml-auto"
           >
             Limpar
           </button>
@@ -498,9 +498,9 @@ export function LeadsListView({ basePath = "/secretary/leads" }: { basePath?: st
 
       {/* Body */}
       {loading ? (
-        <p className="text-gray-400">Carregando...</p>
+        <p className="text-parchment-faint">Carregando...</p>
       ) : !config ? (
-        <p className="text-gray-400">Aguardando configuração do pipeline...</p>
+        <p className="text-parchment-faint">Aguardando configuração do pipeline...</p>
       ) : view === "kanban" ? (
         <KanbanBoard
           config={config}
@@ -610,9 +610,9 @@ function Metric({
   accent?: string;
 }) {
   return (
-    <div className="bg-white border rounded-lg p-3">
-      <div className="text-xs text-gray-500 mb-1">{label}</div>
-      <div className={`text-2xl font-bold ${accent || "text-gray-900"}`}>{value}</div>
+    <div className="bg-ink-2 border border-line rounded-sm p-3">
+      <div className="text-xs text-parchment-dim mb-1">{label}</div>
+      <div className={`text-2xl font-display font-semibold ${accent || "text-parchment"}`}>{value}</div>
     </div>
   );
 }
@@ -658,7 +658,7 @@ function KanbanBoard({
           return (
             <div
               key={s}
-              className={`w-72 shrink-0 rounded-lg border ${STATUS_BORDER[s]} ${STATUS_BG_LIGHT[s]} flex flex-col`}
+              className={`w-72 shrink-0 rounded-sm border ${STATUS_BORDER[s]} ${STATUS_BG_LIGHT[s]} flex flex-col`}
               style={{ minHeight: 400 }}
               onDragOver={(e) => onDragOver(e, s)}
               onDrop={(e) => onDrop(e, s)}
@@ -668,22 +668,22 @@ function KanbanBoard({
                   <span
                     className={`inline-block w-2 h-2 rounded-full ${STATUS_COLORS[s]}`}
                   />
-                  <span className="text-sm font-semibold text-gray-700">
+                  <span className="text-sm font-mono uppercase tracking-wider text-parchment-dim">
                     {statusLabel(s)}
                   </span>
                 </div>
-                <span className="text-xs text-gray-500 bg-white border rounded-full px-2 py-0.5">
+                <span className="text-xs text-parchment-dim bg-ink-2 border border-line rounded-full px-2 py-0.5">
                   {items.length}
                 </span>
               </div>
 
               <div
                 className={`flex-1 p-2 space-y-2 ${
-                  isOver ? "bg-white/60 ring-2 ring-blue-400 ring-inset" : ""
+                  isOver ? "bg-ink-3/60 ring-2 ring-carimbo ring-inset" : ""
                 }`}
               >
                 {items.length === 0 ? (
-                  <p className="text-xs text-gray-400 text-center py-4">
+                  <p className="text-xs text-parchment-faint text-center py-4">
                     Arraste aqui
                   </p>
                 ) : (
@@ -694,59 +694,59 @@ function KanbanBoard({
                       onDragStart={(e) => onDragStart(e, lead)}
                       onDragEnd={onDragEnd}
                       onClick={() => onCardClick(lead)}
-                      className={`bg-white border rounded-lg p-2.5 text-sm cursor-pointer hover:shadow transition-all ${
+                      className={`bg-ink-2 border border-line rounded-sm p-2.5 text-sm cursor-pointer transition-all ${
                         draggingId === lead.id ? "opacity-50" : ""
-                      } ${lead.is_overdue ? "border-red-300" : ""}`}
+                      } ${lead.is_overdue ? "border-carimbo/40" : ""}`}
                     >
                       <div className="flex items-start justify-between gap-2 mb-1">
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium text-gray-900 truncate">
+                          <div className="font-medium text-parchment truncate">
                             {lead.full_name || lead.phone}
                           </div>
                           <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-[10px] font-mono text-gray-400">
+                            <span className="text-[10px] font-mono text-parchment-faint">
                               {lead.code}
                             </span>
-                            <span className="text-[10px] text-gray-400">·</span>
-                            <span className="text-xs text-gray-500 truncate">
+                            <span className="text-[10px] text-parchment-faint">·</span>
+                            <span className="text-xs text-parchment-dim truncate">
                               {lead.phone}
                             </span>
                           </div>
                         </div>
                         {lead.is_overdue && (
-                          <span className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full font-medium shrink-0">
+                          <span className="text-[10px] bg-carimbo/10 text-carimbo-bright px-1.5 py-0.5 rounded-full font-medium shrink-0">
                             VENCIDO
                           </span>
                         )}
                       </div>
 
-                      <div className="flex items-center justify-between text-xs text-gray-500 mt-1.5">
+                      <div className="flex items-center justify-between text-xs text-parchment-dim mt-1.5">
                         <span>{CHANNEL_LABELS[lead.channel] || lead.channel}</span>
                         {lead.ai_active === true && (
-                          <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-medium">
+                          <span className="text-[10px] bg-jade/15 text-jade px-1.5 py-0.5 rounded-full font-medium">
                             🤖 IA
                           </span>
                         )}
                         {lead.ai_active === false && (
-                          <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-medium">
+                          <span className="text-[10px] bg-info/15 text-info px-1.5 py-0.5 rounded-full font-medium">
                             👤 Humano
                           </span>
                         )}
                         {lead.quote_value && (
-                          <span className="font-medium text-gray-700">
+                          <span className="font-medium text-selo font-mono">
                             {formatCurrency(lead.quote_value)}
                           </span>
                         )}
                       </div>
 
-                      <div className="flex items-center justify-between text-xs mt-2 pt-2 border-t">
-                        <span className="text-gray-400">
+                      <div className="flex items-center justify-between text-xs mt-2 pt-2 border-t border-line">
+                        <span className="text-parchment-faint">
                           {relativeDate(lead.created_at)}
                         </span>
                         <div className="flex items-center gap-2">
                           {lead.assigned_user ? (
                             <span
-                              className="text-gray-700 truncate max-w-[100px]"
+                              className="text-parchment-dim truncate max-w-[100px]"
                               title={lead.assigned_user.full_name}
                             >
                               👤 {lead.assigned_user.full_name.split(" ")[0]}
@@ -757,14 +757,14 @@ function KanbanBoard({
                                 e.stopPropagation();
                                 onAssignMe(lead.id);
                               }}
-                              className="text-blue-600 hover:underline"
+                              className="text-carimbo hover:underline"
                             >
                               Pegar
                             </button>
                           ) : null}
                           <button
                             onClick={(e) => { e.stopPropagation(); onDelete(lead); }}
-                            className="text-gray-300 hover:text-red-500 transition-colors ml-1"
+                            className="text-parchment-faint hover:text-carimbo-bright transition-colors ml-1"
                             title="Excluir lead"
                           >
                             🗑
@@ -801,12 +801,12 @@ function LeadsTable({
   onDelete: (lead: Lead) => void;
 }) {
   if (leads.length === 0) {
-    return <p className="text-gray-400">Nenhum lead encontrado.</p>;
+    return <p className="text-parchment-faint">Nenhum lead encontrado.</p>;
   }
   return (
-    <div className="bg-white border rounded-lg overflow-hidden">
+    <div className="bg-ink-2 border border-line rounded-sm overflow-hidden">
       <table className="w-full text-sm">
-        <thead className="bg-gray-50 border-b">
+        <thead className="bg-ink border-b border-line">
           <tr>
             <th className="px-3 py-2 w-8">
               <input
@@ -815,23 +815,23 @@ function LeadsTable({
                 onChange={onSelectAll}
               />
             </th>
-            <th className="text-left px-3 py-2 text-gray-500 font-medium">Lead</th>
-            <th className="text-left px-3 py-2 text-gray-500 font-medium">Canal</th>
-            <th className="text-left px-3 py-2 text-gray-500 font-medium">Status</th>
-            <th className="text-left px-3 py-2 text-gray-500 font-medium">Atendimento</th>
-            <th className="text-left px-3 py-2 text-gray-500 font-medium">Resp.</th>
-            <th className="text-right px-3 py-2 text-gray-500 font-medium">Valor</th>
-            <th className="text-left px-3 py-2 text-gray-500 font-medium">SLA</th>
-            <th className="text-left px-3 py-2 text-gray-500 font-medium">Criado</th>
+            <th className="text-left px-3 py-2 text-parchment-dim font-medium">Lead</th>
+            <th className="text-left px-3 py-2 text-parchment-dim font-medium">Canal</th>
+            <th className="text-left px-3 py-2 text-parchment-dim font-medium">Status</th>
+            <th className="text-left px-3 py-2 text-parchment-dim font-medium">Atendimento</th>
+            <th className="text-left px-3 py-2 text-parchment-dim font-medium">Resp.</th>
+            <th className="text-right px-3 py-2 text-parchment-dim font-medium">Valor</th>
+            <th className="text-left px-3 py-2 text-parchment-dim font-medium">SLA</th>
+            <th className="text-left px-3 py-2 text-parchment-dim font-medium">Criado</th>
             <th className="w-10" />
           </tr>
         </thead>
-        <tbody className="divide-y">
+        <tbody className="divide-y divide-line">
           {leads.map((lead) => (
             <tr
               key={lead.id}
-              className={`hover:bg-gray-50 cursor-pointer ${
-                selected.has(lead.id) ? "bg-blue-50" : ""
+              className={`hover:bg-ink-3 cursor-pointer ${
+                selected.has(lead.id) ? "bg-info/10" : ""
               }`}
             >
               <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
@@ -842,56 +842,56 @@ function LeadsTable({
                 />
               </td>
               <td className="px-3 py-2" onClick={() => onClick(lead)}>
-                <div className="font-medium text-gray-900">
+                <div className="font-medium text-parchment">
                   {lead.full_name || "—"}
                 </div>
-                <div className="text-xs text-gray-400">{lead.phone}</div>
+                <div className="text-xs text-parchment-faint">{lead.phone}</div>
               </td>
-              <td className="px-3 py-2 text-gray-600" onClick={() => onClick(lead)}>
+              <td className="px-3 py-2 text-parchment-dim" onClick={() => onClick(lead)}>
                 {CHANNEL_LABELS[lead.channel] || lead.channel}
               </td>
               <td className="px-3 py-2" onClick={() => onClick(lead)}>
                 <span
-                  className={`text-xs px-2 py-0.5 rounded-full font-medium text-white ${STATUS_COLORS[lead.status]}`}
+                  className={`text-xs px-2 py-0.5 rounded-full font-medium text-parchment ${STATUS_COLORS[lead.status]}`}
                 >
                   {statusLabel(lead.status)}
                 </span>
               </td>
               <td className="px-3 py-2" onClick={() => onClick(lead)}>
                 {lead.ai_active === true && (
-                  <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+                  <span className="text-xs bg-jade/15 text-jade px-2 py-0.5 rounded-full font-medium">
                     🤖 IA
                   </span>
                 )}
                 {lead.ai_active === false && (
-                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">
+                  <span className="text-xs bg-info/15 text-info px-2 py-0.5 rounded-full font-medium">
                     👤 Humano
                   </span>
                 )}
                 {lead.ai_active === null && (
-                  <span className="text-xs text-gray-400">—</span>
+                  <span className="text-xs text-parchment-faint">—</span>
                 )}
               </td>
-              <td className="px-3 py-2 text-gray-600" onClick={() => onClick(lead)}>
+              <td className="px-3 py-2 text-parchment-dim" onClick={() => onClick(lead)}>
                 {lead.assigned_user?.full_name || "—"}
               </td>
               <td
-                className="px-3 py-2 text-right text-gray-700"
+                className="px-3 py-2 text-right text-parchment-dim"
                 onClick={() => onClick(lead)}
               >
                 {formatCurrency(lead.quote_value)}
               </td>
               <td className="px-3 py-2" onClick={() => onClick(lead)}>
                 {lead.is_overdue ? (
-                  <span className="text-xs text-red-600 font-medium">VENCIDO</span>
+                  <span className="text-xs text-carimbo-bright font-medium">VENCIDO</span>
                 ) : lead.contacted_at ? (
-                  <span className="text-xs text-green-600">OK</span>
+                  <span className="text-xs text-jade">OK</span>
                 ) : (
-                  <span className="text-xs text-gray-400">Aguardando</span>
+                  <span className="text-xs text-parchment-faint">Aguardando</span>
                 )}
               </td>
               <td
-                className="px-3 py-2 text-gray-500 text-xs"
+                className="px-3 py-2 text-parchment-dim text-xs"
                 onClick={() => onClick(lead)}
               >
                 {relativeDate(lead.created_at)}
@@ -899,7 +899,7 @@ function LeadsTable({
               <td className="px-3 py-2 text-center" onClick={(e) => e.stopPropagation()}>
                 <button
                   onClick={() => onDelete(lead)}
-                  className="text-gray-300 hover:text-red-500 transition-colors"
+                  className="text-parchment-faint hover:text-carimbo-bright transition-colors"
                   title="Excluir lead"
                 >
                   🗑
@@ -958,7 +958,7 @@ function CreateLeadModal({
             <input
               value={form.full_name}
               onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
             />
           </Field>
           <Field label="Telefone *" required>
@@ -966,21 +966,21 @@ function CreateLeadModal({
               value={form.phone}
               required
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
             />
           </Field>
           <Field label="E-mail">
             <input
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
             />
           </Field>
           <Field label="Canal">
             <select
               value={form.channel}
               onChange={(e) => setForm({ ...form, channel: e.target.value })}
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
             >
               {CHANNEL_OPTIONS.map((c) => (
                 <option key={c.value} value={c.value}>
@@ -995,7 +995,7 @@ function CreateLeadModal({
               step="0.01"
               value={form.quote_value}
               onChange={(e) => setForm({ ...form, quote_value: e.target.value })}
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
             />
           </Field>
         </div>
@@ -1004,20 +1004,20 @@ function CreateLeadModal({
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             rows={3}
-            className="w-full border rounded-lg px-3 py-2 text-sm"
+            className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
           />
         </Field>
-        <div className="flex justify-end gap-2 pt-2 border-t">
+        <div className="flex justify-end gap-2 pt-2 border-t border-line">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm text-gray-600"
+            className="px-4 py-2 text-sm text-parchment-dim"
           >
             Cancelar
           </button>
           <button
             disabled={saving}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+            className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-semibold hover:bg-carimbo-bright disabled:opacity-50"
           >
             {saving ? "Salvando..." : "Criar Lead"}
           </button>
@@ -1052,7 +1052,7 @@ function TransitionModal({
       onClose={onClose}
       title={`Mover para "${statusLabel(target)}"`}
     >
-      <p className="text-sm text-gray-600 mb-3">
+      <p className="text-sm text-parchment-dim mb-3">
         <strong>{lead.full_name || lead.phone}</strong> — atualmente em{" "}
         <em>{statusLabel(lead.status)}</em>.
       </p>
@@ -1062,7 +1062,7 @@ function TransitionModal({
           <select
             value={lostReason}
             onChange={(e) => setLostReason(e.target.value)}
-            className="w-full border rounded-lg px-3 py-2 text-sm"
+            className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
           >
             {lostReasons.map((r) => (
               <option key={r.value} value={r.value}>
@@ -1078,7 +1078,7 @@ function TransitionModal({
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={3}
-          className="w-full border rounded-lg px-3 py-2 text-sm"
+          className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
           placeholder={
             isLost
               ? "Detalhes do motivo, próximos passos..."
@@ -1087,17 +1087,17 @@ function TransitionModal({
         />
       </Field>
 
-      <div className="flex justify-end gap-2 pt-2 border-t">
+      <div className="flex justify-end gap-2 pt-2 border-t border-line">
         <button
           onClick={onClose}
-          className="px-4 py-2 text-sm text-gray-600"
+          className="px-4 py-2 text-sm text-parchment-dim"
         >
           Cancelar
         </button>
         <button
           onClick={() => onConfirm(note, isLost ? lostReason : undefined)}
-          className={`px-4 py-2 rounded-lg text-sm font-medium text-white ${
-            isLost ? "bg-red-600 hover:bg-red-700" : "bg-blue-600 hover:bg-blue-700"
+          className={`px-4 py-2 rounded-sm text-sm font-semibold text-parchment ${
+            isLost ? "bg-carimbo-bright hover:bg-carimbo" : "bg-carimbo hover:bg-carimbo-bright"
           }`}
         >
           Confirmar
@@ -1181,7 +1181,7 @@ function ConvertLeadModal({
 
   return (
     <Modal onClose={onClose} title="Converter Lead em Paciente">
-      <p className="text-sm text-gray-600 mb-3">
+      <p className="text-sm text-parchment-dim mb-3">
         <strong>{lead.full_name || lead.phone}</strong> — telefone {lead.phone}
       </p>
 
@@ -1189,11 +1189,11 @@ function ConvertLeadModal({
         <input
           value={form.patient_name}
           onChange={(e) => setForm({ ...form, patient_name: e.target.value })}
-          className="w-full border rounded-lg px-3 py-2 text-sm"
+          className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
         />
       </Field>
 
-      <label className="flex items-center gap-2 my-3 text-sm cursor-pointer">
+      <label className="flex items-center gap-2 my-3 text-sm cursor-pointer text-parchment-dim">
         <input
           type="checkbox"
           checked={createAppt}
@@ -1203,12 +1203,12 @@ function ConvertLeadModal({
       </label>
 
       {createAppt && (
-        <div className="space-y-3 border-l-2 border-blue-200 pl-3 ml-1">
+        <div className="space-y-3 border-l-2 border-selo/40 pl-3 ml-1">
           <Field label="Médico *">
             <select
               value={form.doctor_id}
               onChange={(e) => setForm({ ...form, doctor_id: e.target.value })}
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
             >
               <option value="">Selecione...</option>
               {doctors.map((d) => (
@@ -1225,16 +1225,16 @@ function ConvertLeadModal({
               onChange={(e) =>
                 setForm({ ...form, starts_at: `${e.target.value}T00:00:00` })
               }
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
             />
           </Field>
 
           {form.doctor_id && form.starts_at.slice(0, 10) && (
             <Field label="Horário disponível *">
               {loadingSlots ? (
-                <p className="text-sm text-gray-400">Buscando horários...</p>
+                <p className="text-sm text-parchment-faint">Buscando horários...</p>
               ) : slots.length === 0 ? (
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-parchment-faint">
                   Sem horários disponíveis nesta data.
                 </p>
               ) : (
@@ -1246,10 +1246,10 @@ function ConvertLeadModal({
                         type="button"
                         key={slot.starts_at}
                         onClick={() => setForm({ ...form, starts_at: slot.starts_at })}
-                        className={`text-xs border rounded px-2 py-1.5 ${
+                        className={`text-xs border border-line rounded-sm px-2 py-1.5 ${
                           isSelected
-                            ? "bg-blue-600 text-white border-blue-600"
-                            : "bg-white hover:bg-gray-50"
+                            ? "bg-carimbo text-parchment border-carimbo"
+                            : "bg-ink-2 text-parchment-dim hover:bg-ink-3"
                         }`}
                       >
                         {new Date(slot.starts_at).toLocaleTimeString("pt-BR", {
@@ -1271,20 +1271,20 @@ function ConvertLeadModal({
                 setForm({ ...form, appointment_notes: e.target.value })
               }
               rows={2}
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
             />
           </Field>
         </div>
       )}
 
-      <div className="flex justify-end gap-2 pt-3 border-t mt-4">
-        <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600">
+      <div className="flex justify-end gap-2 pt-3 border-t border-line mt-4">
+        <button onClick={onClose} className="px-4 py-2 text-sm text-parchment-dim">
           Cancelar
         </button>
         <button
           disabled={saving || (createAppt && (!form.doctor_id || !form.starts_at.includes("T") || form.starts_at.endsWith("T00:00:00")))}
           onClick={submit}
-          className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50"
+          className="bg-jade text-parchment px-4 py-2 rounded-sm text-sm font-semibold hover:bg-jade/80 disabled:opacity-50"
         >
           {saving ? "Convertendo..." : "Converter"}
         </button>
@@ -1311,7 +1311,7 @@ function BulkAssignModal({
         <select
           value={val}
           onChange={(e) => setVal(e.target.value)}
-          className="w-full border rounded-lg px-3 py-2 text-sm"
+          className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
         >
           <option value="">— Sem responsável —</option>
           {users.map((u) => (
@@ -1321,13 +1321,13 @@ function BulkAssignModal({
           ))}
         </select>
       </Field>
-      <div className="flex justify-end gap-2 pt-3 border-t mt-4">
-        <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600">
+      <div className="flex justify-end gap-2 pt-3 border-t border-line mt-4">
+        <button onClick={onClose} className="px-4 py-2 text-sm text-parchment-dim">
           Cancelar
         </button>
         <button
           onClick={() => onConfirm(val || null)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
+          className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-semibold hover:bg-carimbo-bright"
         >
           Atribuir
         </button>
@@ -1351,10 +1351,10 @@ function Modal({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto"
+        className="bg-ink-2 border border-line rounded-sm p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-lg font-bold text-gray-900 mb-4">{title}</h2>
+        <h2 className="text-lg font-display font-semibold text-parchment mb-4">{title}</h2>
         {children}
       </div>
     </div>
@@ -1372,9 +1372,9 @@ function Field({
 }) {
   return (
     <div className="mb-2">
-      <label className="block text-xs font-medium text-gray-600 mb-1">
+      <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-parchment-dim mb-1">
         {label}
-        {required && <span className="text-red-500 ml-0.5">*</span>}
+        {required && <span className="text-carimbo-bright ml-0.5">*</span>}
       </label>
       {children}
     </div>

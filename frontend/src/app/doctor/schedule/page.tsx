@@ -67,7 +67,7 @@ export default function DoctorSchedulePage() {
   if (!user?.doctor_id) {
     return (
       <main className="p-8">
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-yellow-800">
+        <div className="bg-selo/15 border border-line rounded-sm p-6 text-selo">
           Seu usuário não está vinculado a nenhum médico. Contate o administrador.
         </div>
       </main>
@@ -76,34 +76,34 @@ export default function DoctorSchedulePage() {
 
   return (
     <main className="p-8 max-w-2xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">Meus Horários</h1>
-      <p className="text-sm text-gray-500 mb-6">
+      <h1 className="text-2xl font-display font-semibold text-parchment mb-2">Meus Horários</h1>
+      <p className="text-sm text-parchment-dim mb-6">
         Configure os dias e horários em que você está disponível para consultas.
       </p>
 
       {saved && (
-        <div className="mb-4 bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-2 rounded-lg">
+        <div className="mb-4 bg-jade/15 border border-line text-jade text-sm px-4 py-2 rounded-sm">
           Horários salvos com sucesso.
         </div>
       )}
 
       {loading ? (
-        <p className="text-gray-400">Carregando...</p>
+        <p className="text-parchment-faint">Carregando...</p>
       ) : (
-        <div className="bg-white border rounded-lg overflow-hidden">
+        <div className="bg-ink-2 border border-line rounded-sm overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-ink border-b border-line">
               <tr>
-                <th className="text-left p-3 font-medium text-gray-600">Dia</th>
-                <th className="text-left p-3 font-medium text-gray-600">Início</th>
-                <th className="text-left p-3 font-medium text-gray-600">Fim</th>
+                <th className="text-left p-3 font-medium text-parchment-dim">Dia</th>
+                <th className="text-left p-3 font-medium text-parchment-dim">Início</th>
+                <th className="text-left p-3 font-medium text-parchment-dim">Fim</th>
                 <th className="p-3" />
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y divide-line">
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="p-6 text-center text-gray-400">
+                  <td colSpan={4} className="p-6 text-center text-parchment-faint">
                     Nenhum horário configurado.
                   </td>
                 </tr>
@@ -114,7 +114,7 @@ export default function DoctorSchedulePage() {
                     <select
                       value={row.day_of_week}
                       onChange={(e) => updateRow(idx, "day_of_week", Number(e.target.value))}
-                      className="border rounded-lg px-2 py-1.5 text-sm w-full"
+                      className="border border-line bg-ink/60 rounded-sm px-2 py-1.5 text-sm w-full text-parchment focus:outline-none focus:border-carimbo focus:ring-1 focus:ring-carimbo"
                     >
                       {DAY_NAMES.map((name, d) => (
                         <option key={d} value={d}>{name}</option>
@@ -126,7 +126,7 @@ export default function DoctorSchedulePage() {
                       type="time"
                       value={toHHMM(row.start_time)}
                       onChange={(e) => updateRow(idx, "start_time", e.target.value)}
-                      className="border rounded-lg px-2 py-1.5 text-sm w-full"
+                      className="border border-line bg-ink/60 rounded-sm px-2 py-1.5 text-sm w-full text-parchment focus:outline-none focus:border-carimbo focus:ring-1 focus:ring-carimbo"
                     />
                   </td>
                   <td className="p-3">
@@ -134,13 +134,13 @@ export default function DoctorSchedulePage() {
                       type="time"
                       value={toHHMM(row.end_time)}
                       onChange={(e) => updateRow(idx, "end_time", e.target.value)}
-                      className="border rounded-lg px-2 py-1.5 text-sm w-full"
+                      className="border border-line bg-ink/60 rounded-sm px-2 py-1.5 text-sm w-full text-parchment focus:outline-none focus:border-carimbo focus:ring-1 focus:ring-carimbo"
                     />
                   </td>
                   <td className="p-3 text-right">
                     <button
                       onClick={() => removeRow(idx)}
-                      className="text-red-400 hover:text-red-600 text-xs px-2 py-1 rounded"
+                      className="text-carimbo-bright hover:text-carimbo text-xs px-2 py-1 rounded-sm"
                     >
                       Remover
                     </button>
@@ -150,17 +150,17 @@ export default function DoctorSchedulePage() {
             </tbody>
           </table>
 
-          <div className="p-3 border-t flex items-center justify-between">
+          <div className="p-3 border-t border-line flex items-center justify-between">
             <button
               onClick={addRow}
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              className="text-sm text-carimbo hover:text-carimbo-bright font-medium"
             >
               + Adicionar horário
             </button>
             <button
               onClick={save}
               disabled={saving}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+              className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-semibold hover:bg-carimbo-bright active:translate-y-px disabled:opacity-50"
             >
               {saving ? "Salvando..." : "Salvar Horários"}
             </button>

@@ -96,68 +96,68 @@ export function PatientDetailView({ backPath = "/secretary/patients" }: { backPa
     }
   }
 
-  if (loading) return <div className="p-8 text-gray-400">Carregando...</div>;
-  if (!patient) return <div className="p-8 text-gray-400">Paciente não encontrado.</div>;
+  if (loading) return <div className="p-8 text-parchment-faint">Carregando...</div>;
+  if (!patient) return <div className="p-8 text-parchment-faint">Paciente não encontrado.</div>;
 
   return (
     <main className="p-8 max-w-3xl">
       <button
         onClick={() => router.push(backPath)}
-        className="text-sm text-blue-600 hover:underline mb-4 block"
+        className="text-sm text-carimbo hover:underline mb-4 block"
       >
         &larr; Voltar para Pacientes
       </button>
 
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{patient.full_name || "Paciente sem nome"}</h1>
-          <p className="text-gray-500">{patient.phone} {patient.email ? `| ${patient.email}` : ""}</p>
-          <p className="text-xs text-gray-400 mt-1">
+          <h1 className="text-2xl font-display font-semibold text-parchment">{patient.full_name || "Paciente sem nome"}</h1>
+          <p className="text-parchment-dim">{patient.phone} {patient.email ? `| ${patient.email}` : ""}</p>
+          <p className="text-xs text-parchment-faint mt-1">
             Canal: {patient.channel} | Cadastro: {new Date(patient.created_at).toLocaleDateString("pt-BR")}
           </p>
         </div>
         <button
           onClick={() => setEditing(!editing)}
-          className="text-sm text-blue-600 hover:underline"
+          className="text-sm text-carimbo hover:underline"
         >
           {editing ? "Cancelar" : "Editar"}
         </button>
       </div>
 
       {editing && (
-        <div className="bg-white border rounded-lg p-4 mb-6 space-y-3">
-          <h3 className="text-sm font-semibold text-gray-700">Editar Paciente</h3>
+        <div className="bg-ink-2 border border-line rounded-sm p-4 mb-6 space-y-3">
+          <h3 className="text-sm font-semibold text-parchment-dim">Editar Paciente</h3>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Nome</label>
+              <label className="block text-xs text-parchment-dim mb-1">Nome</label>
               <input
                 value={form.full_name}
                 onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                className="w-full border rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Telefone</label>
+              <label className="block text-xs text-parchment-dim mb-1">Telefone</label>
               <input
                 value={form.phone}
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                className="w-full border rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">E-mail</label>
+              <label className="block text-xs text-parchment-dim mb-1">E-mail</label>
               <input
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className="w-full border rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Status</label>
+              <label className="block text-xs text-parchment-dim mb-1">Status</label>
               <select
                 value={form.crm_status}
                 onChange={(e) => setForm({ ...form, crm_status: e.target.value })}
-                className="w-full border rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
               >
                 {STATUS_OPTIONS.map(({ value, label }) => (
                   <option key={value} value={value}>{label}</option>
@@ -165,18 +165,18 @@ export function PatientDetailView({ backPath = "/secretary/patients" }: { backPa
               </select>
             </div>
             <div className="col-span-2">
-              <label className="block text-xs text-gray-500 mb-1">Observações</label>
+              <label className="block text-xs text-parchment-dim mb-1">Observações</label>
               <textarea
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                className="w-full border rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
                 rows={3}
               />
             </div>
           </div>
           <button
             onClick={saveEdit}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
+            className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-semibold hover:bg-carimbo-bright"
           >
             Salvar
           </button>
@@ -184,27 +184,27 @@ export function PatientDetailView({ backPath = "/secretary/patients" }: { backPa
       )}
 
       {/* Appointments */}
-      <div className="bg-white border rounded-lg p-4">
-        <h3 className="text-sm font-semibold text-gray-700 mb-3">Agendamentos</h3>
+      <div className="bg-ink-2 border border-line rounded-sm p-4">
+        <h3 className="text-sm font-semibold text-parchment-dim mb-3">Agendamentos</h3>
         {appointments.length === 0 ? (
-          <p className="text-sm text-gray-400">Nenhum agendamento.</p>
+          <p className="text-sm text-parchment-faint">Nenhum agendamento.</p>
         ) : (
           <div className="space-y-2">
             {appointments.map((appt) => (
-              <div key={appt.id} className="flex items-center justify-between border rounded-lg px-3 py-2">
+              <div key={appt.id} className="flex items-center justify-between border border-line rounded-sm px-3 py-2">
                 <div>
-                  <span className="text-sm font-medium text-gray-900">
+                  <span className="text-sm font-medium text-parchment">
                     {new Date(appt.starts_at).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })}
                     {" "}
                     {new Date(appt.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                   </span>
-                  {appt.notes && <span className="text-xs text-gray-400 ml-2">{appt.notes}</span>}
+                  {appt.notes && <span className="text-xs text-parchment-faint ml-2">{appt.notes}</span>}
                 </div>
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                  appt.status === "scheduled" ? "bg-blue-100 text-blue-700" :
-                  appt.status === "confirmed" ? "bg-green-100 text-green-700" :
-                  appt.status === "cancelled" ? "bg-red-100 text-red-500" :
-                  "bg-gray-100 text-gray-700"
+                  appt.status === "scheduled" ? "bg-info/15 text-info" :
+                  appt.status === "confirmed" ? "bg-jade/15 text-jade" :
+                  appt.status === "cancelled" ? "bg-carimbo/10 text-carimbo-bright" :
+                  "bg-ink-3 text-parchment-dim"
                 }`}>
                   {appt.status}
                 </span>
@@ -215,9 +215,9 @@ export function PatientDetailView({ backPath = "/secretary/patients" }: { backPa
       </div>
 
       {/* Messaging History */}
-      <div className="bg-white border rounded-lg p-4 mt-6">
-        <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-          <MessageSquare size={16} />
+      <div className="bg-ink-2 border border-line rounded-sm p-4 mt-6">
+        <h3 className="text-sm font-semibold text-parchment-dim mb-3 flex items-center gap-2">
+          <MessageSquare size={16} strokeWidth={1.5} />
           Histórico de Mensagens
         </h3>
         <ChatHistory patientId={patient.id} />
@@ -250,20 +250,20 @@ function ChatHistory({ patientId }: { patientId: string }) {
     fetchMessages();
   }, [patientId]);
 
-  if (loading) return <div className="text-xs text-gray-400">Carregando mensagens...</div>;
-  if (messages.length === 0) return <p className="text-sm text-gray-400">Nenhuma conversa registrada.</p>;
+  if (loading) return <div className="text-xs text-parchment-faint">Carregando mensagens...</div>;
+  if (messages.length === 0) return <p className="text-sm text-parchment-faint">Nenhuma conversa registrada.</p>;
 
   return (
-    <div className="space-y-3 max-h-96 overflow-y-auto p-2 bg-gray-50 rounded-lg">
+    <div className="space-y-3 max-h-96 overflow-y-auto p-2 bg-ink rounded-sm">
       {messages.map((m) => (
-        <div 
-          key={m.id} 
-          className={`p-2 rounded-lg text-xs max-w-[80%] ${
-            m.role === 'user' ? 'bg-white self-start border' : 'bg-green-50 self-end ml-auto border-green-100'
+        <div
+          key={m.id}
+          className={`p-2 rounded-sm text-xs max-w-[80%] ${
+            m.role === 'user' ? 'bg-ink-2 self-start border border-line' : 'bg-jade/10 self-end ml-auto border border-jade/30'
           }`}
         >
-          <p className="whitespace-pre-wrap">{m.content}</p>
-          <span className="text-[9px] text-gray-400 mt-1 block text-right">
+          <p className="whitespace-pre-wrap text-parchment">{m.content}</p>
+          <span className="text-[9px] text-parchment-faint mt-1 block text-right">
             {new Date(m.sent_at).toLocaleString("pt-BR")}
           </span>
         </div>

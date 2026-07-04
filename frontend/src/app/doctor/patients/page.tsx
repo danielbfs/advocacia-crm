@@ -76,7 +76,7 @@ export default function DoctorPatientsPage() {
   if (!user?.doctor_id) {
     return (
       <main className="p-8">
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-yellow-800">
+        <div className="bg-selo/15 border border-line rounded-sm p-6 text-selo">
           Seu usuário não está vinculado a nenhum médico. Contate o administrador.
         </div>
       </main>
@@ -86,43 +86,43 @@ export default function DoctorPatientsPage() {
   return (
     <main className="p-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Meus Pacientes</h1>
+        <h1 className="text-2xl font-display font-semibold text-parchment">Meus Pacientes</h1>
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar por nome ou telefone..."
-          className="border rounded-lg px-3 py-2 text-sm w-64"
+          className="border border-line bg-ink/60 rounded-sm px-3 py-2 text-sm w-64 text-parchment placeholder:text-parchment-faint focus:outline-none focus:border-carimbo focus:ring-1 focus:ring-carimbo"
         />
       </div>
 
       {loading ? (
-        <p className="text-gray-400">Carregando...</p>
+        <p className="text-parchment-faint">Carregando...</p>
       ) : filtered.length === 0 ? (
-        <div className="bg-white border rounded-lg p-8 text-center text-gray-400">
+        <div className="bg-ink-2 border border-line rounded-sm p-8 text-center text-parchment-faint">
           {search ? "Nenhum resultado encontrado." : "Nenhum paciente com consulta registrada."}
         </div>
       ) : (
-        <div className="bg-white border rounded-lg overflow-hidden">
+        <div className="bg-ink-2 border border-line rounded-sm overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-ink border-b border-line">
               <tr>
-                <th className="text-left p-4 font-medium text-gray-600">Paciente</th>
-                <th className="text-left p-4 font-medium text-gray-600">Telefone</th>
-                <th className="text-left p-4 font-medium text-gray-600">E-mail</th>
-                <th className="text-left p-4 font-medium text-gray-600">Consultas</th>
-                <th className="text-left p-4 font-medium text-gray-600">Última consulta</th>
+                <th className="text-left p-4 font-medium text-parchment-dim">Paciente</th>
+                <th className="text-left p-4 font-medium text-parchment-dim">Telefone</th>
+                <th className="text-left p-4 font-medium text-parchment-dim">E-mail</th>
+                <th className="text-left p-4 font-medium text-parchment-dim">Consultas</th>
+                <th className="text-left p-4 font-medium text-parchment-dim">Última consulta</th>
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y divide-line">
               {filtered.map(({ patient, lastAppt, totalAppts }) => (
-                <tr key={patient.id} className="hover:bg-gray-50">
-                  <td className="p-4 font-medium text-gray-900">
-                    {patient.full_name || <span className="text-gray-400 italic">Sem nome</span>}
+                <tr key={patient.id} className="hover:bg-ink-3">
+                  <td className="p-4 font-medium text-parchment">
+                    {patient.full_name || <span className="text-parchment-faint italic">Sem nome</span>}
                   </td>
-                  <td className="p-4 text-gray-600">{patient.phone}</td>
-                  <td className="p-4 text-gray-600">{patient.email || "—"}</td>
-                  <td className="p-4 text-gray-600">{totalAppts}</td>
-                  <td className="p-4 text-gray-500">
+                  <td className="p-4 text-parchment-dim">{patient.phone}</td>
+                  <td className="p-4 text-parchment-dim">{patient.email || "—"}</td>
+                  <td className="p-4 text-parchment-dim">{totalAppts}</td>
+                  <td className="p-4 text-parchment-dim">
                     {new Date(lastAppt).toLocaleDateString("pt-BR")}
                   </td>
                 </tr>

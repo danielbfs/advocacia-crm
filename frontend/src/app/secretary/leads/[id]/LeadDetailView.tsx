@@ -17,13 +17,13 @@ const STATUS_OPTIONS = [
 ];
 
 const STATUS_COLORS: Record<string, string> = {
-  novo: "bg-blue-500",
-  em_contato: "bg-yellow-500",
-  qualificado: "bg-cyan-500",
-  orcamento_enviado: "bg-purple-500",
-  negociando: "bg-orange-500",
-  convertido: "bg-green-500",
-  perdido: "bg-gray-400",
+  novo: "bg-info",
+  em_contato: "bg-selo",
+  qualificado: "bg-parchment-dim",
+  orcamento_enviado: "bg-selo",
+  negociando: "bg-carimbo",
+  convertido: "bg-jade",
+  perdido: "bg-parchment-faint",
 };
 
 const LOST_REASON_OPTIONS = [
@@ -68,24 +68,24 @@ function AiControlBadge({
 }) {
   if (!control)
     return (
-      <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+      <span className="text-xs text-parchment-faint bg-ink-3 px-2 py-0.5 rounded-full">
         IA não iniciada
       </span>
     );
   if (control === "ai")
     return (
-      <span className="text-xs text-green-700 bg-green-100 px-2 py-0.5 rounded-full font-medium">
+      <span className="text-xs text-jade bg-jade/15 px-2 py-0.5 rounded-full font-medium">
         🤖 Agente IA ativo
       </span>
     );
   if (control === "awaiting_supervisor")
     return (
-      <span className="text-xs text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded-full font-medium">
+      <span className="text-xs text-selo bg-selo/15 px-2 py-0.5 rounded-full font-medium">
         ⏳ Aguardando supervisor
       </span>
     );
   return (
-    <span className="text-xs text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full font-medium">
+    <span className="text-xs text-info bg-info/15 px-2 py-0.5 rounded-full font-medium">
       👤 Atendimento humano
     </span>
   );
@@ -120,7 +120,7 @@ function ConversaTab({
 
   if (!conv) {
     return (
-      <div className="bg-white border rounded-xl p-6 text-center text-sm text-gray-400">
+      <div className="bg-ink-2 border border-line rounded-sm p-6 text-center text-sm text-parchment-faint">
         Nenhuma conversa de IA iniciada para este lead ainda.
         <br />
         <span className="text-xs">
@@ -141,10 +141,10 @@ function ConversaTab({
   return (
     <div className="space-y-4">
       {/* Control bar */}
-      <div className="bg-white border rounded-xl p-4 flex items-center justify-between">
+      <div className="bg-ink-2 border border-line rounded-sm p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <AiControlBadge control={conv.control} />
-          <span className="text-xs text-gray-400">
+          <span className="text-xs text-parchment-faint">
             Canal: {CHANNEL_LABELS[conv.channel] || conv.channel} ·{" "}
             {conv.messages.length} mensagens
           </span>
@@ -154,7 +154,7 @@ function ConversaTab({
             <button
               onClick={() => toggleControl("human")}
               disabled={toggling}
-              className="text-sm px-3 py-1.5 rounded-lg border border-blue-600 text-blue-600 hover:bg-blue-50 disabled:opacity-50"
+              className="text-sm px-3 py-1.5 rounded-sm border border-carimbo text-carimbo hover:bg-carimbo/10 disabled:opacity-50"
             >
               Assumir conversa
             </button>
@@ -162,7 +162,7 @@ function ConversaTab({
             <button
               onClick={() => toggleControl("ai")}
               disabled={toggling}
-              className="text-sm px-3 py-1.5 rounded-lg border border-green-600 text-green-600 hover:bg-green-50 disabled:opacity-50"
+              className="text-sm px-3 py-1.5 rounded-sm border border-jade text-jade hover:bg-jade/10 disabled:opacity-50"
             >
               Devolver para IA
             </button>
@@ -172,27 +172,27 @@ function ConversaTab({
 
       {/* Supervisor queries */}
       {conv.supervisor_queries.length > 0 && (
-        <div className="bg-white border rounded-xl p-4 space-y-3">
-          <h4 className="text-sm font-semibold text-gray-700">
+        <div className="bg-ink-2 border border-line rounded-sm p-4 space-y-3">
+          <h4 className="text-sm font-semibold text-parchment-dim">
             Consultas ao Supervisor
           </h4>
           {pendingQueries.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs font-medium text-yellow-700">
+              <p className="text-xs font-medium text-selo">
                 ⏳ Aguardando resposta
               </p>
               {pendingQueries.map((q) => (
                 <div
                   key={q.id}
-                  className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm"
+                  className="bg-selo/10 border border-selo/40 rounded-sm p-3 text-sm"
                 >
-                  <p className="font-medium text-gray-800">{q.question}</p>
+                  <p className="font-medium text-parchment">{q.question}</p>
                   {q.context_summary && (
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-parchment-dim mt-1">
                       {q.context_summary}
                     </p>
                   )}
-                  <p className="text-xs text-gray-400 mt-2">
+                  <p className="text-xs text-parchment-faint mt-2">
                     Enviado{" "}
                     {new Date(q.asked_at).toLocaleString("pt-BR")}
                   </p>
@@ -202,19 +202,19 @@ function ConversaTab({
           )}
           {answeredQueries.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs font-medium text-gray-500">Resolvidas</p>
+              <p className="text-xs font-medium text-parchment-dim">Resolvidas</p>
               {answeredQueries.map((q) => (
                 <div
                   key={q.id}
-                  className="border rounded-lg p-3 text-sm space-y-1"
+                  className="border border-line rounded-sm p-3 text-sm space-y-1"
                 >
-                  <p className="text-gray-700">{q.question}</p>
+                  <p className="text-parchment-dim">{q.question}</p>
                   {q.answer && (
-                    <p className="text-green-700 font-medium">
+                    <p className="text-jade font-medium">
                       ↳ {q.answer}
                     </p>
                   )}
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-parchment-faint">
                     {q.status === "timeout"
                       ? "⏰ Expirou sem resposta"
                       : `Respondido ${
@@ -231,12 +231,12 @@ function ConversaTab({
       )}
 
       {/* Messages */}
-      <div className="bg-white border rounded-xl p-4">
-        <h4 className="text-sm font-semibold text-gray-700 mb-3">
+      <div className="bg-ink-2 border border-line rounded-sm p-4">
+        <h4 className="text-sm font-semibold text-parchment-dim mb-3">
           Histórico de mensagens
         </h4>
         {conv.messages.length === 0 ? (
-          <p className="text-sm text-gray-400">Nenhuma mensagem ainda.</p>
+          <p className="text-sm text-parchment-faint">Nenhuma mensagem ainda.</p>
         ) : (
           <div className="space-y-2 max-h-[480px] overflow-y-auto pr-1">
             {conv.messages.map((msg) => (
@@ -247,18 +247,18 @@ function ConversaTab({
                 }`}
               >
                 <div
-                  className={`max-w-[75%] rounded-xl px-3 py-2 text-sm ${
+                  className={`max-w-[75%] rounded-sm px-3 py-2 text-sm ${
                     msg.role === "assistant"
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-100 text-gray-800"
+                      ? "bg-carimbo text-parchment"
+                      : "bg-ink-3 text-parchment"
                   }`}
                 >
                   <p className="whitespace-pre-wrap">{msg.content}</p>
                   <p
                     className={`text-[10px] mt-1 ${
                       msg.role === "assistant"
-                        ? "text-blue-200"
-                        : "text-gray-400"
+                        ? "text-parchment/70"
+                        : "text-parchment-faint"
                     }`}
                   >
                     {new Date(msg.sent_at).toLocaleString("pt-BR")}
@@ -477,15 +477,15 @@ export function LeadDetailView({ backPath = "/secretary" }: { backPath?: string 
     }
   }
 
-  if (loading) return <div className="p-8 text-gray-400">Carregando...</div>;
-  if (!lead) return <div className="p-8 text-gray-400">Lead não encontrado.</div>;
+  if (loading) return <div className="p-8 text-parchment-faint">Carregando...</div>;
+  if (!lead) return <div className="p-8 text-parchment-faint">Lead não encontrado.</div>;
 
   return (
     <main className="p-8 max-w-4xl">
       {/* Back */}
       <button
         onClick={() => router.push(backPath)}
-        className="text-sm text-blue-600 hover:underline mb-4 block"
+        className="text-sm text-carimbo hover:underline mb-4 block"
       >
         &larr; Voltar para Leads
       </button>
@@ -494,30 +494,30 @@ export function LeadDetailView({ backPath = "/secretary" }: { backPath?: string 
       <div className="flex items-start justify-between mb-6">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-mono text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
+            <span className="text-xs font-mono text-parchment-faint bg-ink-3 px-2 py-0.5 rounded-sm">
               {lead.code}
             </span>
             {conversation && (
               <AiControlBadge control={conversation.control} />
             )}
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-display font-semibold text-parchment">
             {lead.full_name || "Lead sem nome"}
           </h1>
-          <p className="text-gray-500">
+          <p className="text-parchment-dim">
             {lead.phone}
             {lead.email ? ` | ${lead.email}` : ""}
           </p>
           <div className="flex items-center gap-2 mt-2">
             <span className={`w-3 h-3 rounded-full ${STATUS_COLORS[lead.status]}`} />
-            <span className="text-sm font-medium text-gray-700">
+            <span className="text-sm font-medium text-parchment-dim">
               {STATUS_OPTIONS.find((s) => s.value === lead.status)?.label}
             </span>
-            <span className="text-xs text-gray-400 ml-2">
+            <span className="text-xs text-parchment-faint ml-2">
               via {CHANNEL_LABELS[lead.channel] || lead.channel}
             </span>
             {lead.is_overdue && (
-              <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-medium ml-2">
+              <span className="text-xs bg-carimbo/10 text-carimbo-bright px-2 py-0.5 rounded-full font-medium ml-2">
                 SLA VENCIDO
               </span>
             )}
@@ -526,14 +526,14 @@ export function LeadDetailView({ backPath = "/secretary" }: { backPath?: string 
         <div className="flex items-center gap-4">
           <button
             onClick={() => setEditing(!editing)}
-            className="text-sm text-blue-600 hover:underline"
+            className="text-sm text-carimbo hover:underline"
           >
             {editing ? "Cancelar Edição" : "Editar"}
           </button>
           <button
             onClick={handleDeleteLead}
             disabled={deletingLead}
-            className="text-sm text-red-600 hover:underline disabled:opacity-50"
+            className="text-sm text-carimbo-bright hover:underline disabled:opacity-50"
             title="Excluir lead"
           >
             {deletingLead ? "Excluindo..." : "Excluir lead"}
@@ -542,17 +542,17 @@ export function LeadDetailView({ backPath = "/secretary" }: { backPath?: string 
       </div>
 
       {/* Handling control */}
-      <div className="flex items-center gap-3 mb-5 p-3 bg-white border rounded-lg">
-        <span className="text-xs text-gray-500">Atendimento:</span>
+      <div className="flex items-center gap-3 mb-5 p-3 bg-ink-2 border border-line rounded-sm">
+        <span className="text-xs text-parchment-dim">Atendimento:</span>
         {lead.ai_active === true && (
           <>
-            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+            <span className="text-xs bg-jade/15 text-jade px-2 py-0.5 rounded-full font-medium">
               🤖 IA ativa
             </span>
             <button
               onClick={() => toggleHandling("human")}
               disabled={handlingBusy}
-              className="text-xs px-3 py-1 rounded-lg border border-blue-600 text-blue-600 hover:bg-blue-50 disabled:opacity-50"
+              className="text-xs px-3 py-1 rounded-sm border border-carimbo text-carimbo hover:bg-carimbo/10 disabled:opacity-50"
             >
               Assumir atendimento
             </button>
@@ -560,25 +560,25 @@ export function LeadDetailView({ backPath = "/secretary" }: { backPath?: string 
         )}
         {lead.ai_active === false && (
           <>
-            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">
+            <span className="text-xs bg-info/15 text-info px-2 py-0.5 rounded-full font-medium">
               👤 {lead.assigned_user?.full_name || "Humano"}
             </span>
             <button
               onClick={() => toggleHandling("ia")}
               disabled={handlingBusy}
-              className="text-xs px-3 py-1 rounded-lg border border-green-600 text-green-600 hover:bg-green-50 disabled:opacity-50"
+              className="text-xs px-3 py-1 rounded-sm border border-jade text-jade hover:bg-jade/10 disabled:opacity-50"
             >
               Devolver para IA
             </button>
           </>
         )}
         {lead.ai_active === null && (
-          <span className="text-xs text-gray-400">Sem IA envolvida</span>
+          <span className="text-xs text-parchment-faint">Sem IA envolvida</span>
         )}
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 border-b">
+      <div className="flex gap-1 mb-6 border-b border-line">
         {([
           { key: "info", label: "Informações" },
           { key: "whatsapp", label: "WhatsApp" },
@@ -590,18 +590,18 @@ export function LeadDetailView({ backPath = "/secretary" }: { backPath?: string 
             onClick={() => setTab(key)}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 ${
               tab === key
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700"
+                ? "border-carimbo text-carimbo"
+                : "border-transparent text-parchment-dim hover:text-parchment"
             }`}
           >
             {label}
             {badge !== undefined && badge > 0 && (
-              <span className="text-[10px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full font-medium">
+              <span className="text-[10px] bg-selo/15 text-selo px-1.5 py-0.5 rounded-full font-medium">
                 {badge}
               </span>
             )}
             {key === "conversa" && conversation?.control === "awaiting_supervisor" && (
-              <span className="w-2 h-2 rounded-full bg-yellow-500 inline-block" />
+              <span className="w-2 h-2 rounded-full bg-selo inline-block" />
             )}
           </button>
         ))}
@@ -611,8 +611,8 @@ export function LeadDetailView({ backPath = "/secretary" }: { backPath?: string 
       {tab === "info" && (
         <>
           {/* Pipeline */}
-          <div className="bg-white border rounded-lg p-4 mb-6">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">
+          <div className="bg-ink-2 border border-line rounded-sm p-4 mb-6">
+            <h3 className="text-sm font-semibold text-parchment-dim mb-3">
               Pipeline
             </h3>
             <div className="flex gap-2 flex-wrap">
@@ -621,10 +621,10 @@ export function LeadDetailView({ backPath = "/secretary" }: { backPath?: string 
                   key={value}
                   onClick={() => changeStatus(value)}
                   disabled={lead.status === value}
-                  className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+                  className={`text-xs px-3 py-1.5 rounded-sm border transition-colors ${
                     lead.status === value
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                      ? "bg-carimbo text-parchment border-carimbo"
+                      : "bg-ink-2 text-parchment-dim border-line hover:bg-ink-3"
                   }`}
                 >
                   {label}
@@ -633,7 +633,7 @@ export function LeadDetailView({ backPath = "/secretary" }: { backPath?: string 
               {!lead.contacted_at && lead.status === "novo" && (
                 <button
                   onClick={handleContact}
-                  className="text-xs px-3 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 ml-2"
+                  className="text-xs px-3 py-1.5 rounded-sm bg-jade text-parchment hover:bg-jade/80 ml-2"
                 >
                   Registrar 1o Contato
                 </button>
@@ -643,43 +643,43 @@ export function LeadDetailView({ backPath = "/secretary" }: { backPath?: string 
 
           {/* Edit Form */}
           {editing && (
-            <div className="bg-white border rounded-lg p-4 mb-6 space-y-3">
-              <h3 className="text-sm font-semibold text-gray-700">
+            <div className="bg-ink-2 border border-line rounded-sm p-4 mb-6 space-y-3">
+              <h3 className="text-sm font-semibold text-parchment-dim">
                 Editar Dados do Lead
               </h3>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">Nome</label>
+                  <label className="block text-xs text-parchment-dim mb-1">Nome</label>
                   <input
                     value={editForm.full_name}
                     onChange={(e) =>
                       setEditForm({ ...editForm, full_name: e.target.value })
                     }
-                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">Telefone</label>
+                  <label className="block text-xs text-parchment-dim mb-1">Telefone</label>
                   <input
                     value={editForm.phone}
                     onChange={(e) =>
                       setEditForm({ ...editForm, phone: e.target.value })
                     }
-                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">E-mail</label>
+                  <label className="block text-xs text-parchment-dim mb-1">E-mail</label>
                   <input
                     value={editForm.email}
                     onChange={(e) =>
                       setEditForm({ ...editForm, email: e.target.value })
                     }
-                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">
+                  <label className="block text-xs text-parchment-dim mb-1">
                     Valor orçamento (R$)
                   </label>
                   <input
@@ -689,11 +689,11 @@ export function LeadDetailView({ backPath = "/secretary" }: { backPath?: string 
                     onChange={(e) =>
                       setEditForm({ ...editForm, quote_value: e.target.value })
                     }
-                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-xs text-gray-500 mb-1">
+                  <label className="block text-xs text-parchment-dim mb-1">
                     Descrição / Queixa
                   </label>
                   <textarea
@@ -701,12 +701,12 @@ export function LeadDetailView({ backPath = "/secretary" }: { backPath?: string 
                     onChange={(e) =>
                       setEditForm({ ...editForm, description: e.target.value })
                     }
-                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
                     rows={2}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">
+                  <label className="block text-xs text-parchment-dim mb-1">
                     Próximo follow-up
                   </label>
                   <input
@@ -718,13 +718,13 @@ export function LeadDetailView({ backPath = "/secretary" }: { backPath?: string 
                         next_followup_at: e.target.value,
                       })
                     }
-                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
                   />
                 </div>
               </div>
               <button
                 onClick={saveEdit}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
+                className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-semibold hover:bg-carimbo-bright"
               >
                 Salvar
               </button>
@@ -764,19 +764,19 @@ export function LeadDetailView({ backPath = "/secretary" }: { backPath?: string 
           </div>
 
           {/* Interactions */}
-          <div className="bg-white border rounded-lg p-4 mb-6">
+          <div className="bg-ink-2 border border-line rounded-sm p-4 mb-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-gray-700">Interações</h3>
+              <h3 className="text-sm font-semibold text-parchment-dim">Interações</h3>
               <button
                 onClick={() => setShowInteraction(!showInteraction)}
-                className="text-sm text-blue-600 hover:underline"
+                className="text-sm text-carimbo hover:underline"
               >
                 {showInteraction ? "Cancelar" : "+ Nova interação"}
               </button>
             </div>
 
             {showInteraction && (
-              <div className="border rounded-lg p-3 mb-4 space-y-2 bg-gray-50">
+              <div className="border border-line rounded-sm p-3 mb-4 space-y-2 bg-ink">
                 <div className="flex gap-2">
                   <select
                     value={interactionForm.type}
@@ -786,7 +786,7 @@ export function LeadDetailView({ backPath = "/secretary" }: { backPath?: string 
                         type: e.target.value,
                       })
                     }
-                    className="border rounded px-2 py-1.5 text-sm"
+                    className="border border-line bg-ink/60 text-parchment rounded-sm px-2 py-1.5 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
                   >
                     {INTERACTION_TYPES.map(({ value, label }) => (
                       <option key={value} value={value}>
@@ -804,7 +804,7 @@ export function LeadDetailView({ backPath = "/secretary" }: { backPath?: string 
                     })
                   }
                   placeholder="Descreva o contato..."
-                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                  className="w-full border border-line bg-ink/60 text-parchment placeholder:text-parchment-faint rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
                   rows={2}
                 />
                 <input
@@ -816,11 +816,11 @@ export function LeadDetailView({ backPath = "/secretary" }: { backPath?: string 
                     })
                   }
                   placeholder="Próxima ação (opcional)"
-                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                  className="w-full border border-line bg-ink/60 text-parchment placeholder:text-parchment-faint rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
                 />
                 <button
                   onClick={addInteraction}
-                  className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-blue-700"
+                  className="bg-carimbo text-parchment px-3 py-1.5 rounded-sm text-sm font-semibold hover:bg-carimbo-bright"
                 >
                   Registrar
                 </button>
@@ -828,25 +828,25 @@ export function LeadDetailView({ backPath = "/secretary" }: { backPath?: string 
             )}
 
             {interactions.length === 0 ? (
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-parchment-faint">
                 Nenhuma interação registrada.
               </p>
             ) : (
               <div className="space-y-3">
                 {interactions.map((int) => (
-                  <div key={int.id} className="border-l-2 border-blue-200 pl-3">
+                  <div key={int.id} className="border-l-2 border-selo/40 pl-3">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-medium text-blue-600 uppercase">
+                      <span className="text-xs font-medium text-carimbo uppercase">
                         {INTERACTION_TYPES.find((t) => t.value === int.type)
                           ?.label || int.type}
                       </span>
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-parchment-faint">
                         {new Date(int.interacted_at).toLocaleString("pt-BR")}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-700">{int.content}</p>
+                    <p className="text-sm text-parchment-dim">{int.content}</p>
                     {int.next_action && (
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-parchment-dim mt-1">
                         Próxima ação: {int.next_action}
                       </p>
                     )}
@@ -889,13 +889,13 @@ export function LeadDetailView({ backPath = "/secretary" }: { backPath?: string 
       {/* Modals */}
       {showLostModal && (
         <Modal onClose={() => setShowLostModal(false)} title="Marcar como Perdido">
-          <label className="block text-xs font-medium text-gray-600 mb-1">
+          <label className="block text-xs font-medium text-parchment-dim mb-1">
             Motivo da perda *
           </label>
           <select
             value={lostReason}
             onChange={(e) => setLostReason(e.target.value)}
-            className="w-full border rounded-lg px-3 py-2 text-sm mb-3"
+            className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm mb-3 focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
           >
             <option value="">Selecione um motivo...</option>
             {LOST_REASON_OPTIONS.map((r) => (
@@ -907,14 +907,14 @@ export function LeadDetailView({ backPath = "/secretary" }: { backPath?: string 
           <div className="flex gap-2 justify-end">
             <button
               onClick={() => setShowLostModal(false)}
-              className="text-sm text-gray-500 px-4 py-2"
+              className="text-sm text-parchment-dim px-4 py-2"
             >
               Cancelar
             </button>
             <button
               onClick={handleLost}
               disabled={!lostReason}
-              className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50"
+              className="bg-carimbo-bright text-parchment px-4 py-2 rounded-sm text-sm font-semibold hover:bg-carimbo disabled:opacity-50"
             >
               Confirmar Perda
             </button>
@@ -927,29 +927,29 @@ export function LeadDetailView({ backPath = "/secretary" }: { backPath?: string 
           onClose={() => setShowConvertModal(false)}
           title="Converter em Paciente"
         >
-          <p className="text-sm text-gray-500 mb-3">
+          <p className="text-sm text-parchment-dim mb-3">
             O lead será convertido em paciente.
           </p>
           <div className="mb-3">
-            <label className="block text-xs text-gray-500 mb-1">
+            <label className="block text-xs text-parchment-dim mb-1">
               Nome do paciente
             </label>
             <input
               value={convertName}
               onChange={(e) => setConvertName(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
             />
           </div>
           <div className="flex gap-2 justify-end">
             <button
               onClick={() => setShowConvertModal(false)}
-              className="text-sm text-gray-500 px-4 py-2"
+              className="text-sm text-parchment-dim px-4 py-2"
             >
               Cancelar
             </button>
             <button
               onClick={handleConvert}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700"
+              className="bg-jade text-parchment px-4 py-2 rounded-sm text-sm font-semibold hover:bg-jade/80"
             >
               Converter
             </button>
@@ -1012,26 +1012,26 @@ function WhatsAppTab({
     cancelled: "Cancelada",
   };
   const statusColor: Record<string, string> = {
-    pending: "bg-yellow-100 text-yellow-700",
-    sent: "bg-green-100 text-green-700",
-    failed: "bg-red-100 text-red-700",
-    cancelled: "bg-gray-100 text-gray-500",
+    pending: "bg-selo/15 text-selo",
+    sent: "bg-jade/15 text-jade",
+    failed: "bg-carimbo/10 text-carimbo-bright",
+    cancelled: "bg-ink-3 text-parchment-faint",
   };
 
   return (
     <div className="space-y-4">
       {/* Send form */}
-      <div className="bg-white border rounded-xl p-4 space-y-3">
-        <h4 className="text-sm font-semibold text-gray-700">Nova mensagem WhatsApp</h4>
+      <div className="bg-ink-2 border border-line rounded-sm p-4 space-y-3">
+        <h4 className="text-sm font-semibold text-parchment-dim">Nova mensagem WhatsApp</h4>
         <textarea
           rows={3}
           value={msg}
           onChange={(e) => setMsg(e.target.value)}
           placeholder="Digite a mensagem..."
-          className="w-full border rounded-lg px-3 py-2 text-sm"
+          className="w-full border border-line bg-ink/60 text-parchment placeholder:text-parchment-faint rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
         />
         <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+          <label className="flex items-center gap-2 text-sm text-parchment-dim cursor-pointer">
             <input
               type="radio"
               checked={!scheduleMode}
@@ -1039,7 +1039,7 @@ function WhatsAppTab({
             />
             Enviar agora
           </label>
-          <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+          <label className="flex items-center gap-2 text-sm text-parchment-dim cursor-pointer">
             <input
               type="radio"
               checked={scheduleMode}
@@ -1052,14 +1052,14 @@ function WhatsAppTab({
               type="datetime-local"
               value={scheduledFor}
               onChange={(e) => setScheduledFor(e.target.value)}
-              className="border rounded px-2 py-1 text-sm"
+              className="border border-line bg-ink/60 text-parchment rounded-sm px-2 py-1 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
             />
           )}
         </div>
         <button
           onClick={send}
           disabled={sending || !msg.trim() || (scheduleMode && !scheduledFor)}
-          className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50"
+          className="bg-jade text-parchment px-4 py-2 rounded-sm text-sm font-semibold hover:bg-jade/80 disabled:opacity-50"
         >
           {sending ? "Enviando..." : scheduleMode ? "Agendar" : "Enviar agora"}
         </button>
@@ -1067,16 +1067,16 @@ function WhatsAppTab({
 
       {/* History */}
       {messages.length > 0 && (
-        <div className="bg-white border rounded-xl p-4">
-          <h4 className="text-sm font-semibold text-gray-700 mb-3">Histórico</h4>
+        <div className="bg-ink-2 border border-line rounded-sm p-4">
+          <h4 className="text-sm font-semibold text-parchment-dim mb-3">Histórico</h4>
           <div className="space-y-2">
             {messages.map((m) => (
-              <div key={m.id} className="border rounded-lg p-3 text-sm">
+              <div key={m.id} className="border border-line rounded-sm p-3 text-sm">
                 <div className="flex items-center justify-between mb-1">
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor[m.status]}`}>
                     {statusLabel[m.status]}
                   </span>
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs text-parchment-faint">
                     {m.scheduled_for
                       ? `Agendada: ${new Date(m.scheduled_for).toLocaleString("pt-BR")}`
                       : m.sent_at
@@ -1084,12 +1084,12 @@ function WhatsAppTab({
                       : new Date(m.created_at).toLocaleString("pt-BR")}
                   </span>
                 </div>
-                <p className="text-gray-700 whitespace-pre-wrap">{m.message}</p>
-                {m.error && <p className="text-xs text-red-500 mt-1">{m.error}</p>}
+                <p className="text-parchment-dim whitespace-pre-wrap">{m.message}</p>
+                {m.error && <p className="text-xs text-carimbo-bright mt-1">{m.error}</p>}
                 {m.status === "pending" && (
                   <button
                     onClick={() => cancel(m.id)}
-                    className="text-xs text-red-500 hover:text-red-700 mt-1"
+                    className="text-xs text-carimbo-bright hover:text-carimbo mt-1"
                   >
                     Cancelar
                   </button>
@@ -1168,50 +1168,50 @@ function LembretesTab({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-semibold text-gray-700">
+        <h4 className="text-sm font-semibold text-parchment-dim">
           Lembretes / Atividades
         </h4>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="text-sm text-blue-600 hover:underline"
+          className="text-sm text-carimbo hover:underline"
         >
           {showForm ? "Cancelar" : "+ Novo lembrete"}
         </button>
       </div>
 
       {showForm && (
-        <div className="bg-white border rounded-xl p-4 space-y-3">
+        <div className="bg-ink-2 border border-line rounded-sm p-4 space-y-3">
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Título *</label>
+            <label className="block text-xs text-parchment-dim mb-1">Título *</label>
             <input
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               placeholder="Ex: Ligar para confirmar interesse"
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-line bg-ink/60 text-parchment placeholder:text-parchment-faint rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Descrição (opcional)</label>
+            <label className="block text-xs text-parchment-dim mb-1">Descrição (opcional)</label>
             <textarea
               rows={2}
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Vencimento (opcional)</label>
+            <label className="block text-xs text-parchment-dim mb-1">Vencimento (opcional)</label>
             <input
               type="datetime-local"
               value={form.due_at}
               onChange={(e) => setForm({ ...form, due_at: e.target.value })}
-              className="border rounded-lg px-3 py-2 text-sm"
+              className="border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
             />
           </div>
           <button
             onClick={create}
             disabled={saving || !form.title.trim()}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+            className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-semibold hover:bg-carimbo-bright disabled:opacity-50"
           >
             {saving ? "Salvando..." : "Criar lembrete"}
           </button>
@@ -1220,7 +1220,7 @@ function LembretesTab({
 
       {/* Pending */}
       {pending.length === 0 && !showForm ? (
-        <div className="bg-white border rounded-xl p-6 text-center text-sm text-gray-400">
+        <div className="bg-ink-2 border border-line rounded-sm p-6 text-center text-sm text-parchment-faint">
           Nenhum lembrete pendente.
         </div>
       ) : (
@@ -1228,22 +1228,22 @@ function LembretesTab({
           {pending.map((a) => (
             <div
               key={a.id}
-              className={`bg-white border rounded-xl p-3 flex items-start gap-3 ${
-                isOverdue(a.due_at) ? "border-orange-300 bg-orange-50" : ""
+              className={`bg-ink-2 border border-line rounded-sm p-3 flex items-start gap-3 ${
+                isOverdue(a.due_at) ? "border-selo/40 bg-selo/10" : ""
               }`}
             >
               <button
                 onClick={() => complete(a.id)}
-                className="mt-0.5 w-5 h-5 rounded border-2 border-gray-300 hover:border-green-500 flex-shrink-0 transition-colors"
+                className="mt-0.5 w-5 h-5 rounded-sm border-2 border-line hover:border-jade flex-shrink-0 transition-colors"
                 title="Marcar como concluído"
               />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-800">{a.title}</p>
+                <p className="text-sm font-medium text-parchment">{a.title}</p>
                 {a.description && (
-                  <p className="text-xs text-gray-500 mt-0.5">{a.description}</p>
+                  <p className="text-xs text-parchment-dim mt-0.5">{a.description}</p>
                 )}
                 {a.due_at && (
-                  <p className={`text-xs mt-1 font-medium ${isOverdue(a.due_at) ? "text-orange-600" : "text-gray-400"}`}>
+                  <p className={`text-xs mt-1 font-medium ${isOverdue(a.due_at) ? "text-selo" : "text-parchment-faint"}`}>
                     {isOverdue(a.due_at) ? "⚠️ " : ""}
                     Vence: {new Date(a.due_at).toLocaleString("pt-BR")}
                   </p>
@@ -1251,7 +1251,7 @@ function LembretesTab({
               </div>
               <button
                 onClick={() => cancel(a.id)}
-                className="text-xs text-gray-400 hover:text-red-500 flex-shrink-0"
+                className="text-xs text-parchment-faint hover:text-carimbo-bright flex-shrink-0"
               >
                 ✕
               </button>
@@ -1262,19 +1262,19 @@ function LembretesTab({
 
       {/* Completed */}
       {done.length > 0 && (
-        <details className="bg-white border rounded-xl overflow-hidden">
-          <summary className="px-4 py-3 text-sm text-gray-500 cursor-pointer hover:bg-gray-50">
+        <details className="bg-ink-2 border border-line rounded-sm overflow-hidden">
+          <summary className="px-4 py-3 text-sm text-parchment-dim cursor-pointer hover:bg-ink-3">
             {done.length} concluído(s) / cancelado(s)
           </summary>
-          <div className="border-t divide-y">
+          <div className="border-t border-line divide-y divide-line">
             {done.map((a) => (
               <div key={a.id} className="px-4 py-2.5 flex items-center gap-3">
-                <span className="text-gray-300 text-base">
+                <span className="text-parchment-faint text-base">
                   {a.status === "done" ? "✓" : "—"}
                 </span>
-                <span className="text-sm text-gray-500 line-through">{a.title}</span>
+                <span className="text-sm text-parchment-dim line-through">{a.title}</span>
                 {a.completed_at && (
-                  <span className="text-xs text-gray-400 ml-auto">
+                  <span className="text-xs text-parchment-faint ml-auto">
                     {new Date(a.completed_at).toLocaleDateString("pt-BR")}
                   </span>
                 )}
@@ -1289,9 +1289,9 @@ function LembretesTab({
 
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-white border rounded-lg px-4 py-3">
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className="text-sm font-medium text-gray-900">{value}</p>
+    <div className="bg-ink-2 border border-line rounded-sm px-4 py-3">
+      <p className="text-xs text-parchment-dim">{label}</p>
+      <p className="text-sm font-medium text-parchment">{value}</p>
     </div>
   );
 }
@@ -1307,8 +1307,8 @@ function Modal({
 }) {
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">{title}</h2>
+      <div className="bg-ink-2 border border-line rounded-sm p-6 w-full max-w-md">
+        <h2 className="text-lg font-display font-semibold text-parchment mb-4">{title}</h2>
         {children}
       </div>
     </div>

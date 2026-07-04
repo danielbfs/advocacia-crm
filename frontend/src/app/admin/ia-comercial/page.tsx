@@ -505,9 +505,9 @@ function PricingTable({
   return (
     <div className="space-y-3">
       {items.length > 0 && (
-        <div className="border rounded-lg overflow-hidden">
+        <div className="border border-line rounded-sm overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-xs text-parchment-dim uppercase">
+            <thead className="bg-ink-2 text-xs text-parchment-dim uppercase">
               <tr>
                 <th className="px-3 py-2 text-left">Especialidade</th>
                 <th className="px-3 py-2 text-left">Serviço</th>
@@ -516,12 +516,12 @@ function PricingTable({
                 <th className="px-3 py-2" />
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y divide-line">
               {items.map((item, i) => (
-                <tr key={i} className="hover:bg-gray-50">
-                  <td className="px-3 py-2">{item.specialty}</td>
-                  <td className="px-3 py-2">{item.service}</td>
-                  <td className="px-3 py-2 text-right font-medium">
+                <tr key={i} className="hover:bg-ink-3">
+                  <td className="px-3 py-2 text-parchment">{item.specialty}</td>
+                  <td className="px-3 py-2 text-parchment">{item.service}</td>
+                  <td className="px-3 py-2 text-right font-medium text-parchment">
                     {item.price.toLocaleString("pt-BR", {
                       style: "currency",
                       currency: "BRL",
@@ -533,7 +533,7 @@ function PricingTable({
                   <td className="px-3 py-2">
                     <button
                       onClick={() => remove(i)}
-                      className="text-red-500 hover:text-red-700 text-xs"
+                      className="text-carimbo-bright hover:text-carimbo text-xs"
                     >
                       Remover
                     </button>
@@ -545,7 +545,7 @@ function PricingTable({
         </div>
       )}
 
-      <div className="border rounded-lg p-3 bg-gray-50">
+      <div className="border border-line rounded-sm p-3 bg-ink-2">
         <p className="text-xs font-medium text-parchment-dim mb-2">Adicionar item</p>
         <div className="grid grid-cols-2 gap-2 mb-2">
           <select
@@ -553,7 +553,7 @@ function PricingTable({
             onChange={(e) =>
               setNewItem({ ...newItem, specialty: e.target.value })
             }
-            className="border rounded px-2 py-1.5 text-sm"
+            className="rounded-sm border border-line bg-ink-2 px-2 py-1.5 text-sm text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
           >
             <option value="">Selecione a Especialidade</option>
             {specialties.map((s) => (
@@ -568,7 +568,7 @@ function PricingTable({
               setNewItem({ ...newItem, service: e.target.value })
             }
             placeholder="Serviço (ex: Consulta, Exame)"
-            className="border rounded px-2 py-1.5 text-sm"
+            className="rounded-sm border border-line bg-ink-2 px-2 py-1.5 text-sm text-parchment placeholder:text-parchment-faint focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
           />
           <input
             type="number"
@@ -579,19 +579,19 @@ function PricingTable({
               setNewItem({ ...newItem, price: parseFloat(e.target.value) || 0 })
             }
             placeholder="Valor (R$)"
-            className="border rounded px-2 py-1.5 text-sm"
+            className="rounded-sm border border-line bg-ink-2 px-2 py-1.5 text-sm text-parchment placeholder:text-parchment-faint focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
           />
           <input
             value={newItem.notes || ""}
             onChange={(e) => setNewItem({ ...newItem, notes: e.target.value })}
             placeholder="Observação (opcional)"
-            className="border rounded px-2 py-1.5 text-sm"
+            className="rounded-sm border border-line bg-ink-2 px-2 py-1.5 text-sm text-parchment placeholder:text-parchment-faint focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
           />
         </div>
         <button
           onClick={add}
           disabled={!newItem.specialty || !newItem.service || newItem.price <= 0}
-          className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm font-medium hover:bg-blue-700 disabled:opacity-40"
+          className="bg-carimbo text-parchment px-3 py-1.5 rounded-sm text-sm font-medium hover:bg-carimbo-bright disabled:opacity-40"
         >
           + Adicionar
         </button>
@@ -740,7 +740,7 @@ export default function IaComercialPage() {
   return (
     <main className="p-8 max-w-3xl space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-parchment">IA Comercial</h1>
+        <h1 className="text-2xl font-display font-semibold text-parchment">IA Comercial</h1>
         <p className="text-sm text-parchment-dim mt-1">
           Configure o agente de IA que negocia automaticamente com os leads via
           WhatsApp.
@@ -748,34 +748,34 @@ export default function IaComercialPage() {
       </div>
 
       {/* Instructions Banner */}
-      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5 space-y-3">
-        <h2 className="text-sm font-bold text-blue-900 flex items-center gap-2">
+      <div className="bg-ink-2 border border-line rounded-sm p-5 space-y-3">
+        <h2 className="text-sm font-semibold text-parchment flex items-center gap-2">
           <span className="text-lg">🤖</span> Como funciona o Atendente IA
         </h2>
-        <div className="grid gap-3 text-xs text-blue-800 leading-relaxed">
+        <div className="grid gap-3 text-xs text-parchment-dim leading-relaxed">
           <div className="flex gap-2">
-            <span className="font-bold text-blue-600 shrink-0">1.</span>
+            <span className="font-bold text-carimbo shrink-0">1.</span>
             <p><strong>Configuração por Etapa:</strong> Cada status do pipeline (Novo, Em Contato, Qualificado, etc.) pode ter seu próprio agente IA com instruções específicas. Ative o toggle para habilitar a IA naquela etapa.</p>
           </div>
           <div className="flex gap-2">
-            <span className="font-bold text-blue-600 shrink-0">2.</span>
+            <span className="font-bold text-carimbo shrink-0">2.</span>
             <p><strong>Gatilho Automático:</strong> Quando um lead <strong>entra em um novo status</strong> (seja por criação ou movimentação no Kanban), a IA envia automaticamente a <em>mensagem inicial</em> configurada, se o toggle &ldquo;Enviar mensagem ao entrar neste status&rdquo; estiver ativo.</p>
           </div>
           <div className="flex gap-2">
-            <span className="font-bold text-blue-600 shrink-0">3.</span>
+            <span className="font-bold text-carimbo shrink-0">3.</span>
             <p><strong>Respostas Inteligentes:</strong> Após o primeiro contato, a IA responde automaticamente as mensagens do lead usando as instruções (prompt) e a tabela de preços configurada abaixo. A IA nunca inventa preços — consulta sempre a tabela.</p>
           </div>
           <div className="flex gap-2">
-            <span className="font-bold text-blue-600 shrink-0">4.</span>
+            <span className="font-bold text-carimbo shrink-0">4.</span>
             <p><strong>Follow-up de Inatividade:</strong> Se o lead parar de responder, a IA envia follow-ups automáticos (configurável por etapa) e pode marcar como perdido após o período definido.</p>
           </div>
           <div className="flex gap-2">
-            <span className="font-bold text-blue-600 shrink-0">5.</span>
+            <span className="font-bold text-carimbo shrink-0">5.</span>
             <p><strong>Supervisor:</strong> Quando o lead pede desconto ou algo fora da tabela, a IA consulta o supervisor via WhatsApp e aguarda a resposta para continuar a negociação.</p>
           </div>
         </div>
-        <div className="bg-white/60 rounded-lg px-3 py-2 text-[11px] text-blue-700 border border-blue-100">
-          <strong>⚠️ Importante:</strong> Leads só são atendidos pela IA se tiverem canal <strong>WhatsApp</strong> ou <strong>Telegram</strong>. Leads criados manualmente com outros canais não receberão mensagens automáticas. Os horários de envio respeitam a grade configurada na seção &ldquo;Horários de Envio&rdquo; abaixo.
+        <div className="bg-ink/40 rounded-sm px-3 py-2 text-[11px] text-parchment-dim border border-line">
+          <strong className="text-selo">⚠️ Importante:</strong> Leads só são atendidos pela IA se tiverem canal <strong>WhatsApp</strong> ou <strong>Telegram</strong>. Leads criados manualmente com outros canais não receberão mensagens automáticas. Os horários de envio respeitam a grade configurada na seção &ldquo;Horários de Envio&rdquo; abaixo.
         </div>
       </div>
 
@@ -1033,7 +1033,7 @@ export default function IaComercialPage() {
                 onChange={(e) =>
                   setSchedule({ ...schedule, timezone: e.target.value })
                 }
-                className="border rounded-lg px-3 py-2 text-sm"
+                className="rounded-sm border border-line bg-ink-2 px-3 py-2 text-sm text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
               >
                 <option value="America/Sao_Paulo">
                   America/Sao_Paulo (Brasília)

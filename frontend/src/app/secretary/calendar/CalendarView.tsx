@@ -32,16 +32,16 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_BORDER: Record<string, string> = {
-  scheduled: "#60a5fa",
-  confirmed: "#4ade80",
-  completed: "#d1d5db",
-  cancelled: "#fca5a5",
-  no_show: "#fdba74",
+  scheduled: "#3e5c6b",
+  confirmed: "#5b8a72",
+  completed: "#6f685a",
+  cancelled: "#d6492f",
+  no_show: "#b8915a",
 };
 
 const DOCTOR_PALETTE = [
-  "#7c3aed", "#0d9488", "#b45309", "#2563eb",
-  "#db2777", "#4f46e5", "#047857", "#0891b2",
+  "#d6492f", "#b8915a", "#3e5c6b", "#5b8a72",
+  "#e85c42", "#8a6f9e", "#6f685a", "#4f7a8a",
 ];
 
 const DAY_LABELS_SHORT = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
@@ -235,15 +235,15 @@ export function CalendarView({ basePath = "/secretary" }: { basePath?: string })
     <main className="p-6">
       {/* Toolbar */}
       <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
-        <h1 className="text-2xl font-bold text-gray-900">Calendário</h1>
+        <h1 className="text-2xl font-display font-semibold text-parchment">Calendário</h1>
         <div className="flex items-center gap-2 flex-wrap">
           {/* View toggle */}
-          <div className="flex border rounded-lg overflow-hidden text-sm">
+          <div className="flex border border-line rounded-sm overflow-hidden text-sm">
             {(["month","week","day"] as ViewMode[]).map((v) => (
               <button
                 key={v}
                 onClick={() => setView(v)}
-                className={`px-3 py-2 ${view === v ? "bg-blue-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+                className={`px-3 py-2 ${view === v ? "bg-carimbo text-parchment" : "bg-ink-2 text-parchment-dim hover:bg-ink-3"}`}
               >
                 {v === "month" ? "Mês" : v === "week" ? "Semana" : "Dia"}
               </button>
@@ -251,59 +251,59 @@ export function CalendarView({ basePath = "/secretary" }: { basePath?: string })
           </div>
 
           {/* Doctor filter */}
-          <select value={doctorFilter} onChange={(e) => setDoctorFilter(e.target.value)} className="border rounded-lg px-3 py-2 text-sm">
+          <select value={doctorFilter} onChange={(e) => setDoctorFilter(e.target.value)} className="border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none">
             <option value="all">Todos os médicos</option>
             {doctors.map((d) => <option key={d.id} value={d.id}>{d.full_name}</option>)}
           </select>
 
           {/* Navigation */}
-          <button onClick={() => navigate(-1)} className="border px-3 py-2 rounded-lg text-sm hover:bg-gray-50">← Anterior</button>
-          <button onClick={goToday} className="border px-3 py-2 rounded-lg text-sm hover:bg-gray-50">Hoje</button>
-          <button onClick={() => navigate(1)} className="border px-3 py-2 rounded-lg text-sm hover:bg-gray-50">Próximo →</button>
+          <button onClick={() => navigate(-1)} className="border border-line bg-ink/40 px-3 py-2 rounded-sm text-sm text-parchment-dim hover:border-selo/50 hover:bg-ink-3">← Anterior</button>
+          <button onClick={goToday} className="border border-line bg-ink/40 px-3 py-2 rounded-sm text-sm text-parchment-dim hover:border-selo/50 hover:bg-ink-3">Hoje</button>
+          <button onClick={() => navigate(1)} className="border border-line bg-ink/40 px-3 py-2 rounded-sm text-sm text-parchment-dim hover:border-selo/50 hover:bg-ink-3">Próximo →</button>
 
-          <label className="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer select-none border rounded-lg px-3 py-2 bg-white">
+          <label className="flex items-center gap-1.5 text-sm text-parchment-dim cursor-pointer select-none border border-line rounded-sm px-3 py-2 bg-ink-2">
             <input
               type="checkbox"
               checked={hideCancelled}
               onChange={(e) => setHideCancelled(e.target.checked)}
-              className="rounded"
+              className="rounded-sm"
             />
             Ocultar cancelados
           </label>
 
-          <Link href={`${basePath}/appointments`} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
+          <Link href={`${basePath}/appointments`} className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-semibold hover:bg-carimbo-bright">
             Novo Agendamento
           </Link>
         </div>
       </div>
 
-      <p className="text-sm text-gray-500 mb-4">{headerLabel}</p>
+      <p className="text-sm text-parchment-dim mb-4">{headerLabel}</p>
 
       {loading ? (
-        <p className="text-gray-400">Carregando...</p>
+        <p className="text-parchment-faint">Carregando...</p>
       ) : (
         <>
           {/* ── MONTH VIEW ──────────────────────────────────────────────── */}
           {view === "month" && (
-            <div className="bg-white border rounded-lg overflow-hidden">
-              <div className="grid grid-cols-7 border-b bg-gray-50">
+            <div className="bg-ink-2 border border-line rounded-sm overflow-hidden">
+              <div className="grid grid-cols-7 border-b border-line bg-ink">
                 {DAY_LABELS_SHORT.map((d) => (
-                  <div key={d} className="p-2 text-center text-xs font-medium text-gray-500">{d}</div>
+                  <div key={d} className="p-2 text-center text-xs font-medium text-parchment-dim">{d}</div>
                 ))}
               </div>
               {monthGrid.map((week, wi) => (
-                <div key={wi} className="grid grid-cols-7 border-b last:border-b-0">
+                <div key={wi} className="grid grid-cols-7 border-b border-line last:border-b-0">
                   {week.map((day, di) => {
-                    if (!day) return <div key={di} className="min-h-[100px] border-r last:border-r-0 bg-gray-50/50" />;
+                    if (!day) return <div key={di} className="min-h-[100px] border-r border-line last:border-r-0 bg-ink/50" />;
                     const isToday = sameDay(day, new Date());
                     const dayAppts = appointmentsForDay(day);
                     return (
                       <div
                         key={di}
-                        className={`min-h-[100px] border-r last:border-r-0 p-1.5 cursor-pointer hover:bg-blue-50/30 transition-colors ${isToday ? "bg-blue-50/40" : ""}`}
+                        className={`min-h-[100px] border-r border-line last:border-r-0 p-1.5 cursor-pointer hover:bg-ink-3/30 transition-colors ${isToday ? "bg-carimbo/10" : ""}`}
                         onClick={() => { setCurrentDate(day); setView("day"); }}
                       >
-                        <div className={`text-xs font-medium mb-1 w-6 h-6 flex items-center justify-center rounded-full ${isToday ? "bg-blue-600 text-white" : "text-gray-700"}`}>
+                        <div className={`text-xs font-medium mb-1 w-6 h-6 flex items-center justify-center rounded-full ${isToday ? "bg-carimbo text-parchment" : "text-parchment-dim"}`}>
                           {day.getDate()}
                         </div>
                         <div className="space-y-0.5">
@@ -311,14 +311,14 @@ export function CalendarView({ basePath = "/secretary" }: { basePath?: string })
                             <button
                               key={a.id}
                               onClick={(e) => { e.stopPropagation(); setSelected(a); }}
-                              className="w-full text-left text-[10px] text-white rounded px-1.5 py-0.5 truncate hover:opacity-90"
-                              style={{ backgroundColor: doctorColorMap[a.doctor_id] || "#6b7280" }}
+                              className="w-full text-left text-[10px] text-parchment rounded-sm px-1.5 py-0.5 truncate hover:opacity-90"
+                              style={{ backgroundColor: doctorColorMap[a.doctor_id] || "#6f685a" }}
                             >
                               {new Date(a.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} {patientLabel(a.patient_id)}
                             </button>
                           ))}
                           {dayAppts.length > 3 && (
-                            <div className="text-[10px] text-gray-400 pl-1">+{dayAppts.length - 3} mais</div>
+                            <div className="text-[10px] text-parchment-faint pl-1">+{dayAppts.length - 3} mais</div>
                           )}
                         </div>
                       </div>
@@ -331,14 +331,14 @@ export function CalendarView({ basePath = "/secretary" }: { basePath?: string })
 
           {/* ── WEEK / DAY VIEW ─────────────────────────────────────────── */}
           {(view === "week" || view === "day") && (
-            <div className="bg-white border rounded-lg overflow-hidden">
+            <div className="bg-ink-2 border border-line rounded-sm overflow-hidden">
               {/* Header */}
-              <div className={`grid border-b ${view === "week" ? "grid-cols-[60px_repeat(7,1fr)]" : "grid-cols-[60px_1fr]"}`}>
-                <div className="p-2 border-r" />
+              <div className={`grid border-b border-line ${view === "week" ? "grid-cols-[60px_repeat(7,1fr)]" : "grid-cols-[60px_1fr]"}`}>
+                <div className="p-2 border-r border-line" />
                 {gridDays.map((d, i) => {
                   const isToday = sameDay(d, new Date());
                   return (
-                    <div key={i} className={`p-2 border-r last:border-r-0 text-center text-xs ${isToday ? "bg-blue-50 font-semibold text-blue-700" : "text-gray-600"}`}>
+                    <div key={i} className={`p-2 border-r border-line last:border-r-0 text-center text-xs ${isToday ? "bg-carimbo/10 font-semibold text-carimbo" : "text-parchment-dim"}`}>
                       <div>{view === "day" ? DAY_LABELS_FULL[d.getDay()] : DAY_LABELS_SHORT[d.getDay()]}</div>
                       <div>{d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</div>
                     </div>
@@ -347,9 +347,9 @@ export function CalendarView({ basePath = "/secretary" }: { basePath?: string })
               </div>
               {/* Body */}
               <div className={`grid ${view === "week" ? "grid-cols-[60px_repeat(7,1fr)]" : "grid-cols-[60px_1fr]"}`}>
-                <div className="border-r">
+                <div className="border-r border-line">
                   {HOURS.map((h) => (
-                    <div key={h} className="h-12 border-b text-xs text-gray-400 text-right pr-2 pt-1">
+                    <div key={h} className="h-12 border-b border-line text-xs text-parchment-faint text-right pr-2 pt-1">
                       {String(h).padStart(2, "0")}:00
                     </div>
                   ))}
@@ -357,18 +357,18 @@ export function CalendarView({ basePath = "/secretary" }: { basePath?: string })
                 {gridDays.map((day, di) => {
                   const dayAppts = appointmentsForDay(day);
                   return (
-                    <div key={di} className="border-r last:border-r-0 relative" style={{ height: `${HOURS.length * 48}px` }}>
-                      {HOURS.map((h) => <div key={h} className="h-12 border-b" />)}
+                    <div key={di} className="border-r border-line last:border-r-0 relative" style={{ height: `${HOURS.length * 48}px` }}>
+                      {HOURS.map((h) => <div key={h} className="h-12 border-b border-line" />)}
                       {dayAppts.map((a) => {
                         const { top, height } = gridPos(a);
                         if (top < 0 || top > HOURS.length * 48) return null;
-                        const bgColor = doctorColorMap[a.doctor_id] || "#6b7280";
-                        const borderColor = STATUS_BORDER[a.status] || "#e5e7eb";
+                        const bgColor = doctorColorMap[a.doctor_id] || "#6f685a";
+                        const borderColor = STATUS_BORDER[a.status] || "#3a342b";
                         return (
                           <button
                             key={a.id}
                             onClick={() => setSelected(a)}
-                            className="absolute left-1 right-1 rounded text-left p-1 text-[10px] text-white shadow-sm overflow-hidden hover:opacity-90"
+                            className="absolute left-1 right-1 rounded-sm text-left p-1 text-[10px] text-parchment overflow-hidden hover:opacity-90"
                             style={{ top, height, backgroundColor: bgColor, borderLeft: `3px solid ${borderColor}` }}
                             title={`${patientLabel(a.patient_id)} — ${doctorLabel(a.doctor_id)}`}
                           >
@@ -392,9 +392,9 @@ export function CalendarView({ basePath = "/secretary" }: { basePath?: string })
       <div className="mt-4 flex flex-wrap gap-5">
         {doctors.length > 0 && (
           <div className="flex items-center gap-3 flex-wrap">
-            <span className="text-xs text-gray-400 font-medium">Médicos:</span>
+            <span className="text-xs text-parchment-faint font-medium">Médicos:</span>
             {doctors.map((d) => (
-              <span key={d.id} className="flex items-center gap-1.5 text-xs text-gray-600">
+              <span key={d.id} className="flex items-center gap-1.5 text-xs text-parchment-dim">
                 <span className="inline-block w-3 h-3 rounded-sm" style={{ backgroundColor: doctorColorMap[d.id] }} />
                 {d.full_name}
               </span>
@@ -402,10 +402,10 @@ export function CalendarView({ basePath = "/secretary" }: { basePath?: string })
           </div>
         )}
         <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-xs text-gray-400 font-medium">Status (borda):</span>
+          <span className="text-xs text-parchment-faint font-medium">Status (borda):</span>
           {Object.entries(STATUS_LABELS).map(([k, label]) => (
-            <span key={k} className="flex items-center gap-1.5 text-xs text-gray-600">
-              <span className="inline-block w-3 h-3 rounded-sm border-2" style={{ borderColor: STATUS_BORDER[k] || "#e5e7eb", backgroundColor: "transparent" }} />
+            <span key={k} className="flex items-center gap-1.5 text-xs text-parchment-dim">
+              <span className="inline-block w-3 h-3 rounded-sm border-2" style={{ borderColor: STATUS_BORDER[k] || "#3a342b", backgroundColor: "transparent" }} />
               {label}
             </span>
           ))}
@@ -415,35 +415,35 @@ export function CalendarView({ basePath = "/secretary" }: { basePath?: string })
       {/* Detail Modal */}
       {selected && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
+          <div className="bg-ink-2 border border-line rounded-sm p-6 w-full max-w-md">
             <div className="flex items-start justify-between mb-3">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">{patientLabel(selected.patient_id)}</h2>
-                <p className="text-sm text-gray-500">{doctorLabel(selected.doctor_id)}</p>
+                <h2 className="text-lg font-display font-semibold text-parchment">{patientLabel(selected.patient_id)}</h2>
+                <p className="text-sm text-parchment-dim">{doctorLabel(selected.doctor_id)}</p>
               </div>
-              <span className="text-xs px-2 py-0.5 rounded-full font-medium text-white" style={{ backgroundColor: doctorColorMap[selected.doctor_id] || "#6b7280" }}>
+              <span className="text-xs px-2 py-0.5 rounded-full font-medium text-parchment" style={{ backgroundColor: doctorColorMap[selected.doctor_id] || "#6f685a" }}>
                 {STATUS_LABELS[selected.status] || selected.status}
               </span>
             </div>
-            <p className="text-sm text-gray-700 mb-4">
+            <p className="text-sm text-parchment-dim mb-4">
               {new Date(selected.starts_at).toLocaleString("pt-BR")} —{" "}
               {new Date(selected.ends_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
             </p>
-            {selected.notes && <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3 mb-4">{selected.notes}</p>}
+            {selected.notes && <p className="text-sm text-parchment-dim bg-ink rounded-sm p-3 mb-4">{selected.notes}</p>}
             <div className="flex flex-wrap gap-2 mb-2">
               {selected.status === "scheduled" && (
-                <button onClick={() => changeStatus(selected.id, "confirmed")} className="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700">Confirmar</button>
+                <button onClick={() => changeStatus(selected.id, "confirmed")} className="text-xs bg-jade text-parchment px-3 py-1.5 rounded-sm hover:bg-jade/80">Confirmar</button>
               )}
               {(selected.status === "scheduled" || selected.status === "confirmed") && (
                 <>
-                  <button onClick={() => changeStatus(selected.id, "completed")} className="text-xs bg-gray-600 text-white px-3 py-1.5 rounded-lg">Concluir</button>
-                  <button onClick={() => changeStatus(selected.id, "no_show")} className="text-xs bg-orange-500 text-white px-3 py-1.5 rounded-lg">Não compareceu</button>
+                  <button onClick={() => changeStatus(selected.id, "completed")} className="text-xs bg-ink-3 text-parchment px-3 py-1.5 rounded-sm">Concluir</button>
+                  <button onClick={() => changeStatus(selected.id, "no_show")} className="text-xs bg-selo text-parchment px-3 py-1.5 rounded-sm">Não compareceu</button>
                 </>
               )}
               {selected.status !== "cancelled" && (
-                <button onClick={() => cancelAppointment(selected.id)} className="text-xs bg-red-500 text-white px-3 py-1.5 rounded-lg">Cancelar</button>
+                <button onClick={() => cancelAppointment(selected.id)} className="text-xs bg-carimbo text-parchment px-3 py-1.5 rounded-sm hover:bg-carimbo-bright">Cancelar</button>
               )}
-              <button onClick={() => setSelected(null)} className="text-xs text-gray-500 ml-auto px-3 py-1.5">Fechar</button>
+              <button onClick={() => setSelected(null)} className="text-xs text-parchment-dim ml-auto px-3 py-1.5">Fechar</button>
             </div>
           </div>
         </div>

@@ -56,17 +56,17 @@ export default function ChangePasswordPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-gray-400">Carregando...</div>
+      <div className="flex min-h-screen items-center justify-center bg-ink">
+        <div className="text-parchment-faint">Carregando...</div>
       </div>
     );
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-sm bg-white rounded-xl shadow-sm border p-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Alterar Senha</h1>
-        <p className="text-gray-500 text-sm mb-6">
+    <main className="flex min-h-screen items-center justify-center bg-ink p-4">
+      <div className="w-full max-w-sm bg-ink-2 rounded-sm border border-line p-8">
+        <h1 className="text-2xl font-display font-semibold text-parchment mb-2">Alterar Senha</h1>
+        <p className="text-parchment-dim text-sm mb-6">
           {user?.must_change_password
             ? "Você precisa alterar sua senha antes de continuar."
             : "Digite sua senha atual e a nova senha."}
@@ -74,7 +74,7 @@ export default function ChangePasswordPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="currentPassword" className="block font-mono text-[10px] tracking-[0.2em] uppercase text-parchment-dim mb-1">
               Senha atual
             </label>
             <input
@@ -82,14 +82,14 @@ export default function ChangePasswordPage() {
               type="password"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-line bg-ink/60 rounded-sm text-sm text-parchment placeholder:text-parchment-faint focus:outline-none focus:ring-1 focus:ring-carimbo focus:border-carimbo"
               required
               autoFocus
             />
           </div>
 
           <div>
-            <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="newPassword" className="block font-mono text-[10px] tracking-[0.2em] uppercase text-parchment-dim mb-1">
               Nova senha
             </label>
             <input
@@ -97,14 +97,14 @@ export default function ChangePasswordPage() {
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-line bg-ink/60 rounded-sm text-sm text-parchment placeholder:text-parchment-faint focus:outline-none focus:ring-1 focus:ring-carimbo focus:border-carimbo"
               placeholder="Mínimo 6 caracteres"
               required
             />
           </div>
 
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="confirmPassword" className="block font-mono text-[10px] tracking-[0.2em] uppercase text-parchment-dim mb-1">
               Confirmar nova senha
             </label>
             <input
@@ -112,19 +112,19 @@ export default function ChangePasswordPage() {
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-line bg-ink/60 rounded-sm text-sm text-parchment placeholder:text-parchment-faint focus:outline-none focus:ring-1 focus:ring-carimbo focus:border-carimbo"
               required
             />
           </div>
 
           {error && (
-            <p className="text-red-600 text-sm">{error}</p>
+            <p className="text-carimbo-bright text-sm">{error}</p>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-carimbo text-parchment py-2 px-4 rounded-sm text-sm font-semibold hover:bg-carimbo-bright active:translate-y-px transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {loading ? "Alterando..." : "Alterar Senha"}
           </button>

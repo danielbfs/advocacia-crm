@@ -88,41 +88,41 @@ export default function SpecialtiesPage() {
     }
   }
 
-  if (loading) return <div className="p-8 text-gray-400">Carregando...</div>;
+  if (loading) return <div className="p-8 text-parchment-faint">Carregando...</div>;
 
   return (
     <main className="p-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Especialidades</h1>
+        <h1 className="text-2xl font-display font-semibold text-parchment">Especialidades</h1>
         <button
           onClick={showForm ? cancelForm : openCreate}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
+          className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-medium hover:bg-carimbo-bright"
         >
           {showForm ? "Cancelar" : "Nova Especialidade"}
         </button>
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-white border rounded-lg p-4 mb-6 space-y-3">
-          <h3 className="text-sm font-semibold text-gray-700">
+        <form onSubmit={handleSubmit} className="bg-ink-2 border border-line rounded-sm p-4 mb-6 space-y-3">
+          <h3 className="text-sm font-semibold text-parchment-dim">
             {editingId ? "Editar Especialidade" : "Nova Especialidade"}
           </h3>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+            <label className="block text-sm font-medium text-parchment-dim mb-1">Nome</label>
             <input
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               required
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full rounded-sm border border-line bg-ink-2 px-3 py-2 text-sm text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
               placeholder="Ex: Cardiologia"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+            <label className="block text-sm font-medium text-parchment-dim mb-1">Descrição</label>
             <input
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full rounded-sm border border-line bg-ink-2 px-3 py-2 text-sm text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
               placeholder="Opcional"
             />
           </div>
@@ -130,43 +130,43 @@ export default function SpecialtiesPage() {
             <button
               type="submit"
               disabled={saving}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+              className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-medium hover:bg-carimbo-bright disabled:opacity-50"
             >
               {saving ? "Salvando..." : editingId ? "Salvar" : "Criar"}
             </button>
-            <button type="button" onClick={cancelForm} className="text-sm text-gray-500 px-4 py-2">
+            <button type="button" onClick={cancelForm} className="text-sm text-parchment-dim px-4 py-2">
               Cancelar
             </button>
           </div>
         </form>
       )}
 
-      <div className="bg-white border rounded-lg overflow-hidden">
+      <div className="bg-ink-2 border border-line rounded-sm overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b">
+          <thead className="bg-ink-3 border-b border-line">
             <tr>
-              <th className="text-left px-4 py-3 text-gray-500 font-medium">Nome</th>
-              <th className="text-left px-4 py-3 text-gray-500 font-medium">Descrição</th>
-              <th className="text-left px-4 py-3 text-gray-500 font-medium">Status</th>
-              <th className="text-left px-4 py-3 text-gray-500 font-medium">Ações</th>
+              <th className="text-left px-4 py-3 text-parchment-dim font-medium">Nome</th>
+              <th className="text-left px-4 py-3 text-parchment-dim font-medium">Descrição</th>
+              <th className="text-left px-4 py-3 text-parchment-dim font-medium">Status</th>
+              <th className="text-left px-4 py-3 text-parchment-dim font-medium">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody className="divide-y divide-line">
             {specialties.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-gray-400">
+                <td colSpan={4} className="px-4 py-8 text-center text-parchment-faint">
                   Nenhuma especialidade cadastrada.
                 </td>
               </tr>
             ) : (
               specialties.map((spec) => (
-                <tr key={spec.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium text-gray-900">{spec.name}</td>
-                  <td className="px-4 py-3 text-gray-500">{spec.description || "—"}</td>
+                <tr key={spec.id} className="hover:bg-ink-3">
+                  <td className="px-4 py-3 font-medium text-parchment">{spec.name}</td>
+                  <td className="px-4 py-3 text-parchment-dim">{spec.description || "—"}</td>
                   <td className="px-4 py-3">
                     <span
                       className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                        spec.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+                        spec.is_active ? "bg-jade/15 text-jade" : "bg-ink-3 text-parchment-faint"
                       }`}
                     >
                       {spec.is_active ? "Ativa" : "Inativa"}
@@ -174,13 +174,13 @@ export default function SpecialtiesPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-3">
-                      <button onClick={() => openEdit(spec)} className="text-xs text-blue-600 hover:underline">
+                      <button onClick={() => openEdit(spec)} className="text-xs text-carimbo hover:underline">
                         Editar
                       </button>
-                      <button onClick={() => toggleActive(spec)} className="text-xs text-yellow-600 hover:underline">
+                      <button onClick={() => toggleActive(spec)} className="text-xs text-selo hover:underline">
                         {spec.is_active ? "Desativar" : "Ativar"}
                       </button>
-                      <button onClick={() => handleDelete(spec)} className="text-xs text-red-600 hover:underline">
+                      <button onClick={() => handleDelete(spec)} className="text-xs text-carimbo-bright hover:underline">
                         Excluir
                       </button>
                     </div>
