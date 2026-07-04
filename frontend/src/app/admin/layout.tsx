@@ -30,9 +30,9 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/admin/reports", label: "Funil de Vendas", icon: PieChart },
 
   { heading: "Cadastros" },
-  { href: "/admin/patients", label: "Clientes", icon: UserCircle },
-  { href: "/admin/doctors", label: "Advogados", icon: Stethoscope },
-  { href: "/admin/specialties", label: "Áreas de Atuação", icon: Activity },
+  { href: "/admin/clients", label: "Clientes", icon: UserCircle },
+  { href: "/admin/lawyers", label: "Advogados", icon: Stethoscope },
+  { href: "/admin/practice-areas", label: "Áreas de Atuação", icon: Activity },
   { href: "/admin/users", label: "Usuários", icon: Shield },
   
   { heading: "Sistema" },
