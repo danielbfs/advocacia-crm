@@ -14,14 +14,14 @@ interface Branding {
 
 const ADMIN_VIEWS = [
   { href: "/admin",     label: "Administração" },
-  { href: "/secretary", label: "Secretaria"    },
-  { href: "/doctor",    label: "Médico"        },
+  { href: "/secretary", label: "Comercial"     },
+  { href: "/doctor",    label: "Advogado"      },
 ];
 
 function currentViewLabel(pathname: string): string {
   if (pathname.startsWith("/admin"))     return "Administração";
-  if (pathname.startsWith("/secretary")) return "Secretaria";
-  if (pathname.startsWith("/doctor"))    return "Médico";
+  if (pathname.startsWith("/secretary")) return "Comercial";
+  if (pathname.startsWith("/doctor"))    return "Advogado";
   return "";
 }
 
@@ -39,8 +39,8 @@ export function AppHeader() {
 
   const roleLabel =
     user.role === "admin"  ? "Administrador" :
-    user.role === "doctor" ? "Médico"        :
-                             "Secretária";
+    user.role === "doctor" ? "Advogado"      :
+                             "Comercial";
 
   const homeHref =
     user.role === "admin"  ? "/admin"     :

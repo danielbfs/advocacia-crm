@@ -29,11 +29,11 @@ const TRIGGER_EVENTS = [
   { value: "appointment_scheduled", label: "Agendamento criado" },
   { value: "appointment_confirmed", label: "Agendamento confirmado" },
   { value: "appointment_cancelled", label: "Agendamento cancelado" },
-  { value: "no_show", label: "Paciente faltou" },
+  { value: "no_show", label: "Cliente faltou" },
 ];
 
 const CHANNELS = [
-  { value: "", label: "Mesmo canal do paciente" },
+  { value: "", label: "Mesmo canal do cliente" },
   { value: "telegram", label: "Telegram" },
   { value: "whatsapp", label: "WhatsApp" },
 ];
@@ -316,9 +316,9 @@ export default function FollowUpsPage() {
                 </div>
                 <div className="flex flex-wrap gap-1.5 mb-2">
                   {[
-                    { tag: "{patient_name}",    label: "Nome do paciente"    },
-                    { tag: "{doctor_name}",     label: "Nome do médico"      },
-                    { tag: "{specialty}",       label: "Especialidade"       },
+                    { tag: "{patient_name}",    label: "Nome do cliente"     },
+                    { tag: "{doctor_name}",     label: "Nome do advogado"    },
+                    { tag: "{specialty}",       label: "Área de Atuação"    },
                     { tag: "{appointment_date}", label: "Data/hora consulta" },
                   ].map(({ tag, label }) => (
                     <button
@@ -394,7 +394,7 @@ export default function FollowUpsPage() {
                       <td className="px-4 py-3 font-medium text-parchment">{rule.name}</td>
                       <td className="px-4 py-3 text-parchment-dim">{triggerLabel(rule.trigger_event)}</td>
                       <td className="px-4 py-3 text-parchment-dim">{formatOffset(rule.offset_minutes)}</td>
-                      <td className="px-4 py-3 text-parchment-dim">{rule.channel || "Paciente"}</td>
+                      <td className="px-4 py-3 text-parchment-dim">{rule.channel || "Cliente"}</td>
                       <td className="px-4 py-3">
                         <span
                           className={`text-xs px-2 py-0.5 rounded-full font-medium ${

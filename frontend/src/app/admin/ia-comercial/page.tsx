@@ -350,13 +350,13 @@ function StatusConfigCard({
             <div>
               <label className="block text-xs text-parchment-dim mb-1">
                 Instrução para a IA no primeiro contato
-                <span className="ml-1 text-parchment-faint">(ex: apresente a clínica e pergunte sobre o interesse)</span>
+                <span className="ml-1 text-parchment-faint">(ex: apresente o escritório e pergunte sobre o interesse)</span>
               </label>
               <textarea
                 rows={2}
                 value={form.initial_message || ""}
                 onChange={(e) => set("initial_message", e.target.value)}
-                placeholder="Ex: Apresente-se como atendente da clínica, seja acolhedor e pergunte qual especialidade o cliente busca."
+                placeholder="Ex: Apresente-se como atendente do escritório, seja acolhedor e pergunte qual área de atuação o cliente busca."
                 className="w-full rounded-sm border border-line bg-ink-2 px-3 py-2 text-sm text-parchment placeholder:text-parchment-faint focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
               />
               <p className="text-[10px] text-parchment-faint mt-1">
@@ -509,7 +509,7 @@ function PricingTable({
           <table className="w-full text-sm">
             <thead className="bg-ink-2 text-xs text-parchment-dim uppercase">
               <tr>
-                <th className="px-3 py-2 text-left">Especialidade</th>
+                <th className="px-3 py-2 text-left">Área de Atuação</th>
                 <th className="px-3 py-2 text-left">Serviço</th>
                 <th className="px-3 py-2 text-right">Valor (R$)</th>
                 <th className="px-3 py-2 text-left">Observação</th>
@@ -555,7 +555,7 @@ function PricingTable({
             }
             className="rounded-sm border border-line bg-ink-2 px-2 py-1.5 text-sm text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
           >
-            <option value="">Selecione a Especialidade</option>
+            <option value="">Selecione a Área de Atuação</option>
             {specialties.map((s) => (
               <option key={s.id} value={s.name}>
                 {s.name}
@@ -750,7 +750,7 @@ export default function IaComercialPage() {
       {/* Instructions Banner */}
       <div className="bg-ink-2 border border-line rounded-sm p-5 space-y-3">
         <h2 className="text-sm font-semibold text-parchment flex items-center gap-2">
-          <span className="text-lg">🤖</span> Como funciona o Atendente IA
+          <span className="text-lg">🤖</span> Como funciona a IA Comercial
         </h2>
         <div className="grid gap-3 text-xs text-parchment-dim leading-relaxed">
           <div className="flex gap-2">
@@ -795,11 +795,11 @@ export default function IaComercialPage() {
           onChange={(v) =>
             setGlobalConfig((prev) => ({ ...prev, convert_on_appointment: v }))
           }
-          label="Converter lead em paciente automaticamente ao agendar consulta"
+          label="Converter lead em cliente automaticamente ao agendar consulta"
         />
         <p className="text-xs text-parchment-faint -mt-2 ml-12">
           Quando ativado, ao confirmar agendamento o lead é convertido para
-          paciente em qualquer status.
+          cliente em qualquer status.
         </p>
         <div className="max-w-xs">
           <label className="block text-xs text-parchment-dim mb-1">

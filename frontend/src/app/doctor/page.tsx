@@ -133,7 +133,7 @@ export default function DoctorCalendarPage() {
   }
 
   async function cancelAppt(id: string) {
-    if (!confirm("Cancelar este agendamento?")) return;
+    if (!confirm("Cancelar esta consulta?")) return;
     try {
       await api.delete(`/scheduling/appointments/${id}`);
       setSelected(null);
@@ -145,7 +145,7 @@ export default function DoctorCalendarPage() {
     return (
       <main className="p-8">
         <div className="rounded-sm border border-selo/40 bg-selo/15 p-6 text-selo">
-          Seu usuário não está vinculado a nenhum médico. Contate o administrador.
+          Seu usuário não está vinculado a nenhum advogado. Contate o administrador.
         </div>
       </main>
     );

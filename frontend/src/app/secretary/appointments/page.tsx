@@ -133,7 +133,7 @@ export default function AppointmentsPage() {
       setSlots([]);
       fetchData();
     } catch {
-      alert("Erro ao criar agendamento.");
+      alert("Erro ao criar consulta.");
     } finally {
       setSaving(false);
     }
@@ -152,7 +152,7 @@ export default function AppointmentsPage() {
   }
 
   async function cancelAppointment(apptId: string) {
-    if (!confirm("Deseja cancelar este agendamento?")) return;
+    if (!confirm("Deseja cancelar esta consulta?")) return;
     try {
       await api.delete(`/scheduling/appointments/${apptId}`);
       fetchData();
@@ -169,7 +169,7 @@ export default function AppointmentsPage() {
   return (
     <main className="p-8">
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <h1 className="text-2xl font-display font-semibold text-parchment">Agendamentos</h1>
+        <h1 className="text-2xl font-display font-semibold text-parchment">Consultas</h1>
         <div className="flex items-center gap-4">
           <label className="flex items-center gap-2 text-sm text-parchment-dim cursor-pointer select-none">
             <input
@@ -189,7 +189,7 @@ export default function AppointmentsPage() {
             }}
             className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-semibold hover:bg-carimbo-bright"
           >
-            {showCreate ? "Cancelar" : "Novo Agendamento"}
+            {showCreate ? "Cancelar" : "Nova Consulta"}
           </button>
         </div>
       </div>
@@ -199,10 +199,10 @@ export default function AppointmentsPage() {
         <div className="bg-ink-2 border border-line rounded-sm p-4 mb-6">
           {createStep === 1 ? (
             <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-parchment-dim">1. Selecione médico e data</h3>
+              <h3 className="text-sm font-semibold text-parchment-dim">1. Selecione advogado e data</h3>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-parchment-dim mb-1">Telefone do Paciente *</label>
+                  <label className="block text-xs text-parchment-dim mb-1">Telefone do Cliente *</label>
                   <input
                     value={createForm.patient_phone}
                     onChange={(e) => setCreateForm({ ...createForm, patient_phone: e.target.value })}
@@ -212,7 +212,7 @@ export default function AppointmentsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-parchment-dim mb-1">Médico *</label>
+                  <label className="block text-xs text-parchment-dim mb-1">Advogado *</label>
                   <select
                     value={createForm.doctor_id}
                     onChange={(e) => setCreateForm({ ...createForm, doctor_id: e.target.value })}
@@ -291,7 +291,7 @@ export default function AppointmentsPage() {
                   disabled={saving}
                   className="bg-jade text-ink px-4 py-2 rounded-sm text-sm font-semibold hover:opacity-90 disabled:opacity-50"
                 >
-                  {saving ? "Agendando..." : "Confirmar Agendamento"}
+                  {saving ? "Agendando..." : "Confirmar Consulta"}
                 </button>
               )}
             </div>
@@ -305,8 +305,8 @@ export default function AppointmentsPage() {
       ) : visibleAppointments.length === 0 ? (
         <p className="text-parchment-faint">
           {hideCancelled && appointments.some((a) => a.status === "cancelled")
-            ? "Nenhum agendamento ativo. Desmarque \"Ocultar cancelados\" para ver todos."
-            : "Nenhum agendamento encontrado."}
+            ? "Nenhuma consulta ativa. Desmarque \"Ocultar cancelados\" para ver todos."
+            : "Nenhuma consulta encontrada."}
         </p>
       ) : (
         <div className="bg-ink-2 border border-line rounded-sm overflow-hidden">
@@ -314,7 +314,7 @@ export default function AppointmentsPage() {
             <thead className="bg-ink-3 border-b border-line">
               <tr>
                 <th className="text-left px-4 py-3 text-parchment-dim font-medium">Data / Hora</th>
-                <th className="text-left px-4 py-3 text-parchment-dim font-medium">Médico</th>
+                <th className="text-left px-4 py-3 text-parchment-dim font-medium">Advogado</th>
                 <th className="text-left px-4 py-3 text-parchment-dim font-medium">Status</th>
                 <th className="text-left px-4 py-3 text-parchment-dim font-medium">Origem</th>
                 <th className="text-left px-4 py-3 text-parchment-dim font-medium">Ações</th>
@@ -344,7 +344,7 @@ export default function AppointmentsPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-parchment-dim">
-                    {appt.source === "ai_chat" ? "IA" : appt.source === "secretary" ? "Secretária" : appt.source || "—"}
+                    {appt.source === "ai_chat" ? "IA" : appt.source === "secretary" ? "Comercial" : appt.source || "—"}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">

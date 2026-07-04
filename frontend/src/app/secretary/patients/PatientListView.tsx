@@ -62,9 +62,9 @@ const LEAD_STATUS_LABELS: Record<string, string> = {
   novo: "Novo",
   em_contato: "Em Contato",
   qualificado: "Qualificado",
-  orcamento_enviado: "Orçamento Enviado",
+  orcamento_enviado: "Proposta Enviada",
   negociando: "Negociando",
-  convertido: "Convertido",
+  convertido: "Cliente Fechado",
   perdido: "Perdido",
 };
 
@@ -140,7 +140,7 @@ function UnifyModal({
       onDone();
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      alert(msg || "Erro ao criar paciente.");
+      alert(msg || "Erro ao criar cliente.");
     } finally {
       setSaving(false);
     }
@@ -152,7 +152,7 @@ function UnifyModal({
         {/* Header */}
         <div className="px-6 py-4 border-b border-line flex items-center justify-between">
           <div>
-            <h2 className="font-display font-semibold text-parchment text-lg">Vincular Contato a Paciente</h2>
+            <h2 className="font-display font-semibold text-parchment text-lg">Vincular Contato a Cliente</h2>
             <p className="text-sm text-parchment-dim mt-0.5">
               {CHANNEL_ICONS[lead.channel]} {lead.full_name || lead.phone} · {lead.phone}
             </p>
@@ -164,7 +164,7 @@ function UnifyModal({
           {!createNew ? (
             <>
               <p className="text-sm text-parchment-dim">
-                Selecione um paciente existente para vincular este contato:
+                Selecione um cliente existente para vincular este contato:
               </p>
               <input
                 value={search}
@@ -189,7 +189,7 @@ function UnifyModal({
                   </button>
                 ))}
                 {filtered.length === 0 && (
-                  <p className="text-sm text-parchment-faint text-center py-4">Nenhum paciente encontrado.</p>
+                  <p className="text-sm text-parchment-faint text-center py-4">Nenhum cliente encontrado.</p>
                 )}
               </div>
 
@@ -212,7 +212,7 @@ function UnifyModal({
           ) : (
             <>
               <p className="text-sm text-parchment-dim">
-                Criar um novo perfil de paciente a partir deste contato:
+                Criar um novo perfil de cliente a partir deste contato:
               </p>
               <div className="bg-ink rounded-sm p-3 text-sm space-y-1">
                 <div><span className="text-parchment-dim">Nome:</span> {lead.full_name || "—"}</div>
@@ -226,7 +226,7 @@ function UnifyModal({
                   disabled={saving}
                   className="flex-1 bg-jade text-parchment py-2 rounded-sm text-sm font-semibold hover:bg-jade/80 disabled:opacity-40"
                 >
-                  {saving ? "Criando..." : "Confirmar e Criar Paciente"}
+                  {saving ? "Criando..." : "Confirmar e Criar Cliente"}
                 </button>
                 <button
                   onClick={() => setCreateNew(false)}
@@ -284,14 +284,14 @@ export function PatientListView({ basePath = "/secretary/patients" }: { basePath
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-display font-semibold text-parchment">Pacientes</h1>
+          <h1 className="text-2xl font-display font-semibold text-parchment">Clientes</h1>
           <p className="text-sm text-parchment-dim mt-0.5">Cadastros unificados de clientes</p>
         </div>
         <button
           onClick={() => router.push(`${basePath}/new`)}
           className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-semibold hover:bg-carimbo-bright"
         >
-          + Novo Paciente
+          + Novo Cliente
         </button>
       </div>
 
@@ -318,14 +318,14 @@ export function PatientListView({ basePath = "/secretary/patients" }: { basePath
       ═══════════════════════════════════════ */}
       <section>
         <h2 className="text-base font-semibold text-parchment mb-3">
-          Pacientes Cadastrados
+          Clientes Cadastrados
           <span className="ml-2 text-sm font-normal text-parchment-faint">({patients.length})</span>
         </h2>
 
         {loading ? (
           <p className="text-parchment-faint text-sm">Carregando...</p>
         ) : patients.length === 0 ? (
-          <p className="text-parchment-faint text-sm">Nenhum paciente encontrado.</p>
+          <p className="text-parchment-faint text-sm">Nenhum cliente encontrado.</p>
         ) : (
           <div className="bg-ink-2 border border-line rounded-sm overflow-hidden">
             <table className="w-full text-sm">
@@ -425,7 +425,7 @@ export function PatientListView({ basePath = "/secretary/patients" }: { basePath
           )}
         </div>
         <p className="text-sm text-parchment-dim mb-4">
-          Leads que entraram em contato recentemente e ainda não foram vinculados a um cadastro de paciente.
+          Leads que entraram em contato recentemente e ainda não foram vinculados a um cadastro de cliente.
         </p>
 
         {unmatched.length === 0 ? (

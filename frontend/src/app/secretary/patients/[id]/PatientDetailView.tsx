@@ -97,7 +97,7 @@ export function PatientDetailView({ backPath = "/secretary/patients" }: { backPa
   }
 
   if (loading) return <div className="p-8 text-parchment-faint">Carregando...</div>;
-  if (!patient) return <div className="p-8 text-parchment-faint">Paciente não encontrado.</div>;
+  if (!patient) return <div className="p-8 text-parchment-faint">Cliente não encontrado.</div>;
 
   return (
     <main className="p-8 max-w-3xl">
@@ -105,12 +105,12 @@ export function PatientDetailView({ backPath = "/secretary/patients" }: { backPa
         onClick={() => router.push(backPath)}
         className="text-sm text-carimbo hover:underline mb-4 block"
       >
-        &larr; Voltar para Pacientes
+        &larr; Voltar para Clientes
       </button>
 
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-display font-semibold text-parchment">{patient.full_name || "Paciente sem nome"}</h1>
+          <h1 className="text-2xl font-display font-semibold text-parchment">{patient.full_name || "Cliente sem nome"}</h1>
           <p className="text-parchment-dim">{patient.phone} {patient.email ? `| ${patient.email}` : ""}</p>
           <p className="text-xs text-parchment-faint mt-1">
             Canal: {patient.channel} | Cadastro: {new Date(patient.created_at).toLocaleDateString("pt-BR")}
@@ -126,7 +126,7 @@ export function PatientDetailView({ backPath = "/secretary/patients" }: { backPa
 
       {editing && (
         <div className="bg-ink-2 border border-line rounded-sm p-4 mb-6 space-y-3">
-          <h3 className="text-sm font-semibold text-parchment-dim">Editar Paciente</h3>
+          <h3 className="text-sm font-semibold text-parchment-dim">Editar Cliente</h3>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-parchment-dim mb-1">Nome</label>
@@ -185,9 +185,9 @@ export function PatientDetailView({ backPath = "/secretary/patients" }: { backPa
 
       {/* Appointments */}
       <div className="bg-ink-2 border border-line rounded-sm p-4">
-        <h3 className="text-sm font-semibold text-parchment-dim mb-3">Agendamentos</h3>
+        <h3 className="text-sm font-semibold text-parchment-dim mb-3">Consultas</h3>
         {appointments.length === 0 ? (
-          <p className="text-sm text-parchment-faint">Nenhum agendamento.</p>
+          <p className="text-sm text-parchment-faint">Nenhuma consulta.</p>
         ) : (
           <div className="space-y-2">
             {appointments.map((appt) => (

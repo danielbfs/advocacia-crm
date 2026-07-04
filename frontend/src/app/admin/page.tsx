@@ -64,15 +64,15 @@ export default function AdminPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-display font-semibold text-parchment tracking-tight">Painel Administrativo</h1>
-          <p className="text-parchment-dim mt-1">Resumo geral das métricas da clínica</p>
+          <p className="text-parchment-dim mt-1">Resumo geral das métricas do escritório</p>
         </div>
       </div>
 
       {/* Cards resumo */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card title="Usuários" value={data.users.length} subtitle={`${data.users.filter(u => u.is_active).length} ativos`} href="/admin/users" icon={<Users className="text-carimbo" size={24} />} />
-        <Card title="Especialidades" value={data.specialties.length} href="/admin/specialties" icon={<Activity className="text-jade" size={24} />} />
-        <Card title="Médicos" value={data.doctors.length} subtitle={`${data.doctors.filter(d => d.is_active).length} ativos`} href="/admin/doctors" icon={<Stethoscope className="text-selo" size={24} />} />
+        <Card title="Áreas de Atuação" value={data.specialties.length} href="/admin/specialties" icon={<Activity className="text-jade" size={24} />} />
+        <Card title="Advogados" value={data.doctors.length} subtitle={`${data.doctors.filter(d => d.is_active).length} ativos`} href="/admin/doctors" icon={<Stethoscope className="text-selo" size={24} />} />
         <Card title="Leads" value={data.leads.length} subtitle={`${newLeads.length} novos`} href="/admin/leads" icon={<LeadsIcon className="text-info" size={24} />} />
       </div>
 

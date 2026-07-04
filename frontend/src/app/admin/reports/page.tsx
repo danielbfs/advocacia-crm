@@ -141,7 +141,7 @@ export default function ReportsPage() {
 
           {/* Funnel */}
           <div className="bg-ink-2 border border-line rounded-sm p-6">
-            <h2 className="text-lg font-display font-semibold text-parchment mb-4">Funil de Leads</h2>
+            <h2 className="text-lg font-display font-semibold text-parchment mb-4">Funil de Vendas</h2>
             {funnel.length === 0 ? (
               <p className="text-sm text-parchment-faint">Sem dados no período.</p>
             ) : (

@@ -6,8 +6,8 @@ import type { Doctor, User } from "@/types";
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "Administrador",
-  secretary: "Secretária",
-  doctor: "Médico",
+  secretary: "Comercial",
+  doctor: "Advogado",
 };
 
 const ROLE_COLORS: Record<string, string> = {
@@ -181,13 +181,13 @@ export default function UsersPage() {
                 className="w-full rounded-sm border border-line bg-ink-2 px-3 py-2 text-sm text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
               >
                 <option value="admin">Administrador</option>
-                <option value="secretary">Secretária</option>
-                <option value="doctor">Médico</option>
+                <option value="secretary">Comercial</option>
+                <option value="doctor">Advogado</option>
               </select>
             </div>
             {form.role === "doctor" && (
               <div className="col-span-2">
-                <label className="block text-xs text-parchment-dim mb-1">Médico vinculado</label>
+                <label className="block text-xs text-parchment-dim mb-1">Advogado vinculado</label>
                 <select
                   value={form.doctor_id}
                   onChange={(e) => setForm({ ...form, doctor_id: e.target.value })}
@@ -201,7 +201,7 @@ export default function UsersPage() {
                   ))}
                 </select>
                 <p className="text-xs text-parchment-faint mt-1">
-                  Vincule a um médico para dar acesso ao portal do médico.
+                  Vincule a um advogado para dar acesso ao portal do advogado.
                 </p>
               </div>
             )}
@@ -228,7 +228,7 @@ export default function UsersPage() {
               <th className="text-left px-4 py-3 text-parchment-dim font-medium">Login</th>
               <th className="text-left px-4 py-3 text-parchment-dim font-medium">Nome</th>
               <th className="text-left px-4 py-3 text-parchment-dim font-medium">Perfil</th>
-              <th className="text-left px-4 py-3 text-parchment-dim font-medium">Médico</th>
+              <th className="text-left px-4 py-3 text-parchment-dim font-medium">Advogado</th>
               <th className="text-left px-4 py-3 text-parchment-dim font-medium">Status</th>
               <th className="text-left px-4 py-3 text-parchment-dim font-medium">Ações</th>
             </tr>

@@ -10,9 +10,9 @@ const STATUS_OPTIONS = [
   { value: "novo", label: "Novo" },
   { value: "em_contato", label: "Em Contato" },
   { value: "qualificado", label: "Qualificado" },
-  { value: "orcamento_enviado", label: "Orçamento Enviado" },
+  { value: "orcamento_enviado", label: "Proposta Enviada" },
   { value: "negociando", label: "Negociando" },
-  { value: "convertido", label: "Convertido" },
+  { value: "convertido", label: "Cliente Fechado" },
   { value: "perdido", label: "Perdido" },
 ];
 
@@ -925,14 +925,14 @@ export function LeadDetailView({ backPath = "/secretary" }: { backPath?: string 
       {showConvertModal && (
         <Modal
           onClose={() => setShowConvertModal(false)}
-          title="Converter em Paciente"
+          title="Converter em Cliente"
         >
           <p className="text-sm text-parchment-dim mb-3">
-            O lead será convertido em paciente.
+            O lead será convertido em cliente.
           </p>
           <div className="mb-3">
             <label className="block text-xs text-parchment-dim mb-1">
-              Nome do paciente
+              Nome do cliente
             </label>
             <input
               value={convertName}

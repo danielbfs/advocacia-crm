@@ -40,19 +40,19 @@ const LOCAL_MODELS = [
 ];
 
 const DEFAULT_PROMPT = `Suas responsabilidades:
-1. Atender pacientes com cordialidade e profissionalismo
+1. Atender clientes com cordialidade e profissionalismo
 2. Verificar disponibilidade e agendar consultas
 3. Confirmar, cancelar ou remarcar consultas existentes
-4. Coletar informações básicas (nome, queixa principal)
-5. Responder dúvidas gerais sobre a clínica
+4. Coletar informações básicas (nome, motivo do contato)
+5. Responder dúvidas gerais sobre o escritório
 
 Regras IMPORTANTES:
 - NUNCA invente horários. Use SEMPRE a ferramenta check_availability para consultar disponibilidade real
-- Se o paciente quiser agendar, pergunte a especialidade ou médico desejado e a data de preferência
+- Se o cliente quiser agendar, pergunte a área de atuação ou advogado desejado e a data de preferência
 - Ao oferecer horários, apresente no máximo 5 opções de forma clara
-- Antes de confirmar um agendamento, SEMPRE pergunte ao paciente se o horário está ok
-- Se o paciente fizer perguntas médicas, oriente-o a consultar o médico
-- Se não conseguir resolver algo, use escalate_to_human para transferir à secretária
+- Antes de confirmar um agendamento, SEMPRE pergunte ao cliente se o horário está ok
+- Se o cliente fizer perguntas jurídicas, oriente-o a consultar o advogado
+- Se não conseguir resolver algo, use escalate_to_human para transferir ao comercial
 - Fale em português do Brasil, com tom profissional mas acolhedor
 - Seja conciso — mensagens curtas e diretas são melhores em chat
 - Formate datas como "segunda-feira, 28 de abril às 14:00"`;
@@ -167,7 +167,7 @@ export default function ChatbotPage() {
         <div className="bg-ink-2 border border-line rounded-sm p-6">
           <h2 className="text-lg font-semibold text-parchment mb-2">Provedor de IA</h2>
           <p className="text-sm text-parchment-dim mb-4">
-            Escolha qual serviço de IA o chatbot usará para conversar com os pacientes.
+            Escolha qual serviço de IA o chatbot usará para conversar com os clientes.
           </p>
 
           <div className="flex items-center gap-3 mb-4 p-3 bg-ink-3 rounded-sm">
@@ -226,7 +226,7 @@ export default function ChatbotPage() {
         <div className="bg-ink-2 border border-line rounded-sm p-6">
           <h2 className="text-lg font-semibold text-parchment mb-2">Comportamento do Chatbot</h2>
           <p className="text-sm text-parchment-dim mb-4">
-            Personalize como o assistente virtual se comporta nas conversas com pacientes.
+            Personalize como o assistente virtual se comporta nas conversas com clientes.
           </p>
 
           <div className="space-y-4">
@@ -308,7 +308,7 @@ export default function ChatbotPage() {
                     d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                 </svg>
                 <p className="text-sm">Envie uma mensagem para testar o chatbot.</p>
-                <p className="text-xs mt-1">Ex: "Quero marcar uma consulta" ou "Quais médicos vocês têm?"</p>
+                <p className="text-xs mt-1">Ex: "Quero marcar uma consulta" ou "Quais advogados vocês têm?"</p>
               </div>
             )}
 

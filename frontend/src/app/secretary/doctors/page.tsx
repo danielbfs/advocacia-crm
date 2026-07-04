@@ -75,7 +75,7 @@ export default function SecretaryDoctorsPage() {
   return (
     <main className="p-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-display font-semibold text-parchment">Médicos</h1>
+        <h1 className="text-2xl font-display font-semibold text-parchment">Advogados</h1>
       </div>
 
       {/* Schedule Modal */}
@@ -128,7 +128,7 @@ export default function SecretaryDoctorsPage() {
               Bloqueios — {blocksDoctor.full_name}
             </h2>
             <p className="text-sm text-parchment-dim mb-4">
-              Períodos em que o médico não atende.
+              Períodos em que o advogado não atende.
             </p>
 
             {/* Existing blocks */}
@@ -171,8 +171,8 @@ export default function SecretaryDoctorsPage() {
           <thead className="bg-ink-3 border-b border-line">
             <tr>
               <th className="text-left px-4 py-3 text-parchment-dim font-medium">Nome</th>
-              <th className="text-left px-4 py-3 text-parchment-dim font-medium">CRM</th>
-              <th className="text-left px-4 py-3 text-parchment-dim font-medium">Especialidade</th>
+              <th className="text-left px-4 py-3 text-parchment-dim font-medium">OAB</th>
+              <th className="text-left px-4 py-3 text-parchment-dim font-medium">Área de Atuação</th>
               <th className="text-left px-4 py-3 text-parchment-dim font-medium">Slot</th>
               <th className="text-left px-4 py-3 text-parchment-dim font-medium">Status</th>
               <th className="text-left px-4 py-3 text-parchment-dim font-medium">Ações</th>
@@ -182,7 +182,7 @@ export default function SecretaryDoctorsPage() {
             {doctors.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-parchment-faint">
-                  Nenhum médico cadastrado.
+                  Nenhum advogado cadastrado.
                 </td>
               </tr>
             ) : (

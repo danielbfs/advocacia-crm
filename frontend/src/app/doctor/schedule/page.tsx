@@ -68,7 +68,7 @@ export default function DoctorSchedulePage() {
     return (
       <main className="p-8">
         <div className="bg-selo/15 border border-line rounded-sm p-6 text-selo">
-          Seu usuário não está vinculado a nenhum médico. Contate o administrador.
+          Seu usuário não está vinculado a nenhum advogado. Contate o administrador.
         </div>
       </main>
     );

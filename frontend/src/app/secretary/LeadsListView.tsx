@@ -1180,12 +1180,12 @@ function ConvertLeadModal({
   }
 
   return (
-    <Modal onClose={onClose} title="Converter Lead em Paciente">
+    <Modal onClose={onClose} title="Converter Lead em Cliente">
       <p className="text-sm text-parchment-dim mb-3">
         <strong>{lead.full_name || lead.phone}</strong> — telefone {lead.phone}
       </p>
 
-      <Field label="Nome do paciente">
+      <Field label="Nome do cliente">
         <input
           value={form.patient_name}
           onChange={(e) => setForm({ ...form, patient_name: e.target.value })}
@@ -1199,12 +1199,12 @@ function ConvertLeadModal({
           checked={createAppt}
           onChange={(e) => setCreateAppt(e.target.checked)}
         />
-        <span>Criar agendamento agora</span>
+        <span>Criar consulta agora</span>
       </label>
 
       {createAppt && (
         <div className="space-y-3 border-l-2 border-selo/40 pl-3 ml-1">
-          <Field label="Médico *">
+          <Field label="Advogado *">
             <select
               value={form.doctor_id}
               onChange={(e) => setForm({ ...form, doctor_id: e.target.value })}

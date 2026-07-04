@@ -199,7 +199,7 @@ export default function WhatsAppPage() {
           <div className="bg-ink-2 border border-line rounded-sm p-6">
             <h2 className="text-lg font-semibold text-parchment mb-1">Nova Instância</h2>
             <p className="text-sm text-parchment-dim mb-4">
-              Crie uma instância e escaneie o QR Code com o WhatsApp da clínica.
+              Crie uma instância e escaneie o QR Code com o WhatsApp do escritório.
             </p>
             <div className="flex gap-3">
               <input
@@ -353,7 +353,7 @@ export default function WhatsAppPage() {
               <code className="bg-ink-3 px-1 rounded-sm">openclinic</code>{" "}
               (ou o valor de <code className="bg-ink-3 px-1 rounded-sm">EVOLUTION_INSTANCE_NAME</code> no .env)
             </li>
-            <li>Escaneie o QR Code com o WhatsApp do número da clínica</li>
+            <li>Escaneie o QR Code com o WhatsApp do número do escritório</li>
             <li>
               Vá em <strong>Configurações</strong> e clique em{" "}
               <strong>Registrar Webhook WhatsApp</strong>

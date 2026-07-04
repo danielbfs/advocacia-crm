@@ -9,9 +9,9 @@ import { Scale } from "lucide-react";
 const NAV_ITEMS = [
   { href: "/secretary", label: "Leads" },
   { href: "/secretary/calendar", label: "Calendário" },
-  { href: "/secretary/appointments", label: "Agendamentos" },
-  { href: "/secretary/patients", label: "Pacientes" },
-  { href: "/secretary/doctors", label: "Médicos" },
+  { href: "/secretary/appointments", label: "Consultas" },
+  { href: "/secretary/patients", label: "Clientes" },
+  { href: "/secretary/doctors", label: "Advogados" },
   { href: "/secretary/shared-inbox", label: "Caixa Compartilhada" },
 ];
 

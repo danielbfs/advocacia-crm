@@ -85,7 +85,7 @@ export default function SetupPage() {
     setSavingClinic(true);
     try {
       await api.patch("/admin/settings/clinic", clinic);
-      showSaved("Dados da clínica salvos.");
+      showSaved("Dados do escritório salvos.");
     } catch {
       alert("Erro ao salvar.");
     } finally {
@@ -154,11 +154,11 @@ export default function SetupPage() {
       <div className="space-y-6">
         {/* Clinic Info */}
         <div className="bg-ink-2 border border-line rounded-sm p-6">
-          <h2 className="text-lg font-semibold text-parchment mb-4">Dados da Clínica</h2>
+          <h2 className="text-lg font-semibold text-parchment mb-4">Dados do Escritório</h2>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-parchment-dim mb-1">
-                Nome da Clínica
+                Nome do Escritório
               </label>
               <input
                 value={clinic.name}
@@ -199,7 +199,7 @@ export default function SetupPage() {
             </div>
             <div className="col-span-2">
               <label className="block text-sm font-medium text-parchment-dim mb-1">
-                Logo da Clínica (URL da imagem)
+                Logo do Escritório (URL da imagem)
               </label>
               <input
                 value={clinic.logo_url}
@@ -225,7 +225,7 @@ export default function SetupPage() {
             disabled={savingClinic}
             className="mt-4 bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-medium hover:bg-carimbo-bright disabled:opacity-50"
           >
-            {savingClinic ? "Salvando..." : "Salvar Dados da Clínica"}
+            {savingClinic ? "Salvando..." : "Salvar Dados do Escritório"}
           </button>
         </div>
 
@@ -295,7 +295,7 @@ export default function SetupPage() {
           <div className="bg-ink-2 border border-line rounded-sm p-6">
             <h2 className="text-lg font-semibold text-parchment mb-2">WhatsApp Webhook (Evolution API)</h2>
             <p className="text-sm text-parchment-dim mb-4">
-              Registre o webhook para que a instância do WhatsApp receba mensagens dos pacientes.
+              Registre o webhook para que a instância do WhatsApp receba mensagens dos clientes.
               Esse registro precisa ser feito apenas uma vez (ou ao trocar de domínio/instância).
             </p>
             <button
@@ -316,7 +316,7 @@ export default function SetupPage() {
           <div className="bg-ink-2 border border-line rounded-sm p-6">
             <h2 className="text-lg font-semibold text-parchment mb-2">Telegram Webhook</h2>
             <p className="text-sm text-parchment-dim mb-4">
-              Registre o webhook para que o bot Telegram receba mensagens dos pacientes.
+              Registre o webhook para que o bot Telegram receba mensagens dos clientes.
               Esse registro precisa ser feito apenas uma vez (ou ao trocar de domínio).
             </p>
             <button
@@ -345,7 +345,7 @@ export default function SetupPage() {
               Reinicie os containers:{" "}
               <code className="bg-ink-3 px-1 rounded-sm">docker compose up -d</code>
             </li>
-            <li>Preencha os dados da clínica acima e salve</li>
+            <li>Preencha os dados do escritório acima e salve</li>
             <li>Vá em "Chatbot / IA" para escolher o modelo e personalizar o prompt</li>
             <li>Registre o webhook do Telegram (botão acima)</li>
             <li>Teste enviando uma mensagem para o bot no Telegram</li>

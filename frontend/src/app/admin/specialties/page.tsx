@@ -63,7 +63,7 @@ export default function SpecialtiesPage() {
       cancelForm();
       fetchSpecialties();
     } catch {
-      alert("Erro ao salvar especialidade.");
+      alert("Erro ao salvar área de atuação.");
     } finally {
       setSaving(false);
     }
@@ -79,12 +79,12 @@ export default function SpecialtiesPage() {
   }
 
   async function handleDelete(spec: Specialty) {
-    if (!confirm(`Deseja excluir a especialidade "${spec.name}"?`)) return;
+    if (!confirm(`Deseja excluir a área de atuação "${spec.name}"?`)) return;
     try {
       await api.delete(`/specialties/${spec.id}`);
       fetchSpecialties();
     } catch {
-      alert("Erro ao excluir. Pode haver médicos vinculados.");
+      alert("Erro ao excluir. Pode haver advogados vinculados.");
     }
   }
 
@@ -93,19 +93,19 @@ export default function SpecialtiesPage() {
   return (
     <main className="p-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-display font-semibold text-parchment">Especialidades</h1>
+        <h1 className="text-2xl font-display font-semibold text-parchment">Áreas de Atuação</h1>
         <button
           onClick={showForm ? cancelForm : openCreate}
           className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-medium hover:bg-carimbo-bright"
         >
-          {showForm ? "Cancelar" : "Nova Especialidade"}
+          {showForm ? "Cancelar" : "Nova Área de Atuação"}
         </button>
       </div>
 
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-ink-2 border border-line rounded-sm p-4 mb-6 space-y-3">
           <h3 className="text-sm font-semibold text-parchment-dim">
-            {editingId ? "Editar Especialidade" : "Nova Especialidade"}
+            {editingId ? "Editar Área de Atuação" : "Nova Área de Atuação"}
           </h3>
           <div>
             <label className="block text-sm font-medium text-parchment-dim mb-1">Nome</label>
@@ -114,7 +114,7 @@ export default function SpecialtiesPage() {
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               required
               className="w-full rounded-sm border border-line bg-ink-2 px-3 py-2 text-sm text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
-              placeholder="Ex: Cardiologia"
+              placeholder="Ex: Direito Tributário"
             />
           </div>
           <div>
@@ -155,7 +155,7 @@ export default function SpecialtiesPage() {
             {specialties.length === 0 ? (
               <tr>
                 <td colSpan={4} className="px-4 py-8 text-center text-parchment-faint">
-                  Nenhuma especialidade cadastrada.
+                  Nenhuma área de atuação cadastrada.
                 </td>
               </tr>
             ) : (

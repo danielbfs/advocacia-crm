@@ -207,7 +207,7 @@ export function CalendarView({ basePath = "/secretary" }: { basePath?: string })
   }
 
   async function cancelAppointment(id: string) {
-    if (!confirm("Cancelar este agendamento?")) return;
+    if (!confirm("Cancelar esta consulta?")) return;
     try { await api.delete(`/scheduling/appointments/${id}`); setSelected(null); fetchAppointments(dateRange.from, dateRange.to); }
     catch { alert("Erro ao cancelar."); }
   }
@@ -252,7 +252,7 @@ export function CalendarView({ basePath = "/secretary" }: { basePath?: string })
 
           {/* Doctor filter */}
           <select value={doctorFilter} onChange={(e) => setDoctorFilter(e.target.value)} className="border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none">
-            <option value="all">Todos os médicos</option>
+            <option value="all">Todos os advogados</option>
             {doctors.map((d) => <option key={d.id} value={d.id}>{d.full_name}</option>)}
           </select>
 
@@ -272,7 +272,7 @@ export function CalendarView({ basePath = "/secretary" }: { basePath?: string })
           </label>
 
           <Link href={`${basePath}/appointments`} className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-semibold hover:bg-carimbo-bright">
-            Novo Agendamento
+            Nova Consulta
           </Link>
         </div>
       </div>
@@ -392,7 +392,7 @@ export function CalendarView({ basePath = "/secretary" }: { basePath?: string })
       <div className="mt-4 flex flex-wrap gap-5">
         {doctors.length > 0 && (
           <div className="flex items-center gap-3 flex-wrap">
-            <span className="text-xs text-parchment-faint font-medium">Médicos:</span>
+            <span className="text-xs text-parchment-faint font-medium">Advogados:</span>
             {doctors.map((d) => (
               <span key={d.id} className="flex items-center gap-1.5 text-xs text-parchment-dim">
                 <span className="inline-block w-3 h-3 rounded-sm" style={{ backgroundColor: doctorColorMap[d.id] }} />

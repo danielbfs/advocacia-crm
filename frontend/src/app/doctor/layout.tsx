@@ -8,7 +8,7 @@ import { Scale } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/doctor", label: "Minha Agenda" },
-  { href: "/doctor/patients", label: "Meus Pacientes" },
+  { href: "/doctor/patients", label: "Meus Clientes" },
   { href: "/doctor/schedule", label: "Meus Horários" },
 ];
 

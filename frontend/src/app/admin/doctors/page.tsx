@@ -96,7 +96,7 @@ export default function DoctorsPage() {
       cancelForm();
       fetchData();
     } catch {
-      alert("Erro ao salvar médico.");
+      alert("Erro ao salvar advogado.");
     } finally {
       setSaving(false);
     }
@@ -208,12 +208,12 @@ export default function DoctorsPage() {
   return (
     <main className="p-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-display font-semibold text-parchment">Médicos</h1>
+        <h1 className="text-2xl font-display font-semibold text-parchment">Advogados</h1>
         <button
           onClick={showForm ? cancelForm : openCreate}
           className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-medium hover:bg-carimbo-bright"
         >
-          {showForm ? "Cancelar" : "Novo Médico"}
+          {showForm ? "Cancelar" : "Novo Advogado"}
         </button>
       </div>
 
@@ -221,7 +221,7 @@ export default function DoctorsPage() {
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-ink-2/30 border border-line rounded-sm p-4 mb-6 space-y-3">
           <h3 className="text-sm font-semibold text-parchment-dim">
-            {editingId ? "Editar Médico" : "Novo Médico"}
+            {editingId ? "Editar Advogado" : "Novo Advogado"}
           </h3>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -234,7 +234,7 @@ export default function DoctorsPage() {
               />
             </div>
             <div>
-              <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-parchment-dim mb-1">CRM</label>
+              <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-parchment-dim mb-1">OAB</label>
               <input
                 value={form.crm}
                 onChange={(e) => setForm({ ...form, crm: e.target.value })}
@@ -243,13 +243,13 @@ export default function DoctorsPage() {
               />
             </div>
             <div>
-              <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-parchment-dim mb-1">Especialidade</label>
+              <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-parchment-dim mb-1">Área de Atuação</label>
               <select
                 value={form.specialty_id}
                 onChange={(e) => setForm({ ...form, specialty_id: e.target.value })}
                 className="w-full border border-line rounded-sm px-3 py-2 text-sm bg-ink text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo"
               >
-                <option value="">Sem especialidade</option>
+                <option value="">Sem área de atuação</option>
                 {specialties.filter((s) => s.is_active).map((s) => (
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
@@ -361,7 +361,7 @@ export default function DoctorsPage() {
               Bloqueios — {blocksDoctor.full_name}
             </h2>
             <p className="text-sm text-parchment-dim mb-4">
-              Férias, reuniões, feriados ou qualquer período em que o médico não atende.
+              Férias, reuniões, feriados ou qualquer período em que o advogado não atende.
             </p>
 
             {/* Existing blocks */}
@@ -448,8 +448,8 @@ export default function DoctorsPage() {
           <thead className="bg-ink-2 border-b border-line">
             <tr>
               <th className="text-left px-4 py-3 text-parchment-dim font-medium">Nome</th>
-              <th className="text-left px-4 py-3 text-parchment-dim font-medium">CRM</th>
-              <th className="text-left px-4 py-3 text-parchment-dim font-medium">Especialidade</th>
+              <th className="text-left px-4 py-3 text-parchment-dim font-medium">OAB</th>
+              <th className="text-left px-4 py-3 text-parchment-dim font-medium">Área de Atuação</th>
               <th className="text-left px-4 py-3 text-parchment-dim font-medium">Slot</th>
               <th className="text-left px-4 py-3 text-parchment-dim font-medium">Status</th>
               <th className="text-left px-4 py-3 text-parchment-dim font-medium">Ações</th>
@@ -459,7 +459,7 @@ export default function DoctorsPage() {
             {doctors.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-parchment-faint">
-                  Nenhum médico cadastrado.
+                  Nenhum advogado cadastrado.
                 </td>
               </tr>
             ) : (

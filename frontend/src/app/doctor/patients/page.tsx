@@ -77,7 +77,7 @@ export default function DoctorPatientsPage() {
     return (
       <main className="p-8">
         <div className="bg-selo/15 border border-line rounded-sm p-6 text-selo">
-          Seu usuário não está vinculado a nenhum médico. Contate o administrador.
+          Seu usuário não está vinculado a nenhum advogado. Contate o administrador.
         </div>
       </main>
     );
@@ -86,7 +86,7 @@ export default function DoctorPatientsPage() {
   return (
     <main className="p-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-display font-semibold text-parchment">Meus Pacientes</h1>
+        <h1 className="text-2xl font-display font-semibold text-parchment">Meus Clientes</h1>
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -99,14 +99,14 @@ export default function DoctorPatientsPage() {
         <p className="text-parchment-faint">Carregando...</p>
       ) : filtered.length === 0 ? (
         <div className="bg-ink-2 border border-line rounded-sm p-8 text-center text-parchment-faint">
-          {search ? "Nenhum resultado encontrado." : "Nenhum paciente com consulta registrada."}
+          {search ? "Nenhum resultado encontrado." : "Nenhum cliente com consulta registrada."}
         </div>
       ) : (
         <div className="bg-ink-2 border border-line rounded-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-ink border-b border-line">
               <tr>
-                <th className="text-left p-4 font-medium text-parchment-dim">Paciente</th>
+                <th className="text-left p-4 font-medium text-parchment-dim">Cliente</th>
                 <th className="text-left p-4 font-medium text-parchment-dim">Telefone</th>
                 <th className="text-left p-4 font-medium text-parchment-dim">E-mail</th>
                 <th className="text-left p-4 font-medium text-parchment-dim">Consultas</th>

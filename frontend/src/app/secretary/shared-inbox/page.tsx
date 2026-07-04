@@ -105,7 +105,7 @@ export default function SharedInbox() {
               >
                 <div className="flex justify-between items-start mb-1">
                   <span className="font-medium text-sm text-parchment">
-                    {conv.lead_id ? `Lead: ${conv.lead_id.slice(0,8)}` : `Patient: ${conv.patient_id?.slice(0,8)}`}
+                    {conv.lead_id ? `Lead: ${conv.lead_id.slice(0,8)}` : `Client: ${conv.patient_id?.slice(0,8)}`}
                   </span>
                   <span className={`text-[10px] px-2 py-0.5 rounded-full ${conv.channel === 'whatsapp' ? 'bg-jade/15 text-jade' : 'bg-info/15 text-info'}`}>
                     {conv.channel.toUpperCase()}

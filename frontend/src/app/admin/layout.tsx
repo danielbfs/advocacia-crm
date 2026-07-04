@@ -17,22 +17,22 @@ type NavItem =
 
 const NAV_ITEMS: NavItem[] = [
   { href: "/admin", label: "Painel", icon: LayoutDashboard },
-  { href: "/admin/calendar", label: "Agenda da Clínica", icon: Calendar },
+  { href: "/admin/calendar", label: "Agenda do Escritório", icon: Calendar },
   { href: "/admin/leads", label: "Leads", icon: Users },
 
   { heading: "Automações" },
   { href: "/admin/shared-inbox", label: "Caixa Compartilhada", icon: Inbox },
   { href: "/admin/chatbot", label: "Chatbot / IA", icon: Bot },
-  { href: "/admin/ia-comercial", label: "Atendente IA", icon: BrainCircuit },
+  { href: "/admin/ia-comercial", label: "IA Comercial", icon: BrainCircuit },
   { href: "/admin/follow-ups", label: "Follow-ups", icon: Clock },
-  
+
   { heading: "Relatórios" },
-  { href: "/admin/reports", label: "Funil de Leads", icon: PieChart },
-  
+  { href: "/admin/reports", label: "Funil de Vendas", icon: PieChart },
+
   { heading: "Cadastros" },
-  { href: "/admin/patients", label: "Pacientes", icon: UserCircle },
-  { href: "/admin/doctors", label: "Médicos", icon: Stethoscope },
-  { href: "/admin/specialties", label: "Especialidades", icon: Activity },
+  { href: "/admin/patients", label: "Clientes", icon: UserCircle },
+  { href: "/admin/doctors", label: "Advogados", icon: Stethoscope },
+  { href: "/admin/specialties", label: "Áreas de Atuação", icon: Activity },
   { href: "/admin/users", label: "Usuários", icon: Shield },
   
   { heading: "Sistema" },
