@@ -87,35 +87,35 @@ jobs:
 
       - name: Provisionar + deploy
         uses: appleboy/ssh-action@v1
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+          FORCE_SEED: ${{ github.event.inputs.force_seed }}
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ALEMBIC_DATABASE_URL: ${{ secrets.ALEMBIC_DATABASE_URL }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          DOMAIN: ${{ secrets.DOMAIN }}
+          ACME_EMAIL: ${{ secrets.ACME_EMAIL }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          EVOLUTION_DATABASE_URL: ${{ secrets.EVOLUTION_DATABASE_URL }}
+          EVOLUTION_API_KEY: ${{ secrets.EVOLUTION_API_KEY }}
+          EVOLUTION_INSTANCE_NAME: ${{ secrets.EVOLUTION_INSTANCE_NAME }}
+          FIRM_TIMEZONE: ${{ secrets.FIRM_TIMEZONE }}
+          FIRM_SLA_HOURS: ${{ secrets.FIRM_SLA_HOURS }}
+          LEADS_WEBHOOK_API_KEY: ${{ secrets.LEADS_WEBHOOK_API_KEY }}
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           command_timeout: 20m
           envs: IMAGE_TAG,FORCE_SEED,GHCR_USER,GHCR_TOKEN,DEPLOY_PATH,DATABASE_URL,ALEMBIC_DATABASE_URL,SECRET_KEY,DOMAIN,ACME_EMAIL,OPENAI_API_KEY,OPENAI_MODEL,TELEGRAM_BOT_TOKEN,EVOLUTION_DATABASE_URL,EVOLUTION_API_KEY,EVOLUTION_INSTANCE_NAME,FIRM_TIMEZONE,FIRM_SLA_HOURS,LEADS_WEBHOOK_API_KEY,ENCRYPTION_KEY,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET
-          env:
-            IMAGE_TAG: ${{ github.sha }}
-            FORCE_SEED: ${{ github.event.inputs.force_seed }}
-            GHCR_USER: ${{ github.actor }}
-            GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-            DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
-            DATABASE_URL: ${{ secrets.DATABASE_URL }}
-            ALEMBIC_DATABASE_URL: ${{ secrets.ALEMBIC_DATABASE_URL }}
-            SECRET_KEY: ${{ secrets.SECRET_KEY }}
-            DOMAIN: ${{ secrets.DOMAIN }}
-            ACME_EMAIL: ${{ secrets.ACME_EMAIL }}
-            OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-            OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
-            TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-            EVOLUTION_DATABASE_URL: ${{ secrets.EVOLUTION_DATABASE_URL }}
-            EVOLUTION_API_KEY: ${{ secrets.EVOLUTION_API_KEY }}
-            EVOLUTION_INSTANCE_NAME: ${{ secrets.EVOLUTION_INSTANCE_NAME }}
-            FIRM_TIMEZONE: ${{ secrets.FIRM_TIMEZONE }}
-            FIRM_SLA_HOURS: ${{ secrets.FIRM_SLA_HOURS }}
-            LEADS_WEBHOOK_API_KEY: ${{ secrets.LEADS_WEBHOOK_API_KEY }}
-            ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
-            GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-            GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           script: |
             set -euo pipefail
             APP_DIR="${DEPLOY_PATH:-/home/ubuntu/advocacia-crm}"
@@ -192,13 +192,13 @@ jobs:
       - name: Rollback em caso de falha
         if: failure()
         uses: appleboy/ssh-action@v1
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           envs: DEPLOY_PATH
-          env:
-            DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
           script: |
             set -euo pipefail
             cd "${DEPLOY_PATH:-/home/ubuntu/advocacia-crm}"
