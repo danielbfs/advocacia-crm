@@ -2,21 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+:root, .dark {
+  --ink: 22 20 15;
+  --ink-2: 33 29 22;
+  --ink-3: 44 39 32;
+  --line: 58 52 43;
+  --parchment: 237 230 214;
+  --parchment-dim: 179 169 147;
+  --parchment-faint: 111 104 90;
+  --carimbo: 214 73 47;
+  --carimbo-bright: 232 92 66;
+  --selo: 184 145 90;
+  --info: 62 92 107;
+  --jade: 91 138 114;
   color-scheme: dark;
+}
+
+.light {
+  --ink: 245 241 232;
+  --ink-2: 255 255 255;
+  --ink-3: 233 226 212;
+  --line: 214 206 191;
+  --parchment: 30 27 20;
+  --parchment-dim: 92 84 70;
+  --parchment-faint: 138 128 110;
+  --carimbo: 198 62 38;
+  --carimbo-bright: 214 73 47;
+  --selo: 141 108 58;
+  --info: 47 74 88;
+  --jade: 61 110 84;
+  color-scheme: light;
 }
 
 body {
   margin: 0;
-  background-color: #16140f; /* ink */
-  color: #ede6d6; /* parchment */
+  background-color: rgb(var(--ink));
+  color: rgb(var(--parchment));
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
 
 ::selection {
-  background: #d6492f; /* carimbo */
+  background: rgb(var(--carimbo));
   color: #fff;
 }
 

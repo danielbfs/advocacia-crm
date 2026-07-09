@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AuthGuard } from "@/components/auth-guard";
 import { AppHeader } from "@/components/app-header";
+import { SidebarFooter } from "@/components/sidebar-footer";
 import { useTier } from "@/lib/tier";
 import {
   LayoutDashboard, Calendar, Users, Inbox, Bot, BrainCircuit, Clock,
@@ -92,6 +93,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 );
               })}
             </div>
+            <SidebarFooter />
           </nav>
           <div className="flex-1 overflow-x-hidden overflow-y-auto bg-ink-2/30">{children}</div>
         </div>

@@ -184,18 +184,18 @@ export default function LoginPage() {
         .input {
           width: 100%;
           border-radius: 2px;
-          border: 1px solid var(--color-line);
-          background-color: color-mix(in srgb, var(--color-ink) 60%, transparent);
+          border: 1px solid rgb(var(--line));
+          background-color: rgb(var(--ink) / 0.6);
           padding: 0.7rem 0.85rem;
           font-size: 0.9rem;
-          color: var(--color-parchment);
+          color: rgb(var(--parchment));
           transition: border-color 0.15s, box-shadow 0.15s;
         }
-        .input::placeholder { color: var(--color-parchment-faint); }
+        .input::placeholder { color: rgb(var(--parchment-faint)); }
         .input:focus {
           outline: none;
-          border-color: var(--color-carimbo);
-          box-shadow: 0 0 0 1px var(--color-carimbo);
+          border-color: rgb(var(--carimbo));
+          box-shadow: 0 0 0 1px rgb(var(--carimbo));
         }
       `}</style>
     </div>

@@ -26,7 +26,7 @@ function currentViewLabel(pathname: string): string {
 }
 
 export function AppHeader() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [branding, setBranding] = useState<Branding>({ name: "Open Clinic AI", logo_url: "" });
@@ -108,18 +108,11 @@ export function AppHeader() {
 
       {/* ── Ações do usuário ── */}
       <div className="flex items-center gap-4 shrink-0">
-        <span className="text-sm text-parchment-dim hidden sm:inline">{user.full_name}</span>
         <button
           onClick={() => router.push("/change-password")}
           className="text-sm text-parchment-dim hover:text-parchment transition-colors"
         >
           Alterar Senha
-        </button>
-        <button
-          onClick={logout}
-          className="text-sm text-parchment-dim hover:text-carimbo transition-colors"
-        >
-          Sair
         </button>
       </div>
     </header>

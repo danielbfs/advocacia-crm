@@ -29,8 +29,17 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`${spectral.variable} ${inter.variable} ${jetbrainsMono.variable}`}
+      suppressHydrationWarning
+      className={`dark ${spectral.variable} ${inter.variable} ${jetbrainsMono.variable}`}
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=localStorage.getItem('theme')||'dark';var e=document.documentElement;e.classList.remove('dark','light');e.classList.add(t);}catch(_){}",
+          }}
+        />
+      </head>
       <body className="font-sans">{children}</body>
     </html>
   );

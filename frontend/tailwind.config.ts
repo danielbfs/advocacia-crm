@@ -9,13 +9,24 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: { DEFAULT: "#16140f", 2: "#211d16", 3: "#2c2720" },
-        line: "#3a342b",
-        parchment: { DEFAULT: "#ede6d6", dim: "#b3a993", faint: "#6f685a" },
-        carimbo: { DEFAULT: "#d6492f", bright: "#e85c42" },
-        selo: "#b8915a",
-        info: "#3e5c6b",
-        jade: "#5b8a72",
+        ink: {
+          DEFAULT: "rgb(var(--ink) / <alpha-value>)",
+          2: "rgb(var(--ink-2) / <alpha-value>)",
+          3: "rgb(var(--ink-3) / <alpha-value>)",
+        },
+        line: "rgb(var(--line) / <alpha-value>)",
+        parchment: {
+          DEFAULT: "rgb(var(--parchment) / <alpha-value>)",
+          dim: "rgb(var(--parchment-dim) / <alpha-value>)",
+          faint: "rgb(var(--parchment-faint) / <alpha-value>)",
+        },
+        carimbo: {
+          DEFAULT: "rgb(var(--carimbo) / <alpha-value>)",
+          bright: "rgb(var(--carimbo-bright) / <alpha-value>)",
+        },
+        selo: "rgb(var(--selo) / <alpha-value>)",
+        info: "rgb(var(--info) / <alpha-value>)",
+        jade: "rgb(var(--jade) / <alpha-value>)",
       },
       fontFamily: {
         display: ["var(--font-display)", "Georgia", "serif"],
