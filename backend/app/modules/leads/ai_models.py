@@ -25,8 +25,8 @@ class LeadAgentConfig(Base):
     proactive_delay_minutes: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     inactivity_followup_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     auto_lost_after_hours: Mapped[int] = mapped_column(Integer, default=72, nullable=False)
-    # When True, booking an appointment auto-converts the lead to 'convertido'
-    convert_on_appointment: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # When True, booking a consultation auto-converts the lead to 'convertido'
+    convert_on_consultation: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
@@ -35,7 +35,7 @@ class LeadAgentConfig(Base):
 
 
 class LeadConversation(Base):
-    """AI conversation linked to a specific Lead (not a Patient)."""
+    """AI conversation linked to a specific Lead (not a Client)."""
 
     __tablename__ = "lead_conversations"
 

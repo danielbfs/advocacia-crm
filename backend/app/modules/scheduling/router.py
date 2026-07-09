@@ -1,4 +1,4 @@
-"""Doctor and scheduling API endpoints."""
+"""Lawyer and scheduling API endpoints."""
 import uuid
 from datetime import datetime
 
@@ -11,141 +11,141 @@ from app.core.permissions import get_current_user, require_role
 from app.database import get_db
 from app.modules.auth.models import User
 from app.modules.scheduling.schemas import (
-    AppointmentCreate,
-    AppointmentResponse,
-    AppointmentUpdate,
-    DoctorCreate,
-    DoctorResponse,
-    DoctorScheduleResponse,
-    DoctorScheduleSet,
-    DoctorUpdate,
+    ConsultationCreate,
+    ConsultationResponse,
+    ConsultationUpdate,
+    LawyerCreate,
+    LawyerResponse,
+    LawyerScheduleResponse,
+    LawyerScheduleSet,
+    LawyerUpdate,
     ScheduleBlockCreate,
     ScheduleBlockResponse,
     TimeSlot,
 )
 from app.modules.scheduling.service import (
     SlotNotAvailableError,
-    cancel_appointment,
-    create_appointment,
-    create_doctor,
+    cancel_consultation,
+    create_consultation,
+    create_lawyer,
     create_schedule_block,
     delete_schedule_block,
-    get_all_doctors,
-    get_appointment_by_id,
-    get_appointments,
+    get_all_lawyers,
+    get_consultation_by_id,
+    get_consultations,
     get_available_slots,
-    get_available_slots_by_specialty,
-    get_doctor_by_id,
-    get_doctor_schedules,
+    get_available_slots_by_practice_area,
+    get_lawyer_by_id,
+    get_lawyer_schedules,
     get_schedule_block_by_id,
     get_schedule_blocks,
-    set_doctor_schedules,
-    update_appointment,
-    update_doctor,
+    set_lawyer_schedules,
+    update_consultation,
+    update_lawyer,
 )
 
 router = APIRouter()
 
 
-# --- Doctors ---
+# --- Lawyers ---
 
-@router.get("/doctors", response_model=list[DoctorResponse])
-async def list_doctors(
+@router.get("/lawyers", response_model=list[LawyerResponse])
+async def list_lawyers(
     active_only: bool = False,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    return await get_all_doctors(db, active_only=active_only)
+    return await get_all_lawyers(db, active_only=active_only)
 
 
-@router.post("/doctors", response_model=DoctorResponse, status_code=201)
-async def create_new_doctor(
-    body: DoctorCreate,
+@router.post("/lawyers", response_model=LawyerResponse, status_code=201)
+async def create_new_lawyer(
+    body: LawyerCreate,
     current_user: User = Depends(require_role("admin")),
     db: AsyncSession = Depends(get_db),
 ):
-    return await create_doctor(
+    return await create_lawyer(
         db,
         full_name=body.full_name,
-        crm=body.crm,
-        specialty_id=body.specialty_id,
+        oab=body.oab,
+        practice_area_id=body.practice_area_id,
         scheduling_provider=body.scheduling_provider,
         slot_duration_minutes=body.slot_duration_minutes,
     )
 
 
-@router.get("/doctors/{doctor_id}", response_model=DoctorResponse)
-async def get_single_doctor(
-    doctor_id: uuid.UUID,
+@router.get("/lawyers/{lawyer_id}", response_model=LawyerResponse)
+async def get_single_lawyer(
+    lawyer_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    doctor = await get_doctor_by_id(db, doctor_id)
-    if not doctor:
-        raise HTTPException(status_code=404, detail="Médico não encontrado.")
-    return doctor
+    lawyer = await get_lawyer_by_id(db, lawyer_id)
+    if not lawyer:
+        raise HTTPException(status_code=404, detail="Advogado não encontrado.")
+    return lawyer
 
 
-@router.patch("/doctors/{doctor_id}", response_model=DoctorResponse)
-async def update_existing_doctor(
-    doctor_id: uuid.UUID,
-    body: DoctorUpdate,
+@router.patch("/lawyers/{lawyer_id}", response_model=LawyerResponse)
+async def update_existing_lawyer(
+    lawyer_id: uuid.UUID,
+    body: LawyerUpdate,
     current_user: User = Depends(require_role("admin")),
     db: AsyncSession = Depends(get_db),
 ):
-    doctor = await get_doctor_by_id(db, doctor_id)
-    if not doctor:
-        raise HTTPException(status_code=404, detail="Médico não encontrado.")
-    return await update_doctor(
-        db, doctor,
+    lawyer = await get_lawyer_by_id(db, lawyer_id)
+    if not lawyer:
+        raise HTTPException(status_code=404, detail="Advogado não encontrado.")
+    return await update_lawyer(
+        db, lawyer,
         full_name=body.full_name,
-        crm=body.crm,
-        specialty_id=body.specialty_id,
+        oab=body.oab,
+        practice_area_id=body.practice_area_id,
         slot_duration_minutes=body.slot_duration_minutes,
         is_active=body.is_active,
     )
 
 
-# --- Doctor Schedules ---
+# --- Lawyer Schedules ---
 
-@router.get("/doctors/{doctor_id}/schedule", response_model=list[DoctorScheduleResponse])
-async def get_doctor_schedule(
-    doctor_id: uuid.UUID,
+@router.get("/lawyers/{lawyer_id}/schedule", response_model=list[LawyerScheduleResponse])
+async def get_lawyer_schedule(
+    lawyer_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    doctor = await get_doctor_by_id(db, doctor_id)
-    if not doctor:
-        raise HTTPException(status_code=404, detail="Médico não encontrado.")
-    return await get_doctor_schedules(db, doctor_id)
+    lawyer = await get_lawyer_by_id(db, lawyer_id)
+    if not lawyer:
+        raise HTTPException(status_code=404, detail="Advogado não encontrado.")
+    return await get_lawyer_schedules(db, lawyer_id)
 
 
-@router.put("/doctors/{doctor_id}/schedule", response_model=list[DoctorScheduleResponse])
-async def replace_doctor_schedule(
-    doctor_id: uuid.UUID,
-    body: DoctorScheduleSet,
+@router.put("/lawyers/{lawyer_id}/schedule", response_model=list[LawyerScheduleResponse])
+async def replace_lawyer_schedule(
+    lawyer_id: uuid.UUID,
+    body: LawyerScheduleSet,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     if current_user.role != "admin":
-        if current_user.role != "doctor" or current_user.doctor_id != doctor_id:
+        if current_user.role != "lawyer" or current_user.lawyer_id != lawyer_id:
             raise ForbiddenError()
-    doctor = await get_doctor_by_id(db, doctor_id)
-    if not doctor:
-        raise HTTPException(status_code=404, detail="Médico não encontrado.")
+    lawyer = await get_lawyer_by_id(db, lawyer_id)
+    if not lawyer:
+        raise HTTPException(status_code=404, detail="Advogado não encontrado.")
     schedules_data = [item.model_dump() for item in body.schedules]
-    return await set_doctor_schedules(db, doctor_id, schedules_data)
+    return await set_lawyer_schedules(db, lawyer_id, schedules_data)
 
 
 # --- Schedule Blocks ---
 
 @router.get("/blocks", response_model=list[ScheduleBlockResponse])
 async def list_schedule_blocks(
-    doctor_id: uuid.UUID = Query(...),
+    lawyer_id: uuid.UUID = Query(...),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    return await get_schedule_blocks(db, doctor_id)
+    return await get_schedule_blocks(db, lawyer_id)
 
 
 @router.post("/blocks", response_model=ScheduleBlockResponse, status_code=201)
@@ -156,7 +156,7 @@ async def create_new_block(
 ):
     return await create_schedule_block(
         db,
-        doctor_id=body.doctor_id,
+        lawyer_id=body.lawyer_id,
         starts_at=body.starts_at,
         ends_at=body.ends_at,
         reason=body.reason,
@@ -180,50 +180,50 @@ async def delete_existing_block(
 
 @router.get("/slots")
 async def list_available_slots(
-    doctor_id: uuid.UUID | None = None,
-    specialty_id: uuid.UUID | None = None,
+    lawyer_id: uuid.UUID | None = None,
+    practice_area_id: uuid.UUID | None = None,
     date_from: datetime = Query(...),
     date_to: datetime = Query(...),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    if doctor_id:
-        return await get_available_slots(db, doctor_id, date_from, date_to)
-    if specialty_id:
-        return await get_available_slots_by_specialty(db, specialty_id, date_from, date_to)
-    raise HTTPException(status_code=400, detail="Informe doctor_id ou specialty_id.")
+    if lawyer_id:
+        return await get_available_slots(db, lawyer_id, date_from, date_to)
+    if practice_area_id:
+        return await get_available_slots_by_practice_area(db, practice_area_id, date_from, date_to)
+    raise HTTPException(status_code=400, detail="Informe lawyer_id ou practice_area_id.")
 
 
-# --- Appointments ---
+# --- Consultations ---
 
-@router.get("/appointments", response_model=list[AppointmentResponse])
-async def list_appointments(
-    doctor_id: uuid.UUID | None = None,
-    patient_id: uuid.UUID | None = None,
+@router.get("/consultations", response_model=list[ConsultationResponse])
+async def list_consultations(
+    lawyer_id: uuid.UUID | None = None,
+    client_id: uuid.UUID | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
     status: str | None = None,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    return await get_appointments(db, doctor_id, patient_id, date_from, date_to, status)
+    return await get_consultations(db, lawyer_id, client_id, date_from, date_to, status)
 
 
-@router.post("/appointments", response_model=AppointmentResponse, status_code=201)
-async def create_new_appointment(
-    body: AppointmentCreate,
+@router.post("/consultations", response_model=ConsultationResponse, status_code=201)
+async def create_new_consultation(
+    body: ConsultationCreate,
     request: Request,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     try:
-        appt = await create_appointment(
+        consultation = await create_consultation(
             db,
-            patient_id=body.patient_id,
-            doctor_id=body.doctor_id,
+            client_id=body.client_id,
+            lawyer_id=body.lawyer_id,
             starts_at=body.starts_at,
             ends_at=body.ends_at,
-            specialty_id=body.specialty_id,
+            practice_area_id=body.practice_area_id,
             source=body.source,
             notes=body.notes,
             created_by_user=current_user.id,
@@ -232,62 +232,62 @@ async def create_new_appointment(
         raise HTTPException(status_code=409, detail=str(exc))
     await log_action(
         db,
-        action="appointment.create",
+        action="consultation.create",
         user_id=current_user.id,
-        entity_type="appointment",
-        entity_id=appt.id,
+        entity_type="consultation",
+        entity_id=consultation.id,
         payload={
-            "patient_id": str(appt.patient_id),
-            "doctor_id": str(appt.doctor_id),
-            "starts_at": appt.starts_at.isoformat(),
-            "source": appt.source,
+            "client_id": str(consultation.client_id),
+            "lawyer_id": str(consultation.lawyer_id),
+            "starts_at": consultation.starts_at.isoformat(),
+            "source": consultation.source,
         },
         request=request,
     )
-    return appt
+    return consultation
 
 
-@router.get("/appointments/{appointment_id}", response_model=AppointmentResponse)
-async def get_single_appointment(
-    appointment_id: uuid.UUID,
+@router.get("/consultations/{consultation_id}", response_model=ConsultationResponse)
+async def get_single_consultation(
+    consultation_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    appt = await get_appointment_by_id(db, appointment_id)
-    if not appt:
-        raise HTTPException(status_code=404, detail="Agendamento não encontrado.")
-    return appt
+    consultation = await get_consultation_by_id(db, consultation_id)
+    if not consultation:
+        raise HTTPException(status_code=404, detail="Consulta não encontrada.")
+    return consultation
 
 
-@router.patch("/appointments/{appointment_id}", response_model=AppointmentResponse)
-async def update_existing_appointment(
-    appointment_id: uuid.UUID,
-    body: AppointmentUpdate,
+@router.patch("/consultations/{consultation_id}", response_model=ConsultationResponse)
+async def update_existing_consultation(
+    consultation_id: uuid.UUID,
+    body: ConsultationUpdate,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    appt = await get_appointment_by_id(db, appointment_id)
-    if not appt:
-        raise HTTPException(status_code=404, detail="Agendamento não encontrado.")
-    return await update_appointment(db, appt, status=body.status, notes=body.notes)
+    consultation = await get_consultation_by_id(db, consultation_id)
+    if not consultation:
+        raise HTTPException(status_code=404, detail="Consulta não encontrada.")
+    return await update_consultation(db, consultation, status=body.status, notes=body.notes)
 
 
-@router.delete("/appointments/{appointment_id}", status_code=204)
-async def cancel_existing_appointment(
-    appointment_id: uuid.UUID,
+@router.delete("/consultations/{consultation_id}", status_code=204)
+async def cancel_existing_consultation(
+    consultation_id: uuid.UUID,
     request: Request,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    appt = await get_appointment_by_id(db, appointment_id)
-    if not appt:
-        raise HTTPException(status_code=404, detail="Agendamento não encontrado.")
-    await cancel_appointment(db, appt)
+    consultation = await get_consultation_by_id(db, consultation_id)
+    if not consultation:
+        raise HTTPException(status_code=404, detail="Consulta não encontrada.")
+    await cancel_consultation(db, consultation)
     await log_action(
         db,
-        action="appointment.cancel",
+        action="consultation.cancel",
         user_id=current_user.id,
-        entity_type="appointment",
-        entity_id=appt.id,
+        entity_type="consultation",
+        entity_id=consultation.id,
         request=request,
     )

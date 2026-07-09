@@ -17,9 +17,9 @@ class LeadCreate(BaseModel):
     utm_campaign: str | None = None
     utm_content: str | None = None
     utm_term: str | None = None
-    specialty_id: uuid.UUID | None = None
+    practice_area_id: uuid.UUID | None = None
     description: str | None = None
-    quote_value: float | None = None
+    proposal_value: float | None = None
     assigned_to: uuid.UUID | None = None
 
 
@@ -30,9 +30,9 @@ class LeadUpdate(BaseModel):
     status: str | None = None
     lost_reason: str | None = None
     assigned_to: uuid.UUID | None = None
-    specialty_id: uuid.UUID | None = None
+    practice_area_id: uuid.UUID | None = None
     description: str | None = None
-    quote_value: float | None = None
+    proposal_value: float | None = None
     next_followup_at: datetime | None = None
 
 
@@ -57,9 +57,9 @@ class LeadResponse(BaseModel):
     utm_campaign: str | None
     utm_content: str | None
     utm_term: str | None
-    specialty_id: uuid.UUID | None
+    practice_area_id: uuid.UUID | None
     description: str | None
-    quote_value: float | None
+    proposal_value: float | None
     status: str
     lost_reason: str | None
     assigned_to: uuid.UUID | None
@@ -68,9 +68,9 @@ class LeadResponse(BaseModel):
     contacted_at: datetime | None
     is_overdue: bool
     next_followup_at: datetime | None
-    converted_patient_id: uuid.UUID | None
+    converted_client_id: uuid.UUID | None
     converted_at: datetime | None
-    appointment_id: uuid.UUID | None
+    consultation_id: uuid.UUID | None
     created_at: datetime
     updated_at: datetime
 
@@ -105,11 +105,11 @@ class LeadContactRequest(BaseModel):
 
 
 class LeadConvertRequest(BaseModel):
-    """Converte lead em paciente. Opcionalmente já cria o agendamento."""
-    patient_name: str | None = None
-    appointment_notes: str | None = None
-    # Quando informados, criam o agendamento na conversão
-    doctor_id: uuid.UUID | None = None
+    """Converte lead em cliente. Opcionalmente já cria a consulta."""
+    client_name: str | None = None
+    consultation_notes: str | None = None
+    # Quando informados, criam a consulta na conversão
+    lawyer_id: uuid.UUID | None = None
     starts_at: datetime | None = None
 
 
@@ -163,7 +163,7 @@ class InboundLeadWebhook(BaseModel):
     utm_campaign: str | None = None
     utm_content: str | None = None
     utm_term: str | None = None
-    specialty: str | None = None
+    practice_area: str | None = None
     message: str | None = None
 
 

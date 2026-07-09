@@ -2,23 +2,23 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import type { Doctor, User } from "@/types";
+import type { Lawyer, User } from "@/types";
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "Administrador",
   secretary: "Comercial",
-  doctor: "Advogado",
+  lawyer: "Advogado",
 };
 
 const ROLE_COLORS: Record<string, string> = {
   admin: "bg-carimbo/10 text-carimbo-bright",
   secretary: "bg-info/15 text-info",
-  doctor: "bg-jade/15 text-jade",
+  lawyer: "bg-jade/15 text-jade",
 };
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [lawyers, setLawyers] = useState<Lawyer[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [showForm, setShowForm] = useState(false);
@@ -28,13 +28,13 @@ export default function UsersPage() {
     full_name: "",
     password: "",
     role: "secretary" as string,
-    doctor_id: "" as string,
+    lawyer_id: "" as string,
   });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchUsers();
-    api.get("/scheduling/doctors?active_only=false").then(({ data }) => setDoctors(data)).catch(() => {});
+    api.get("/scheduling/lawyers?active_only=false").then(({ data }) => setLawyers(data)).catch(() => {});
   }, []);
 
   async function fetchUsers() {
@@ -50,7 +50,7 @@ export default function UsersPage() {
 
   function openCreate() {
     setEditingId(null);
-    setForm({ username: "", full_name: "", password: "", role: "secretary", doctor_id: "" });
+    setForm({ username: "", full_name: "", password: "", role: "secretary", lawyer_id: "" });
     setShowForm(true);
   }
 
@@ -61,7 +61,7 @@ export default function UsersPage() {
       full_name: user.full_name,
       password: "",
       role: user.role,
-      doctor_id: user.doctor_id || "",
+      lawyer_id: user.lawyer_id || "",
     });
     setShowForm(true);
   }
@@ -75,14 +75,14 @@ export default function UsersPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      const doctor_id = form.role === "doctor" && form.doctor_id ? form.doctor_id : null;
+      const lawyer_id = form.role === "lawyer" && form.lawyer_id ? form.lawyer_id : null;
 
       if (editingId) {
         const payload: Record<string, unknown> = {
           username: form.username,
           full_name: form.full_name,
           role: form.role,
-          doctor_id,
+          lawyer_id,
         };
         await api.patch(`/auth/users/${editingId}`, payload);
       } else {
@@ -92,7 +92,7 @@ export default function UsersPage() {
           full_name: form.full_name,
           password: form.password,
           role: form.role,
-          doctor_id,
+          lawyer_id,
         });
       }
       cancelForm();
@@ -117,9 +117,9 @@ export default function UsersPage() {
     } catch { alert("Erro ao resetar senha."); }
   }
 
-  function doctorName(doctorId: string | null) {
-    if (!doctorId) return null;
-    return doctors.find((d) => d.id === doctorId)?.full_name || null;
+  function lawyerName(lawyerId: string | null) {
+    if (!lawyerId) return null;
+    return lawyers.find((d) => d.id === lawyerId)?.full_name || null;
   }
 
   if (loading) return <div className="p-8 text-parchment-faint">Carregando...</div>;
@@ -177,26 +177,26 @@ export default function UsersPage() {
               <label className="block text-xs text-parchment-dim mb-1">Perfil</label>
               <select
                 value={form.role}
-                onChange={(e) => setForm({ ...form, role: e.target.value, doctor_id: "" })}
+                onChange={(e) => setForm({ ...form, role: e.target.value, lawyer_id: "" })}
                 className="w-full rounded-sm border border-line bg-ink-2 px-3 py-2 text-sm text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
               >
                 <option value="admin">Administrador</option>
                 <option value="secretary">Comercial</option>
-                <option value="doctor">Advogado</option>
+                <option value="lawyer">Advogado</option>
               </select>
             </div>
-            {form.role === "doctor" && (
+            {form.role === "lawyer" && (
               <div className="col-span-2">
                 <label className="block text-xs text-parchment-dim mb-1">Advogado vinculado</label>
                 <select
-                  value={form.doctor_id}
-                  onChange={(e) => setForm({ ...form, doctor_id: e.target.value })}
+                  value={form.lawyer_id}
+                  onChange={(e) => setForm({ ...form, lawyer_id: e.target.value })}
                   className="w-full rounded-sm border border-line bg-ink-2 px-3 py-2 text-sm text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
                 >
                   <option value="">— Nenhum —</option>
-                  {doctors.map((d) => (
+                  {lawyers.map((d) => (
                     <option key={d.id} value={d.id}>
-                      {d.full_name}{d.crm ? ` (${d.crm})` : ""}
+                      {d.full_name}{d.oab ? ` (${d.oab})` : ""}
                     </option>
                   ))}
                 </select>
@@ -244,7 +244,7 @@ export default function UsersPage() {
                   </span>
                 </td>
                 <td className="px-4 py-3 text-parchment-dim text-xs">
-                  {doctorName(user.doctor_id) || "—"}
+                  {lawyerName(user.lawyer_id) || "—"}
                 </td>
                 <td className="px-4 py-3">
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${user.is_active ? "bg-jade/15 text-jade" : "bg-ink-3 text-parchment-faint"}`}>

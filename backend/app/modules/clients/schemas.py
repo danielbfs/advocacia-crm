@@ -1,11 +1,11 @@
-"""Pydantic schemas for patients."""
+"""Pydantic schemas for clients."""
 import uuid
 from datetime import datetime
 
 from pydantic import BaseModel
 
 
-class PatientContactResponse(BaseModel):
+class ClientContactResponse(BaseModel):
     id: uuid.UUID
     channel: str
     value: str
@@ -26,7 +26,7 @@ class LeadSummary(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class PatientCreate(BaseModel):
+class ClientCreate(BaseModel):
     full_name: str | None = None
     phone: str
     email: str | None = None
@@ -35,27 +35,27 @@ class PatientCreate(BaseModel):
     notes: str | None = None
 
 
-class PatientUpdate(BaseModel):
+class ClientUpdate(BaseModel):
     full_name: str | None = None
     phone: str | None = None
     email: str | None = None
-    crm_status: str | None = None
+    client_status: str | None = None
     notes: str | None = None
 
 
-class PatientResponse(BaseModel):
+class ClientResponse(BaseModel):
     id: uuid.UUID
     full_name: str | None
     phone: str
     email: str | None
     channel: str
     channel_id: str | None
-    crm_status: str
+    client_status: str
     lead_id: uuid.UUID | None
     notes: str | None
     created_at: datetime
     updated_at: datetime
-    contacts: list[PatientContactResponse] = []
+    contacts: list[ClientContactResponse] = []
     leads: list[LeadSummary] = []
 
     model_config = {"from_attributes": True}

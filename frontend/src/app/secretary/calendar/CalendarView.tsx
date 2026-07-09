@@ -3,19 +3,19 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import type { Doctor } from "@/types";
+import type { Lawyer } from "@/types";
 
-interface Appointment {
+interface Consultation {
   id: string;
-  patient_id: string;
-  doctor_id: string;
+  client_id: string;
+  lawyer_id: string;
   starts_at: string;
   ends_at: string;
   status: string;
   notes: string | null;
 }
 
-interface PatientLite {
+interface ClientLite {
   id: string;
   full_name: string | null;
   phone: string;
@@ -39,7 +39,7 @@ const STATUS_BORDER: Record<string, string> = {
   no_show: "#b8915a",
 };
 
-const DOCTOR_PALETTE = [
+const LAWYER_PALETTE = [
   "#d6492f", "#b8915a", "#3e5c6b", "#5b8a72",
   "#e85c42", "#8a6f9e", "#6f685a", "#4f7a8a",
 ];
@@ -101,23 +101,23 @@ function generateMonthGrid(d: Date): (Date | null)[][] {
 export function CalendarView({ basePath = "/secretary" }: { basePath?: string }) {
   const [view, setView] = useState<ViewMode>("week");
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
-  const [doctorFilter, setDoctorFilter] = useState<string>("all");
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [patients, setPatients] = useState<Record<string, PatientLite>>({});
+  const [lawyers, setLawyers] = useState<Lawyer[]>([]);
+  const [lawyerFilter, setLawyerFilter] = useState<string>("all");
+  const [consultations, setConsultations] = useState<Consultation[]>([]);
+  const [clients, setClients] = useState<Record<string, ClientLite>>({});
   const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState<Appointment | null>(null);
+  const [selected, setSelected] = useState<Consultation | null>(null);
   const [hideCancelled, setHideCancelled] = useState(true);
 
   useEffect(() => {
-    api.get("/scheduling/doctors?active_only=true").then(({ data }) => setDoctors(data)).catch(() => {});
+    api.get("/scheduling/lawyers?active_only=true").then(({ data }) => setLawyers(data)).catch(() => {});
   }, []);
 
-  const doctorColorMap = useMemo(() => {
+  const lawyerColorMap = useMemo(() => {
     const map: Record<string, string> = {};
-    doctors.forEach((d, i) => { map[d.id] = DOCTOR_PALETTE[i % DOCTOR_PALETTE.length]; });
+    lawyers.forEach((d, i) => { map[d.id] = LAWYER_PALETTE[i % LAWYER_PALETTE.length]; });
     return map;
-  }, [doctors]);
+  }, [lawyers]);
 
   const dateRange = useMemo(() => {
     if (view === "month") {
@@ -133,29 +133,29 @@ export function CalendarView({ basePath = "/secretary" }: { basePath?: string })
   }, [view, currentDate]);
 
   useEffect(() => {
-    fetchAppointments(dateRange.from, dateRange.to);
-  }, [dateRange, doctorFilter]);
+    fetchConsultations(dateRange.from, dateRange.to);
+  }, [dateRange, lawyerFilter]);
 
-  async function fetchAppointments(from: Date, to: Date) {
+  async function fetchConsultations(from: Date, to: Date) {
     setLoading(true);
     try {
       const params = new URLSearchParams({
         date_from: from.toISOString(),
         date_to: to.toISOString(),
       });
-      if (doctorFilter !== "all") params.set("doctor_id", doctorFilter);
-      const { data } = await api.get(`/scheduling/appointments?${params}`);
-      setAppointments(data);
+      if (lawyerFilter !== "all") params.set("lawyer_id", lawyerFilter);
+      const { data } = await api.get(`/scheduling/consultations?${params}`);
+      setConsultations(data);
 
-      const ids = Array.from(new Set(data.map((a: Appointment) => a.patient_id))) as string[];
-      const fetched: Record<string, PatientLite> = { ...patients };
+      const ids = Array.from(new Set(data.map((a: Consultation) => a.client_id))) as string[];
+      const fetched: Record<string, ClientLite> = { ...clients };
       await Promise.all(
         ids.filter((id) => !fetched[id]).map(async (id) => {
-          try { const { data: p } = await api.get(`/patients/${id}`); fetched[id] = p; }
+          try { const { data: p } = await api.get(`/clients/${id}`); fetched[id] = p; }
           catch { /* ignore */ }
         })
       );
-      setPatients(fetched);
+      setClients(fetched);
     } finally {
       setLoading(false);
     }
@@ -171,29 +171,29 @@ export function CalendarView({ basePath = "/secretary" }: { basePath?: string })
 
   function goToday() { setCurrentDate(new Date()); }
 
-  function patientLabel(pid: string) {
-    const p = patients[pid];
+  function clientLabel(pid: string) {
+    const p = clients[pid];
     return p ? (p.full_name || p.phone) : "...";
   }
 
-  function doctorLabel(did: string) {
-    return doctors.find((d) => d.id === did)?.full_name || "—";
+  function lawyerLabel(did: string) {
+    return lawyers.find((d) => d.id === did)?.full_name || "—";
   }
 
-  const visibleAppointments = useMemo(
-    () => hideCancelled ? appointments.filter((a) => a.status !== "cancelled") : appointments,
-    [appointments, hideCancelled]
+  const visibleConsultations = useMemo(
+    () => hideCancelled ? consultations.filter((a) => a.status !== "cancelled") : consultations,
+    [consultations, hideCancelled]
   );
 
-  function appointmentsForDay(day: Date): Appointment[] {
+  function consultationsForDay(day: Date): Consultation[] {
     const s = new Date(day); s.setHours(0, 0, 0, 0);
     const e = addDays(s, 1);
-    return visibleAppointments
+    return visibleConsultations
       .filter((a) => { const t = new Date(a.starts_at); return t >= s && t < e; })
       .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
   }
 
-  function gridPos(a: Appointment) {
+  function gridPos(a: Consultation) {
     const start = new Date(a.starts_at);
     const end = new Date(a.ends_at);
     const top = ((start.getHours() - HOUR_START) * 60 + start.getMinutes()) / 60 * 48;
@@ -202,13 +202,13 @@ export function CalendarView({ basePath = "/secretary" }: { basePath?: string })
   }
 
   async function changeStatus(id: string, status: string) {
-    try { await api.patch(`/scheduling/appointments/${id}`, { status }); setSelected(null); fetchAppointments(dateRange.from, dateRange.to); }
+    try { await api.patch(`/scheduling/consultations/${id}`, { status }); setSelected(null); fetchConsultations(dateRange.from, dateRange.to); }
     catch { alert("Erro ao atualizar."); }
   }
 
-  async function cancelAppointment(id: string) {
+  async function cancelConsultation(id: string) {
     if (!confirm("Cancelar esta consulta?")) return;
-    try { await api.delete(`/scheduling/appointments/${id}`); setSelected(null); fetchAppointments(dateRange.from, dateRange.to); }
+    try { await api.delete(`/scheduling/consultations/${id}`); setSelected(null); fetchConsultations(dateRange.from, dateRange.to); }
     catch { alert("Erro ao cancelar."); }
   }
 
@@ -250,10 +250,10 @@ export function CalendarView({ basePath = "/secretary" }: { basePath?: string })
             ))}
           </div>
 
-          {/* Doctor filter */}
-          <select value={doctorFilter} onChange={(e) => setDoctorFilter(e.target.value)} className="border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none">
+          {/* Lawyer filter */}
+          <select value={lawyerFilter} onChange={(e) => setLawyerFilter(e.target.value)} className="border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none">
             <option value="all">Todos os advogados</option>
-            {doctors.map((d) => <option key={d.id} value={d.id}>{d.full_name}</option>)}
+            {lawyers.map((d) => <option key={d.id} value={d.id}>{d.full_name}</option>)}
           </select>
 
           {/* Navigation */}
@@ -271,7 +271,7 @@ export function CalendarView({ basePath = "/secretary" }: { basePath?: string })
             Ocultar cancelados
           </label>
 
-          <Link href={`${basePath}/appointments`} className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-semibold hover:bg-carimbo-bright">
+          <Link href={`${basePath}/consultations`} className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-semibold hover:bg-carimbo-bright">
             Nova Consulta
           </Link>
         </div>
@@ -296,7 +296,7 @@ export function CalendarView({ basePath = "/secretary" }: { basePath?: string })
                   {week.map((day, di) => {
                     if (!day) return <div key={di} className="min-h-[100px] border-r border-line last:border-r-0 bg-ink/50" />;
                     const isToday = sameDay(day, new Date());
-                    const dayAppts = appointmentsForDay(day);
+                    const dayConsults = consultationsForDay(day);
                     return (
                       <div
                         key={di}
@@ -307,18 +307,18 @@ export function CalendarView({ basePath = "/secretary" }: { basePath?: string })
                           {day.getDate()}
                         </div>
                         <div className="space-y-0.5">
-                          {dayAppts.slice(0, 3).map((a) => (
+                          {dayConsults.slice(0, 3).map((a) => (
                             <button
                               key={a.id}
                               onClick={(e) => { e.stopPropagation(); setSelected(a); }}
                               className="w-full text-left text-[10px] text-parchment rounded-sm px-1.5 py-0.5 truncate hover:opacity-90"
-                              style={{ backgroundColor: doctorColorMap[a.doctor_id] || "#6f685a" }}
+                              style={{ backgroundColor: lawyerColorMap[a.lawyer_id] || "#6f685a" }}
                             >
-                              {new Date(a.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} {patientLabel(a.patient_id)}
+                              {new Date(a.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} {clientLabel(a.client_id)}
                             </button>
                           ))}
-                          {dayAppts.length > 3 && (
-                            <div className="text-[10px] text-parchment-faint pl-1">+{dayAppts.length - 3} mais</div>
+                          {dayConsults.length > 3 && (
+                            <div className="text-[10px] text-parchment-faint pl-1">+{dayConsults.length - 3} mais</div>
                           )}
                         </div>
                       </div>
@@ -355,14 +355,14 @@ export function CalendarView({ basePath = "/secretary" }: { basePath?: string })
                   ))}
                 </div>
                 {gridDays.map((day, di) => {
-                  const dayAppts = appointmentsForDay(day);
+                  const dayConsults = consultationsForDay(day);
                   return (
                     <div key={di} className="border-r border-line last:border-r-0 relative" style={{ height: `${HOURS.length * 48}px` }}>
                       {HOURS.map((h) => <div key={h} className="h-12 border-b border-line" />)}
-                      {dayAppts.map((a) => {
+                      {dayConsults.map((a) => {
                         const { top, height } = gridPos(a);
                         if (top < 0 || top > HOURS.length * 48) return null;
-                        const bgColor = doctorColorMap[a.doctor_id] || "#6f685a";
+                        const bgColor = lawyerColorMap[a.lawyer_id] || "#6f685a";
                         const borderColor = STATUS_BORDER[a.status] || "#3a342b";
                         return (
                           <button
@@ -370,12 +370,12 @@ export function CalendarView({ basePath = "/secretary" }: { basePath?: string })
                             onClick={() => setSelected(a)}
                             className="absolute left-1 right-1 rounded-sm text-left p-1 text-[10px] text-parchment overflow-hidden hover:opacity-90"
                             style={{ top, height, backgroundColor: bgColor, borderLeft: `3px solid ${borderColor}` }}
-                            title={`${patientLabel(a.patient_id)} — ${doctorLabel(a.doctor_id)}`}
+                            title={`${clientLabel(a.client_id)} — ${lawyerLabel(a.lawyer_id)}`}
                           >
                             <div className="font-semibold truncate">
-                              {new Date(a.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} {patientLabel(a.patient_id)}
+                              {new Date(a.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} {clientLabel(a.client_id)}
                             </div>
-                            {view === "day" && <div className="opacity-90 truncate">{doctorLabel(a.doctor_id)}</div>}
+                            {view === "day" && <div className="opacity-90 truncate">{lawyerLabel(a.lawyer_id)}</div>}
                           </button>
                         );
                       })}
@@ -390,12 +390,12 @@ export function CalendarView({ basePath = "/secretary" }: { basePath?: string })
 
       {/* Legends */}
       <div className="mt-4 flex flex-wrap gap-5">
-        {doctors.length > 0 && (
+        {lawyers.length > 0 && (
           <div className="flex items-center gap-3 flex-wrap">
             <span className="text-xs text-parchment-faint font-medium">Advogados:</span>
-            {doctors.map((d) => (
+            {lawyers.map((d) => (
               <span key={d.id} className="flex items-center gap-1.5 text-xs text-parchment-dim">
-                <span className="inline-block w-3 h-3 rounded-sm" style={{ backgroundColor: doctorColorMap[d.id] }} />
+                <span className="inline-block w-3 h-3 rounded-sm" style={{ backgroundColor: lawyerColorMap[d.id] }} />
                 {d.full_name}
               </span>
             ))}
@@ -418,10 +418,10 @@ export function CalendarView({ basePath = "/secretary" }: { basePath?: string })
           <div className="bg-ink-2 border border-line rounded-sm p-6 w-full max-w-md">
             <div className="flex items-start justify-between mb-3">
               <div>
-                <h2 className="text-lg font-display font-semibold text-parchment">{patientLabel(selected.patient_id)}</h2>
-                <p className="text-sm text-parchment-dim">{doctorLabel(selected.doctor_id)}</p>
+                <h2 className="text-lg font-display font-semibold text-parchment">{clientLabel(selected.client_id)}</h2>
+                <p className="text-sm text-parchment-dim">{lawyerLabel(selected.lawyer_id)}</p>
               </div>
-              <span className="text-xs px-2 py-0.5 rounded-full font-medium text-parchment" style={{ backgroundColor: doctorColorMap[selected.doctor_id] || "#6f685a" }}>
+              <span className="text-xs px-2 py-0.5 rounded-full font-medium text-parchment" style={{ backgroundColor: lawyerColorMap[selected.lawyer_id] || "#6f685a" }}>
                 {STATUS_LABELS[selected.status] || selected.status}
               </span>
             </div>
@@ -441,7 +441,7 @@ export function CalendarView({ basePath = "/secretary" }: { basePath?: string })
                 </>
               )}
               {selected.status !== "cancelled" && (
-                <button onClick={() => cancelAppointment(selected.id)} className="text-xs bg-carimbo text-parchment px-3 py-1.5 rounded-sm hover:bg-carimbo-bright">Cancelar</button>
+                <button onClick={() => cancelConsultation(selected.id)} className="text-xs bg-carimbo text-parchment px-3 py-1.5 rounded-sm hover:bg-carimbo-bright">Cancelar</button>
               )}
               <button onClick={() => setSelected(null)} className="text-xs text-parchment-dim ml-auto px-3 py-1.5">Fechar</button>
             </div>

@@ -10,7 +10,7 @@ const STATUS_OPTIONS = [
   { value: "novo", label: "Novo" },
   { value: "em_contato", label: "Em Contato" },
   { value: "qualificado", label: "Qualificado" },
-  { value: "orcamento_enviado", label: "Proposta Enviada" },
+  { value: "proposta_enviada", label: "Proposta Enviada" },
   { value: "negociando", label: "Negociando" },
   { value: "convertido", label: "Cliente Fechado" },
   { value: "perdido", label: "Perdido" },
@@ -20,7 +20,7 @@ const STATUS_COLORS: Record<string, string> = {
   novo: "bg-info",
   em_contato: "bg-selo",
   qualificado: "bg-parchment-dim",
-  orcamento_enviado: "bg-selo",
+  proposta_enviada: "bg-selo",
   negociando: "bg-carimbo",
   convertido: "bg-jade",
   perdido: "bg-parchment-faint",
@@ -28,10 +28,10 @@ const STATUS_COLORS: Record<string, string> = {
 
 const LOST_REASON_OPTIONS = [
   { value: "sem_resposta", label: "Sem resposta" },
-  { value: "preco", label: "Preço" },
-  { value: "ja_atendido", label: "Já atendido em outro lugar" },
-  { value: "fora_de_perfil", label: "Fora do perfil" },
-  { value: "sem_disponibilidade", label: "Sem disponibilidade" },
+  { value: "honorarios", label: "Honorários (preço)" },
+  { value: "ja_tem_advogado", label: "Já tem advogado / contratou outro" },
+  { value: "fora_de_area", label: "Fora das áreas de atuação" },
+  { value: "sem_viabilidade", label: "Caso sem viabilidade jurídica" },
   { value: "mudou_de_ideia", label: "Mudou de ideia" },
   { value: "duplicado", label: "Lead duplicado" },
   { value: "outro", label: "Outro" },
@@ -295,7 +295,7 @@ export function LeadDetailView({ backPath = "/secretary" }: { backPath?: string 
     phone: "",
     email: "",
     description: "",
-    quote_value: "",
+    proposal_value: "",
     next_followup_at: "",
   });
 
@@ -336,7 +336,7 @@ export function LeadDetailView({ backPath = "/secretary" }: { backPath?: string 
           phone: l.phone || "",
           email: l.email || "",
           description: l.description || "",
-          quote_value: l.quote_value?.toString() || "",
+          proposal_value: l.proposal_value?.toString() || "",
           next_followup_at: l.next_followup_at?.slice(0, 16) || "",
         });
         setConvertName(l.full_name || "");
@@ -381,7 +381,7 @@ export function LeadDetailView({ backPath = "/secretary" }: { backPath?: string 
         phone: editForm.phone,
         email: editForm.email || null,
         description: editForm.description || null,
-        quote_value: editForm.quote_value ? parseFloat(editForm.quote_value) : null,
+        proposal_value: editForm.proposal_value ? parseFloat(editForm.proposal_value) : null,
         next_followup_at: editForm.next_followup_at || null,
       });
       setEditing(false);
@@ -432,7 +432,7 @@ export function LeadDetailView({ backPath = "/secretary" }: { backPath?: string 
     if (!lead) return;
     try {
       await api.post(`/leads/${lead.id}/convert`, {
-        patient_name: convertName || null,
+        client_name: convertName || null,
       });
       setShowConvertModal(false);
       fetchAll();
@@ -685,9 +685,9 @@ export function LeadDetailView({ backPath = "/secretary" }: { backPath?: string 
                   <input
                     type="number"
                     step="0.01"
-                    value={editForm.quote_value}
+                    value={editForm.proposal_value}
                     onChange={(e) =>
-                      setEditForm({ ...editForm, quote_value: e.target.value })
+                      setEditForm({ ...editForm, proposal_value: e.target.value })
                     }
                     className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
                   />
@@ -758,7 +758,7 @@ export function LeadDetailView({ backPath = "/secretary" }: { backPath?: string 
             <InfoCard
               label="Valor Orçamento"
               value={
-                lead.quote_value ? `R$ ${lead.quote_value.toFixed(2)}` : "—"
+                lead.proposal_value ? `R$ ${lead.proposal_value.toFixed(2)}` : "—"
               }
             />
           </div>

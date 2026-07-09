@@ -1,4 +1,4 @@
-"""Doctor, schedule and appointment models."""
+"""Lawyer, schedule and consultation models."""
 import uuid
 from datetime import datetime, time, timezone
 
@@ -18,16 +18,16 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
 
-class Doctor(Base):
-    __tablename__ = "doctors"
+class Lawyer(Base):
+    __tablename__ = "lawyers"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     full_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    crm: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    specialty_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("specialties.id"), nullable=True
+    oab: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    practice_area_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("practice_areas.id"), nullable=True
     )
     scheduling_provider: Mapped[str] = mapped_column(
         String(50), nullable=False, default="local_db"
@@ -44,25 +44,25 @@ class Doctor(Base):
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
-    specialty = relationship("Specialty", lazy="joined")
-    schedules = relationship("DoctorSchedule", back_populates="doctor", lazy="selectin")
+    practice_area = relationship("PracticeArea", lazy="joined")
+    schedules = relationship("LawyerSchedule", back_populates="lawyer", lazy="selectin")
 
 
-class DoctorSchedule(Base):
-    __tablename__ = "doctor_schedules"
+class LawyerSchedule(Base):
+    __tablename__ = "lawyer_schedules"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    doctor_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("doctors.id", ondelete="CASCADE"), nullable=False
+    lawyer_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("lawyers.id", ondelete="CASCADE"), nullable=False
     )
     day_of_week: Mapped[int] = mapped_column(SmallInteger, nullable=False)  # 0=Mon
     start_time: Mapped[time] = mapped_column(Time, nullable=False)
     end_time: Mapped[time] = mapped_column(Time, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
-    doctor = relationship("Doctor", back_populates="schedules")
+    lawyer = relationship("Lawyer", back_populates="schedules")
 
 
 class ScheduleBlock(Base):
@@ -71,8 +71,8 @@ class ScheduleBlock(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    doctor_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("doctors.id", ondelete="CASCADE"), nullable=False
+    lawyer_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("lawyers.id", ondelete="CASCADE"), nullable=False
     )
     starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -85,20 +85,20 @@ class ScheduleBlock(Base):
     )
 
 
-class Appointment(Base):
-    __tablename__ = "appointments"
+class Consultation(Base):
+    __tablename__ = "consultations"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
+    client_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("clients.id"), nullable=False
     )
-    doctor_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("doctors.id"), nullable=False
+    lawyer_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("lawyers.id"), nullable=False
     )
-    specialty_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("specialties.id"), nullable=True
+    practice_area_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("practice_areas.id"), nullable=True
     )
     starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -118,6 +118,6 @@ class Appointment(Base):
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
-    doctor = relationship("Doctor", lazy="joined")
-    patient = relationship("Patient", lazy="joined")
-    specialty = relationship("Specialty", lazy="joined")
+    lawyer = relationship("Lawyer", lazy="joined")
+    client = relationship("Client", lazy="joined")
+    practice_area = relationship("PracticeArea", lazy="joined")

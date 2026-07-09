@@ -17,8 +17,8 @@ interface FollowupRule {
 interface FollowupJob {
   id: string;
   rule_id: string;
-  appointment_id: string;
-  patient_id: string;
+  consultation_id: string;
+  client_id: string;
   scheduled_for: string;
   status: string;
   error_message: string | null;
@@ -26,9 +26,9 @@ interface FollowupJob {
 }
 
 const TRIGGER_EVENTS = [
-  { value: "appointment_scheduled", label: "Agendamento criado" },
-  { value: "appointment_confirmed", label: "Agendamento confirmado" },
-  { value: "appointment_cancelled", label: "Agendamento cancelado" },
+  { value: "consultation_scheduled", label: "Agendamento criado" },
+  { value: "consultation_confirmed", label: "Agendamento confirmado" },
+  { value: "consultation_cancelled", label: "Agendamento cancelado" },
   { value: "no_show", label: "Cliente faltou" },
 ];
 
@@ -56,7 +56,7 @@ export default function FollowUpsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "",
-    trigger_event: "appointment_scheduled",
+    trigger_event: "consultation_scheduled",
     offset_minutes: -1440,
     message_template: "",
     channel: "",
@@ -99,10 +99,10 @@ export default function FollowUpsPage() {
     setEditingId(null);
     setForm({
       name: "",
-      trigger_event: "appointment_scheduled",
+      trigger_event: "consultation_scheduled",
       offset_minutes: -1440,
       message_template:
-        "Olá {patient_name}! Lembramos que sua consulta com {doctor_name} ({specialty}) está marcada para {appointment_date}. Confirme sua presença respondendo esta mensagem.",
+        "Olá {client_name}! Lembramos que sua consulta com {lawyer_name} ({practice_area}) está marcada para {consultation_date}. Confirme sua presença respondendo esta mensagem.",
       channel: "",
       is_active: true,
     });
@@ -316,10 +316,10 @@ export default function FollowUpsPage() {
                 </div>
                 <div className="flex flex-wrap gap-1.5 mb-2">
                   {[
-                    { tag: "{patient_name}",    label: "Nome do cliente"     },
-                    { tag: "{doctor_name}",     label: "Nome do advogado"    },
-                    { tag: "{specialty}",       label: "Área de Atuação"    },
-                    { tag: "{appointment_date}", label: "Data/hora consulta" },
+                    { tag: "{client_name}",    label: "Nome do cliente"     },
+                    { tag: "{lawyer_name}",     label: "Nome do advogado"    },
+                    { tag: "{practice_area}",       label: "Área de Atuação"    },
+                    { tag: "{consultation_date}", label: "Data/hora consulta" },
                   ].map(({ tag, label }) => (
                     <button
                       key={tag}
@@ -339,7 +339,7 @@ export default function FollowUpsPage() {
                   required
                   rows={4}
                   className="w-full border border-line rounded-sm px-3 py-2 text-sm bg-ink text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo"
-                  placeholder="Ex: Olá {patient_name}! Sua consulta com {doctor_name} ({specialty}) está marcada para {appointment_date}."
+                  placeholder="Ex: Olá {client_name}! Sua consulta com {lawyer_name} ({practice_area}) está marcada para {consultation_date}."
                 />
               </div>
               <div className="flex items-center gap-2">

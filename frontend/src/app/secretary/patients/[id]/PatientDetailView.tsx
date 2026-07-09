@@ -4,20 +4,20 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 
-interface Patient {
+interface Client {
   id: string;
   full_name: string | null;
   phone: string;
   email: string | null;
   channel: string;
   channel_id: string | null;
-  crm_status: string;
+  client_status: string;
   notes: string | null;
   created_at: string;
   updated_at: string;
 }
 
-interface Appointment {
+interface Consultation {
   id: string;
   starts_at: string;
   ends_at: string;
@@ -37,42 +37,42 @@ const STATUS_OPTIONS = [
 export function PatientDetailView({ backPath = "/secretary/patients" }: { backPath?: string }) {
   const { id } = useParams();
   const router = useRouter();
-  const [patient, setPatient] = useState<Patient | null>(null);
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [client, setClient] = useState<Client | null>(null);
+  const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
     full_name: "",
     phone: "",
     email: "",
-    crm_status: "new",
+    client_status: "new",
     notes: "",
   });
 
   useEffect(() => {
-    if (id) fetchPatient();
+    if (id) fetchClient();
   }, [id]);
 
-  async function fetchPatient() {
+  async function fetchClient() {
     setLoading(true);
     try {
-      const [patRes, apptRes] = await Promise.allSettled([
-        api.get(`/patients/${id}`),
-        api.get(`/scheduling/appointments?patient_id=${id}`),
+      const [clientRes, consultRes] = await Promise.allSettled([
+        api.get(`/clients/${id}`),
+        api.get(`/scheduling/consultations?client_id=${id}`),
       ]);
-      if (patRes.status === "fulfilled") {
-        const p = patRes.value.data;
-        setPatient(p);
+      if (clientRes.status === "fulfilled") {
+        const p = clientRes.value.data;
+        setClient(p);
         setForm({
           full_name: p.full_name || "",
           phone: p.phone || "",
           email: p.email || "",
-          crm_status: p.crm_status || "new",
+          client_status: p.client_status || "new",
           notes: p.notes || "",
         });
       }
-      if (apptRes.status === "fulfilled") {
-        setAppointments(apptRes.value.data);
+      if (consultRes.status === "fulfilled") {
+        setConsultations(consultRes.value.data);
       }
     } finally {
       setLoading(false);
@@ -80,24 +80,24 @@ export function PatientDetailView({ backPath = "/secretary/patients" }: { backPa
   }
 
   async function saveEdit() {
-    if (!patient) return;
+    if (!client) return;
     try {
-      await api.patch(`/patients/${patient.id}`, {
+      await api.patch(`/clients/${client.id}`, {
         full_name: form.full_name || null,
         phone: form.phone,
         email: form.email || null,
-        crm_status: form.crm_status,
+        client_status: form.client_status,
         notes: form.notes || null,
       });
       setEditing(false);
-      fetchPatient();
+      fetchClient();
     } catch {
       alert("Erro ao salvar.");
     }
   }
 
   if (loading) return <div className="p-8 text-parchment-faint">Carregando...</div>;
-  if (!patient) return <div className="p-8 text-parchment-faint">Cliente não encontrado.</div>;
+  if (!client) return <div className="p-8 text-parchment-faint">Cliente não encontrado.</div>;
 
   return (
     <main className="p-8 max-w-3xl">
@@ -110,10 +110,10 @@ export function PatientDetailView({ backPath = "/secretary/patients" }: { backPa
 
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-display font-semibold text-parchment">{patient.full_name || "Cliente sem nome"}</h1>
-          <p className="text-parchment-dim">{patient.phone} {patient.email ? `| ${patient.email}` : ""}</p>
+          <h1 className="text-2xl font-display font-semibold text-parchment">{client.full_name || "Cliente sem nome"}</h1>
+          <p className="text-parchment-dim">{client.phone} {client.email ? `| ${client.email}` : ""}</p>
           <p className="text-xs text-parchment-faint mt-1">
-            Canal: {patient.channel} | Cadastro: {new Date(patient.created_at).toLocaleDateString("pt-BR")}
+            Canal: {client.channel} | Cadastro: {new Date(client.created_at).toLocaleDateString("pt-BR")}
           </p>
         </div>
         <button
@@ -155,8 +155,8 @@ export function PatientDetailView({ backPath = "/secretary/patients" }: { backPa
             <div>
               <label className="block text-xs text-parchment-dim mb-1">Status</label>
               <select
-                value={form.crm_status}
-                onChange={(e) => setForm({ ...form, crm_status: e.target.value })}
+                value={form.client_status}
+                onChange={(e) => setForm({ ...form, client_status: e.target.value })}
                 className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
               >
                 {STATUS_OPTIONS.map(({ value, label }) => (
@@ -183,14 +183,14 @@ export function PatientDetailView({ backPath = "/secretary/patients" }: { backPa
         </div>
       )}
 
-      {/* Appointments */}
+      {/* Consultations */}
       <div className="bg-ink-2 border border-line rounded-sm p-4">
         <h3 className="text-sm font-semibold text-parchment-dim mb-3">Consultas</h3>
-        {appointments.length === 0 ? (
+        {consultations.length === 0 ? (
           <p className="text-sm text-parchment-faint">Nenhuma consulta.</p>
         ) : (
           <div className="space-y-2">
-            {appointments.map((appt) => (
+            {consultations.map((appt) => (
               <div key={appt.id} className="flex items-center justify-between border border-line rounded-sm px-3 py-2">
                 <div>
                   <span className="text-sm font-medium text-parchment">
@@ -220,23 +220,23 @@ export function PatientDetailView({ backPath = "/secretary/patients" }: { backPa
           <MessageSquare size={16} strokeWidth={1.5} />
           Histórico de Mensagens
         </h3>
-        <ChatHistory patientId={patient.id} />
+        <ChatHistory clientId={client.id} />
       </div>
     </main>
   );
 }
 
-function ChatHistory({ patientId }: { patientId: string }) {
+function ChatHistory({ clientId }: { clientId: string }) {
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchMessages() {
       try {
-        // First find conversation for this patient
+        // First find conversation for this client
         const convRes = await api.get<any[]>('/messaging/conversations');
-        const myConv = convRes.data.find(c => c.patient_id === patientId || c.lead_id === patientId);
-        
+        const myConv = convRes.data.find(c => c.client_id === clientId || c.lead_id === clientId);
+
         if (myConv) {
           const msgRes = await api.get(`/messaging/conversations/${myConv.id}/messages`);
           setMessages(msgRes.data);
@@ -248,7 +248,7 @@ function ChatHistory({ patientId }: { patientId: string }) {
       }
     }
     fetchMessages();
-  }, [patientId]);
+  }, [clientId]);
 
   if (loading) return <div className="text-xs text-parchment-faint">Carregando mensagens...</div>;
   if (messages.length === 0) return <p className="text-sm text-parchment-faint">Nenhuma conversa registrada.</p>;

@@ -1,13 +1,13 @@
 /** Tipos compartilhados do Open Clinic AI Frontend */
 
-export type UserRole = "admin" | "secretary" | "doctor";
+export type UserRole = "admin" | "secretary" | "lawyer";
 
 export interface User {
   id: string;
   username: string;
   full_name: string;
   role: UserRole;
-  doctor_id: string | null;
+  lawyer_id: string | null;
   is_active: boolean;
   must_change_password: boolean;
   created_at: string;
@@ -24,7 +24,7 @@ export type LeadStatus =
   | "novo"
   | "em_contato"
   | "qualificado"
-  | "orcamento_enviado"
+  | "proposta_enviada"
   | "negociando"
   | "convertido"
   | "perdido";
@@ -58,7 +58,7 @@ export interface LeadAgentConfig {
   proactive_delay_minutes: number;
   inactivity_followup_message: string | null;
   auto_lost_after_hours: number;
-  convert_on_appointment: boolean;
+  convert_on_consultation: boolean;
 }
 
 export interface LeadMessage {
@@ -93,7 +93,7 @@ export interface LeadConversation {
 }
 
 export interface PricingItem {
-  specialty: string;
+  practice_area: string;
   service: string;
   price: number;
   notes?: string;
@@ -132,7 +132,7 @@ export interface SupervisorConfig {
 }
 
 export interface LeadAIGlobalConfig {
-  convert_on_appointment: boolean;
+  convert_on_consultation: boolean;
   delay_between_leads_minutes: number;
 }
 
@@ -146,9 +146,9 @@ export interface Lead {
   channel: LeadChannel;
   utm_source: string | null;
   utm_campaign: string | null;
-  specialty_id: string | null;
+  practice_area_id: string | null;
   description: string | null;
-  quote_value: number | null;
+  proposal_value: number | null;
   status: LeadStatus;
   lost_reason: string | null;
   assigned_to: string | null;
@@ -157,9 +157,9 @@ export interface Lead {
   contacted_at: string | null;
   is_overdue: boolean;
   next_followup_at: string | null;
-  converted_patient_id: string | null;
+  converted_client_id: string | null;
   converted_at: string | null;
-  appointment_id: string | null;
+  consultation_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -190,25 +190,25 @@ export interface LeadInteraction {
   interacted_at: string;
 }
 
-export interface Appointment {
+export interface Consultation {
   id: string;
-  patient_id: string;
-  doctor_id: string;
-  specialty_id: string | null;
+  client_id: string;
+  lawyer_id: string;
+  practice_area_id: string | null;
   starts_at: string;
   ends_at: string;
   status: "scheduled" | "confirmed" | "completed" | "cancelled" | "no_show";
-  source: "ai_chat" | "secretary" | "patient_link" | null;
+  source: "ai_chat" | "secretary" | "client_link" | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
 }
 
-export interface Doctor {
+export interface Lawyer {
   id: string;
   full_name: string;
-  crm: string | null;
-  specialty_id: string | null;
+  oab: string | null;
+  practice_area_id: string | null;
   scheduling_provider: "google_calendar" | "local_db";
   slot_duration_minutes: number;
   is_active: boolean;
@@ -216,21 +216,21 @@ export interface Doctor {
   updated_at: string;
 }
 
-export interface Patient {
+export interface Client {
   id: string;
   full_name: string | null;
   phone: string;
   email: string | null;
   channel: string;
   channel_id: string | null;
-  crm_status: string;
+  client_status: string;
   lead_id: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
 }
 
-export interface Specialty {
+export interface PracticeArea {
   id: string;
   name: string;
   description: string | null;

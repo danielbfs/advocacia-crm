@@ -10,11 +10,11 @@ from app.core.audit import log_action
 from app.core.permissions import get_current_user, require_role
 from app.database import get_db
 from app.modules.auth.models import User
-from app.modules.crm.service import get_patient_by_phone, create_patient
+from app.modules.clients.service import get_client_by_phone, create_client
 from app.modules.scheduling.service import (
     SlotNotAvailableError,
-    create_appointment,
-    get_doctor_by_id,
+    create_consultation,
+    get_lawyer_by_id,
 )
 from app.modules.leads.pipeline import (
     ALLOWED_TRANSITIONS,
@@ -77,7 +77,7 @@ async def list_leads(
     channel: str | None = None,
     assigned_to: uuid.UUID | None = None,
     is_overdue: bool | None = None,
-    specialty_id: uuid.UUID | None = None,
+    practice_area_id: uuid.UUID | None = None,
     utm_campaign: str | None = None,
     search: str | None = None,
     current_user: User = Depends(get_current_user),
@@ -89,7 +89,7 @@ async def list_leads(
         channel=channel,
         assigned_to=assigned_to,
         is_overdue=is_overdue,
-        specialty_id=specialty_id,
+        practice_area_id=practice_area_id,
         utm_campaign=utm_campaign,
         search=search,
     )
@@ -112,9 +112,9 @@ async def create_new_lead(
         utm_campaign=body.utm_campaign,
         utm_content=body.utm_content,
         utm_term=body.utm_term,
-        specialty_id=body.specialty_id,
+        practice_area_id=body.practice_area_id,
         description=body.description,
-        quote_value=body.quote_value,
+        proposal_value=body.proposal_value,
         assigned_to=body.assigned_to,
     )
     return lead
@@ -180,7 +180,7 @@ async def contact_lead(
 
 
 @router.post("/{lead_id}/convert", response_model=LeadResponse)
-async def convert_lead_to_patient(
+async def convert_lead_to_client(
     lead_id: uuid.UUID,
     body: LeadConvertRequest,
     request: Request,
@@ -191,36 +191,36 @@ async def convert_lead_to_patient(
     if not lead:
         raise HTTPException(status_code=404, detail="Lead não encontrado.")
 
-    # Cria ou recupera paciente pelo telefone
-    patient = await get_patient_by_phone(db, lead.phone)
-    if not patient:
-        patient = await create_patient(
+    # Cria ou recupera cliente pelo telefone
+    client = await get_client_by_phone(db, lead.phone)
+    if not client:
+        client = await create_client(
             db,
             phone=lead.phone,
-            full_name=body.patient_name or lead.full_name,
+            full_name=body.client_name or lead.full_name,
             email=lead.email,
             channel=lead.channel if lead.channel in ("telegram", "whatsapp") else "whatsapp",
         )
 
-    # Se médico+horário foram informados, já cria o agendamento
-    appointment_id = None
-    interaction_note = "Lead convertido em paciente."
-    if body.doctor_id and body.starts_at:
-        doctor = await get_doctor_by_id(db, body.doctor_id)
-        if not doctor:
-            raise HTTPException(status_code=404, detail="Médico não encontrado.")
+    # Se advogado+horário foram informados, já cria a consulta
+    consultation_id = None
+    interaction_note = "Lead convertido em cliente."
+    if body.lawyer_id and body.starts_at:
+        lawyer = await get_lawyer_by_id(db, body.lawyer_id)
+        if not lawyer:
+            raise HTTPException(status_code=404, detail="Advogado não encontrado.")
 
-        ends_at = body.starts_at + timedelta(minutes=doctor.slot_duration_minutes)
+        ends_at = body.starts_at + timedelta(minutes=lawyer.slot_duration_minutes)
         try:
-            appt = await create_appointment(
+            consultation = await create_consultation(
                 db,
-                patient_id=patient.id,
-                doctor_id=doctor.id,
+                client_id=client.id,
+                lawyer_id=lawyer.id,
                 starts_at=body.starts_at,
                 ends_at=ends_at,
-                specialty_id=doctor.specialty_id or lead.specialty_id,
+                practice_area_id=lawyer.practice_area_id or lead.practice_area_id,
                 source="secretary",
-                notes=body.appointment_notes,
+                notes=body.consultation_notes,
                 created_by_user=current_user.id,
             )
         except SlotNotAvailableError as exc:
@@ -228,16 +228,16 @@ async def convert_lead_to_patient(
         except Exception as exc:
             raise HTTPException(
                 status_code=400,
-                detail=f"Não foi possível criar o agendamento: {exc}",
+                detail=f"Não foi possível criar a consulta: {exc}",
             )
-        appointment_id = appt.id
+        consultation_id = consultation.id
         interaction_note = (
-            f"Lead convertido em paciente e agendado com {doctor.full_name} "
+            f"Lead convertido em cliente e consulta agendada com {lawyer.full_name} "
             f"em {body.starts_at.isoformat()}."
         )
 
     lead = await convert_lead(
-        db, lead, converted_patient_id=patient.id, appointment_id=appointment_id
+        db, lead, converted_client_id=client.id, consultation_id=consultation_id
     )
 
     await create_interaction(
@@ -251,8 +251,8 @@ async def convert_lead_to_patient(
         entity_type="lead",
         entity_id=lead.id,
         payload={
-            "patient_id": str(patient.id),
-            "appointment_id": str(appointment_id) if appointment_id else None,
+            "client_id": str(client.id),
+            "consultation_id": str(consultation_id) if consultation_id else None,
         },
         request=request,
     )
@@ -544,7 +544,7 @@ async def export_leads_csv(
     channel: str | None = None,
     assigned_to: uuid.UUID | None = None,
     is_overdue: bool | None = None,
-    specialty_id: uuid.UUID | None = None,
+    practice_area_id: uuid.UUID | None = None,
     utm_campaign: str | None = None,
     search: str | None = None,
     current_user: User = Depends(get_current_user),
@@ -562,7 +562,7 @@ async def export_leads_csv(
         channel=channel,
         assigned_to=assigned_to,
         is_overdue=is_overdue,
-        specialty_id=specialty_id,
+        practice_area_id=practice_area_id,
         utm_campaign=utm_campaign,
         search=search,
     )
@@ -571,7 +571,7 @@ async def export_leads_csv(
     writer = csv.writer(buffer)
     writer.writerow([
         "id", "codigo", "nome", "telefone", "email", "canal",
-        "status", "lost_reason", "valor_orcamento",
+        "status", "lost_reason", "valor_proposta",
         "utm_source", "utm_campaign", "responsavel_id",
         "sla_deadline", "contacted_at", "is_overdue",
         "convertido_em", "criado_em",
@@ -586,7 +586,7 @@ async def export_leads_csv(
             l.channel,
             l.status,
             l.lost_reason or "",
-            l.quote_value or "",
+            l.proposal_value or "",
             l.utm_source or "",
             l.utm_campaign or "",
             str(l.assigned_to) if l.assigned_to else "",

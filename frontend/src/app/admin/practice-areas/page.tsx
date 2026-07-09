@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import type { Specialty } from "@/types";
+import type { PracticeArea } from "@/types";
 
-export default function SpecialtiesPage() {
-  const [specialties, setSpecialties] = useState<Specialty[]>([]);
+export default function PracticeAreasPage() {
+  const [practiceAreas, setPracticeAreas] = useState<PracticeArea[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -13,13 +13,13 @@ export default function SpecialtiesPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetchSpecialties();
+    fetchPracticeAreas();
   }, []);
 
-  async function fetchSpecialties() {
+  async function fetchPracticeAreas() {
     try {
-      const { data } = await api.get("/specialties/");
-      setSpecialties(data);
+      const { data } = await api.get("/practice-areas/");
+      setPracticeAreas(data);
     } catch {
       // ignore
     } finally {
@@ -33,7 +33,7 @@ export default function SpecialtiesPage() {
     setShowForm(true);
   }
 
-  function openEdit(spec: Specialty) {
+  function openEdit(spec: PracticeArea) {
     setEditingId(spec.id);
     setForm({ name: spec.name, description: spec.description || "" });
     setShowForm(true);
@@ -50,18 +50,18 @@ export default function SpecialtiesPage() {
     setSaving(true);
     try {
       if (editingId) {
-        await api.patch(`/specialties/${editingId}`, {
+        await api.patch(`/practice-areas/${editingId}`, {
           name: form.name,
           description: form.description || null,
         });
       } else {
-        await api.post("/specialties/", {
+        await api.post("/practice-areas/", {
           name: form.name,
           description: form.description || null,
         });
       }
       cancelForm();
-      fetchSpecialties();
+      fetchPracticeAreas();
     } catch {
       alert("Erro ao salvar área de atuação.");
     } finally {
@@ -69,20 +69,20 @@ export default function SpecialtiesPage() {
     }
   }
 
-  async function toggleActive(spec: Specialty) {
+  async function toggleActive(spec: PracticeArea) {
     try {
-      await api.patch(`/specialties/${spec.id}`, { is_active: !spec.is_active });
-      fetchSpecialties();
+      await api.patch(`/practice-areas/${spec.id}`, { is_active: !spec.is_active });
+      fetchPracticeAreas();
     } catch {
       // ignore
     }
   }
 
-  async function handleDelete(spec: Specialty) {
+  async function handleDelete(spec: PracticeArea) {
     if (!confirm(`Deseja excluir a área de atuação "${spec.name}"?`)) return;
     try {
-      await api.delete(`/specialties/${spec.id}`);
-      fetchSpecialties();
+      await api.delete(`/practice-areas/${spec.id}`);
+      fetchPracticeAreas();
     } catch {
       alert("Erro ao excluir. Pode haver advogados vinculados.");
     }
@@ -152,14 +152,14 @@ export default function SpecialtiesPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
-            {specialties.length === 0 ? (
+            {practiceAreas.length === 0 ? (
               <tr>
                 <td colSpan={4} className="px-4 py-8 text-center text-parchment-faint">
                   Nenhuma área de atuação cadastrada.
                 </td>
               </tr>
             ) : (
-              specialties.map((spec) => (
+              practiceAreas.map((spec) => (
                 <tr key={spec.id} className="hover:bg-ink-3">
                   <td className="px-4 py-3 font-medium text-parchment">{spec.name}</td>
                   <td className="px-4 py-3 text-parchment-dim">{spec.description || "—"}</td>

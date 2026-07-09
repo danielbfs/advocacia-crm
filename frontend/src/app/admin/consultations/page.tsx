@@ -1,5 +1,5 @@
-import AppointmentsPage from "@/app/secretary/appointments/page";
+import ConsultationsPage from "@/app/secretary/appointments/page";
 
-export default function AdminAppointmentsPage() {
-  return <AppointmentsPage />;
+export default function AdminConsultationsPage() {
+  return <ConsultationsPage />;
 }

@@ -1,22 +1,22 @@
-"""Pydantic schemas for specialties."""
+"""Pydantic schemas for practice areas."""
 import uuid
 from datetime import datetime
 
 from pydantic import BaseModel
 
 
-class SpecialtyCreate(BaseModel):
+class PracticeAreaCreate(BaseModel):
     name: str
     description: str | None = None
 
 
-class SpecialtyUpdate(BaseModel):
+class PracticeAreaUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
     is_active: bool | None = None
 
 
-class SpecialtyResponse(BaseModel):
+class PracticeAreaResponse(BaseModel):
     id: uuid.UUID
     name: str
     description: str | None

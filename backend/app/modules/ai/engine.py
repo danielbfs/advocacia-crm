@@ -7,40 +7,40 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.modules.admin.models import Specialty
-from app.modules.ai.config_loader import load_ai_config, load_chatbot_config, load_clinic_config
+from app.modules.admin.models import PracticeArea
+from app.modules.ai.config_loader import load_ai_config, load_chatbot_config, load_firm_config
 from app.modules.ai.prompts import build_system_prompt
 from app.modules.ai.session import load_session, save_session
 from app.modules.ai.tools import TOOL_DEFINITIONS, execute_tool
-from app.modules.crm.models import Patient
+from app.modules.clients.models import Client
 from app.modules.followup.service import schedule_event_followups, cancel_event_followups
-from app.modules.scheduling.models import Doctor
+from app.modules.scheduling.models import Lawyer
 
 logger = logging.getLogger(__name__)
 
 
 async def _load_catalog(db: AsyncSession) -> tuple[list[dict], list[dict]]:
-    """Load active specialties and doctors so the LLM can pick the right UUIDs."""
-    spec_result = await db.execute(
-        select(Specialty).where(Specialty.is_active == True).order_by(Specialty.name)
+    """Load active practice areas and lawyers so the LLM can pick the right UUIDs."""
+    area_result = await db.execute(
+        select(PracticeArea).where(PracticeArea.is_active == True).order_by(PracticeArea.name)
     )
-    specialties = [
-        {"id": str(s.id), "name": s.name} for s in spec_result.scalars().all()
+    practice_areas = [
+        {"id": str(s.id), "name": s.name} for s in area_result.scalars().all()
     ]
 
-    doc_result = await db.execute(
-        select(Doctor).where(Doctor.is_active == True).order_by(Doctor.full_name)
+    lawyer_result = await db.execute(
+        select(Lawyer).where(Lawyer.is_active == True).order_by(Lawyer.full_name)
     )
-    doctors = []
-    for d in doc_result.scalars().unique().all():
-        doctors.append(
+    lawyers = []
+    for l in lawyer_result.scalars().unique().all():
+        lawyers.append(
             {
-                "id": str(d.id),
-                "full_name": d.full_name,
-                "specialty_name": d.specialty.name if d.specialty else None,
+                "id": str(l.id),
+                "full_name": l.full_name,
+                "practice_area_name": l.practice_area.name if l.practice_area else None,
             }
         )
-    return specialties, doctors
+    return practice_areas, lawyers
 
 
 def _get_client(ai_config: dict) -> AsyncOpenAI:
@@ -60,12 +60,12 @@ def _get_model(ai_config: dict) -> str:
 
 async def process_message(
     db: AsyncSession,
-    patient: Patient,
+    client: Client,
     user_text: str,
 ) -> str:
-    """Process an incoming patient message and return the AI response."""
+    """Process an incoming client message and return the AI response."""
     # Cancela mensagens de inatividade pendentes já que o usuário respondeu
-    await cancel_event_followups(db, "inactivity", patient_id=patient.id)
+    await cancel_event_followups(db, "inactivity", client_id=client.id)
 
     if not settings.OPENAI_API_KEY and not settings.LOCAL_LLM_BASE_URL:
         # Also check DB config
@@ -74,38 +74,38 @@ async def process_message(
             logger.warning("No LLM configured (OPENAI_API_KEY or LOCAL_LLM_BASE_URL)")
             return (
                 "O assistente virtual está temporariamente indisponível. "
-                "Por favor, entre em contato pelo telefone da clínica."
+                "Por favor, entre em contato pelo telefone do escritório."
             )
     else:
         ai_config = await load_ai_config(db)
 
     chatbot_config = await load_chatbot_config(db)
-    clinic_config = await load_clinic_config(db)
-    specialties, doctors = await _load_catalog(db)
+    firm_config = await load_firm_config(db)
+    practice_areas, lawyers = await _load_catalog(db)
 
-    client = _get_client(ai_config)
+    llm_client = _get_client(ai_config)
     model = _get_model(ai_config)
     max_tool_calls = chatbot_config.get("max_tool_calls", 3)
     temperature = chatbot_config.get("temperature", 0.3)
 
     # Load conversation history
-    history = await load_session(patient.id)
+    history = await load_session(client.id)
 
     # Build messages
     system_prompt = build_system_prompt(
         custom_prompt=chatbot_config.get("system_prompt", ""),
-        clinic_name=clinic_config.get("name", ""),
-        clinic_timezone=clinic_config.get("timezone", settings.CLINIC_TIMEZONE),
-        specialties=specialties,
-        doctors=doctors,
+        firm_name=firm_config.get("name", ""),
+        firm_timezone=firm_config.get("timezone", settings.FIRM_TIMEZONE),
+        practice_areas=practice_areas,
+        lawyers=lawyers,
     )
-    patient_context = (
-        f"Paciente atual: {patient.full_name or 'nome não informado'} "
-        f"(ID: {patient.id})"
+    client_context = (
+        f"Cliente atual: {client.full_name or 'nome não informado'} "
+        f"(ID: {client.id})"
     )
 
     messages = [
-        {"role": "system", "content": f"{system_prompt}\n\n{patient_context}"},
+        {"role": "system", "content": f"{system_prompt}\n\n{client_context}"},
     ]
     messages.extend(history)
     messages.append({"role": "user", "content": user_text})
@@ -116,7 +116,7 @@ async def process_message(
 
     try:
         while tool_calls_count <= max_tool_calls:
-            completion = await client.chat.completions.create(
+            completion = await llm_client.chat.completions.create(
                 model=model,
                 messages=messages,
                 tools=TOOL_DEFINITIONS,
@@ -155,11 +155,11 @@ async def process_message(
                         args = {}
 
                     logger.info(
-                        "Tool call: %s(%s) for patient %s",
-                        tool_name, args, patient.id,
+                        "Tool call: %s(%s) for client %s",
+                        tool_name, args, client.id,
                     )
 
-                    result = await execute_tool(tool_name, args, db, patient.id)
+                    result = await execute_tool(tool_name, args, db, client.id)
 
                     messages.append({
                         "role": "tool",
@@ -175,11 +175,11 @@ async def process_message(
         else:
             response_text = (
                 "Desculpe, estou tendo dificuldades para processar seu pedido. "
-                "Vou encaminhar para a secretária."
+                "Vou encaminhar para a equipe comercial."
             )
 
     except Exception:
-        logger.exception("LLM API error for patient %s", patient.id)
+        logger.exception("LLM API error for client %s", client.id)
         return (
             "Desculpe, ocorreu um erro ao processar sua mensagem. "
             "Por favor, tente novamente."
@@ -187,10 +187,10 @@ async def process_message(
 
     # Save updated history (keep only user/assistant messages for storage)
     session_messages = _extract_storable_messages(history, user_text, response_text)
-    await save_session(patient.id, session_messages)
+    await save_session(client.id, session_messages)
 
-    # Agenda follow-ups de inatividade caso o paciente pare de responder
-    await schedule_event_followups(db, "inactivity", patient_id=patient.id)
+    # Agenda follow-ups de inatividade caso o cliente pare de responder
+    await schedule_event_followups(db, "inactivity", client_id=client.id)
 
     return response_text
 

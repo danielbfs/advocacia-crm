@@ -55,7 +55,7 @@ async def get_all_leads(
     channel: str | None = None,
     assigned_to: uuid.UUID | None = None,
     is_overdue: bool | None = None,
-    specialty_id: uuid.UUID | None = None,
+    practice_area_id: uuid.UUID | None = None,
     utm_campaign: str | None = None,
     search: str | None = None,
 ) -> list[Lead]:
@@ -67,8 +67,8 @@ async def get_all_leads(
         query = query.where(Lead.channel == channel)
     if assigned_to:
         query = query.where(Lead.assigned_to == assigned_to)
-    if specialty_id:
-        query = query.where(Lead.specialty_id == specialty_id)
+    if practice_area_id:
+        query = query.where(Lead.practice_area_id == practice_area_id)
     if utm_campaign:
         query = query.where(Lead.utm_campaign == utm_campaign)
     if search:
@@ -118,12 +118,12 @@ async def create_lead(
     utm_campaign: str | None = None,
     utm_content: str | None = None,
     utm_term: str | None = None,
-    specialty_id: uuid.UUID | None = None,
+    practice_area_id: uuid.UUID | None = None,
     description: str | None = None,
-    quote_value: float | None = None,
+    proposal_value: float | None = None,
     assigned_to: uuid.UUID | None = None,
 ) -> Lead:
-    sla_deadline = datetime.now(timezone.utc) + timedelta(hours=settings.CLINIC_SLA_HOURS)
+    sla_deadline = datetime.now(timezone.utc) + timedelta(hours=settings.FIRM_SLA_HOURS)
     code = await _generate_lead_code(db)
 
     lead = Lead(
@@ -137,9 +137,9 @@ async def create_lead(
         utm_campaign=utm_campaign,
         utm_content=utm_content,
         utm_term=utm_term,
-        specialty_id=specialty_id,
+        practice_area_id=practice_area_id,
         description=description,
-        quote_value=quote_value,
+        proposal_value=proposal_value,
         assigned_to=assigned_to,
         sla_deadline=sla_deadline,
     )
@@ -171,11 +171,11 @@ async def delete_lead(db: AsyncSession, lead: Lead) -> None:
         LeadOutboundMessage,
         SupervisorQuery,
     )
-    
+
     # Manually delete related records from all potential tables
     # 1. Followup Jobs
     await db.execute(delete(FollowupJob).where(FollowupJob.lead_id == lead.id))
-    
+
     # 2. AI-related entities (explicit deletes keep compatibility with older schemas)
     await db.execute(delete(SupervisorQuery).where(SupervisorQuery.lead_id == lead.id))
     await db.execute(
@@ -190,10 +190,10 @@ async def delete_lead(db: AsyncSession, lead: Lead) -> None:
     # 3. Outbound messages & Activities
     await db.execute(delete(LeadOutboundMessage).where(LeadOutboundMessage.lead_id == lead.id))
     await db.execute(delete(LeadActivity).where(LeadActivity.lead_id == lead.id))
-    
+
     # 4. Interactions
     await db.execute(delete(LeadInteraction).where(LeadInteraction.lead_id == lead.id))
-    
+
     # Finally delete the lead
     await db.delete(lead)
     await db.commit()
@@ -226,13 +226,13 @@ async def mark_lost(db: AsyncSession, lead: Lead, lost_reason: str) -> Lead:
 async def convert_lead(
     db: AsyncSession,
     lead: Lead,
-    converted_patient_id: uuid.UUID,
-    appointment_id: uuid.UUID | None = None,
+    converted_client_id: uuid.UUID,
+    consultation_id: uuid.UUID | None = None,
 ) -> Lead:
     from_status = lead.status
     lead.status = "convertido"
-    lead.converted_patient_id = converted_patient_id
-    lead.appointment_id = appointment_id
+    lead.converted_client_id = converted_client_id
+    lead.consultation_id = consultation_id
     lead.converted_at = datetime.now(timezone.utc)
     if lead.contacted_at is None:
         lead.contacted_at = datetime.now(timezone.utc)
@@ -241,7 +241,7 @@ async def convert_lead(
     dispatch_proactive_on_status_change(lead, from_status, lead.status)
     await cancel_event_followups(db, "inactivity", lead_id=lead.id)
     await schedule_event_followups(
-        db, "lead_converted", lead_id=lead.id, patient_id=converted_patient_id, appointment_id=appointment_id
+        db, "lead_converted", lead_id=lead.id, client_id=converted_client_id, consultation_id=consultation_id
     )
     return lead
 
@@ -257,8 +257,8 @@ async def transition_status(
     """Move o lead para outro status validando a máquina de estados.
 
     Cria automaticamente uma interação de tipo 'nota' registrando a mudança
-    para manter o histórico auditável. Não cria paciente/agendamento — para
-    converter use ``convert_lead`` (após criar o paciente).
+    para manter o histórico auditável. Não cria cliente/consulta — para
+    converter use ``convert_lead`` (após criar o cliente).
     """
     from_status = lead.status
     validate_transition(from_status, to_status)
@@ -269,9 +269,9 @@ async def transition_status(
         )
 
     if to_status == "convertido":
-        # Conversão deve passar por convert_lead que cria patient + appointment
+        # Conversão deve passar por convert_lead que cria client + consultation
         raise InvalidTransitionError(
-            "Para 'convertido' use o endpoint /convert que cria paciente."
+            "Para 'convertido' use o endpoint /convert que cria cliente."
         )
 
     lead.status = to_status
@@ -447,8 +447,8 @@ async def get_pipeline_report(
         select(
             Lead.status,
             func.count().label("total"),
-            func.coalesce(func.sum(Lead.quote_value), 0).label("value_total"),
-            func.coalesce(func.avg(Lead.quote_value), 0).label("value_avg"),
+            func.coalesce(func.sum(Lead.proposal_value), 0).label("value_total"),
+            func.coalesce(func.avg(Lead.proposal_value), 0).label("value_avg"),
         )
         .group_by(Lead.status)
     )
@@ -492,11 +492,11 @@ async def get_automations_report(db: AsyncSession, date_from: datetime | None = 
     ai_conv_q = select(func.count()).select_from(Lead).where(
         and_(Lead.ai_active.isnot(None), Lead.status == "convertido")
     )
-    
+
     if date_from:
         ai_q = ai_q.where(Lead.created_at >= date_from)
         ai_conv_q = ai_conv_q.where(Lead.created_at >= date_from)
-        
+
     ai_total = (await db.execute(ai_q)).scalar() or 0
     ai_converted = (await db.execute(ai_conv_q)).scalar() or 0
     ai_rate = round(100.0 * ai_converted / ai_total, 1) if ai_total > 0 else 0.0
@@ -504,11 +504,11 @@ async def get_automations_report(db: AsyncSession, date_from: datetime | None = 
     # Follow-ups Metrics
     fu_q = select(func.count()).select_from(FollowupJob)
     fu_exec_q = select(func.count()).select_from(FollowupJob).where(FollowupJob.status == "executed")
-    
+
     if date_from:
         fu_q = fu_q.where(FollowupJob.scheduled_for >= date_from)
         fu_exec_q = fu_exec_q.where(FollowupJob.scheduled_for >= date_from)
-        
+
     fu_total = (await db.execute(fu_q)).scalar() or 0
     fu_executed = (await db.execute(fu_exec_q)).scalar() or 0
     fu_rate = round(100.0 * fu_executed / fu_total, 1) if fu_total > 0 else 0.0

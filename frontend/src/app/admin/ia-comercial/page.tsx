@@ -13,7 +13,7 @@ const PIPELINE_STATUSES = [
   { value: "novo", label: "Novo" },
   { value: "em_contato", label: "Em Contato" },
   { value: "qualificado", label: "Qualificado" },
-  { value: "orcamento_enviado", label: "Orçamento Enviado" },
+  { value: "proposta_enviada", label: "Proposta Enviada" },
   { value: "negociando", label: "Negociando" },
 ];
 
@@ -479,23 +479,23 @@ function StatusConfigCard({
 function PricingTable({
   items,
   onChange,
-  specialties,
+  practiceAreas,
 }: {
   items: PricingItem[];
   onChange: (items: PricingItem[]) => void;
-  specialties: { id: string; name: string }[];
+  practiceAreas: { id: string; name: string }[];
 }) {
   const [newItem, setNewItem] = useState<PricingItem>({
-    specialty: "",
+    practice_area: "",
     service: "",
     price: 0,
     notes: "",
   });
 
   function add() {
-    if (!newItem.specialty || !newItem.service || newItem.price <= 0) return;
+    if (!newItem.practice_area || !newItem.service || newItem.price <= 0) return;
     onChange([...items, { ...newItem }]);
-    setNewItem({ specialty: "", service: "", price: 0, notes: "" });
+    setNewItem({ practice_area: "", service: "", price: 0, notes: "" });
   }
 
   function remove(i: number) {
@@ -519,7 +519,7 @@ function PricingTable({
             <tbody className="divide-y divide-line">
               {items.map((item, i) => (
                 <tr key={i} className="hover:bg-ink-3">
-                  <td className="px-3 py-2 text-parchment">{item.specialty}</td>
+                  <td className="px-3 py-2 text-parchment">{item.practice_area}</td>
                   <td className="px-3 py-2 text-parchment">{item.service}</td>
                   <td className="px-3 py-2 text-right font-medium text-parchment">
                     {item.price.toLocaleString("pt-BR", {
@@ -549,14 +549,14 @@ function PricingTable({
         <p className="text-xs font-medium text-parchment-dim mb-2">Adicionar item</p>
         <div className="grid grid-cols-2 gap-2 mb-2">
           <select
-            value={newItem.specialty}
+            value={newItem.practice_area}
             onChange={(e) =>
-              setNewItem({ ...newItem, specialty: e.target.value })
+              setNewItem({ ...newItem, practice_area: e.target.value })
             }
             className="rounded-sm border border-line bg-ink-2 px-2 py-1.5 text-sm text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
           >
             <option value="">Selecione a Área de Atuação</option>
-            {specialties.map((s) => (
+            {practiceAreas.map((s) => (
               <option key={s.id} value={s.name}>
                 {s.name}
               </option>
@@ -590,7 +590,7 @@ function PricingTable({
         </div>
         <button
           onClick={add}
-          disabled={!newItem.specialty || !newItem.service || newItem.price <= 0}
+          disabled={!newItem.practice_area || !newItem.service || newItem.price <= 0}
           className="bg-carimbo text-parchment px-3 py-1.5 rounded-sm text-sm font-medium hover:bg-carimbo-bright disabled:opacity-40"
         >
           + Adicionar
@@ -606,7 +606,7 @@ function PricingTable({
 export default function IaComercialPage() {
   const [configs, setConfigs] = useState<LeadAgentConfig[]>([]);
   const [globalConfig, setGlobalConfig] = useState<LeadAIGlobalConfig>({
-    convert_on_appointment: true,
+    convert_on_consultation: true,
     delay_between_leads_minutes: 0,
   });
   const [supervisorConfig, setSupervisorConfig] = useState<SupervisorConfig>({
@@ -618,7 +618,7 @@ export default function IaComercialPage() {
   const [pricingItems, setPricingItems] = useState<PricingItem[]>([]);
   const [pricingNotes, setPricingNotes] = useState("");
   const [schedule, setSchedule] = useState<ScheduleConfig>(DEFAULT_SCHEDULE);
-  const [specialties, setSpecialties] = useState<{ id: string; name: string }[]>([]);
+  const [practiceAreas, setPracticeAreas] = useState<{ id: string; name: string }[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [supSaving, setSupSaving] = useState(false);
@@ -637,14 +637,14 @@ export default function IaComercialPage() {
   async function fetchAll() {
     setLoading(true);
     try {
-      const [cfgRes, globalRes, supRes, priceRes, schedRes, specRes] =
+      const [cfgRes, globalRes, supRes, priceRes, schedRes, areasRes] =
         await Promise.allSettled([
         api.get("/leads/ai-configs"),
         api.get("/leads/ai-global-config"),
         api.get("/leads/ai-supervisor-config"),
         api.get("/leads/ai-pricing"),
         api.get("/leads/ai-messaging-schedule"),
-        api.get("/specialties/"),
+        api.get("/practice-areas/"),
       ]);
       if (cfgRes.status === "fulfilled") setConfigs(cfgRes.value.data);
       if (globalRes.status === "fulfilled") setGlobalConfig(globalRes.value.data);
@@ -654,7 +654,7 @@ export default function IaComercialPage() {
         setPricingNotes(priceRes.value.data.notes || "");
       }
       if (schedRes.status === "fulfilled") setSchedule(schedRes.value.data);
-      if (specRes.status === "fulfilled") setSpecialties(specRes.value.data);
+      if (areasRes.status === "fulfilled") setPracticeAreas(areasRes.value.data);
     } finally {
       setLoading(false);
     }
@@ -791,9 +791,9 @@ export default function IaComercialPage() {
           </p>
         </div>
         <Toggle
-          checked={globalConfig.convert_on_appointment}
+          checked={globalConfig.convert_on_consultation}
           onChange={(v) =>
-            setGlobalConfig((prev) => ({ ...prev, convert_on_appointment: v }))
+            setGlobalConfig((prev) => ({ ...prev, convert_on_consultation: v }))
           }
           label="Converter lead em cliente automaticamente ao agendar consulta"
         />
@@ -972,10 +972,10 @@ export default function IaComercialPage() {
           </p>
         </div>
 
-        <PricingTable 
-          items={pricingItems} 
-          onChange={setPricingItems} 
-          specialties={specialties}
+        <PricingTable
+          items={pricingItems}
+          onChange={setPricingItems}
+          practiceAreas={practiceAreas}
         />
 
         <div>

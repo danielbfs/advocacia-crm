@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import type { Doctor, Specialty } from "@/types";
+import type { Lawyer, PracticeArea } from "@/types";
 
 const DAYS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
 
@@ -12,9 +12,9 @@ interface ScheduleItem {
   end_time: string;
 }
 
-export default function DoctorsPage() {
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
-  const [specialties, setSpecialties] = useState<Specialty[]>([]);
+export default function LawyersPage() {
+  const [lawyers, setLawyers] = useState<Lawyer[]>([]);
+  const [practiceAreas, setPracticeAreas] = useState<PracticeArea[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Form state
@@ -22,19 +22,19 @@ export default function DoctorsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({
     full_name: "",
-    crm: "",
-    specialty_id: "",
+    oab: "",
+    practice_area_id: "",
     slot_duration_minutes: 30,
   });
   const [saving, setSaving] = useState(false);
 
   // Schedule modal
-  const [scheduleDoctor, setScheduleDoctor] = useState<Doctor | null>(null);
+  const [scheduleLawyer, setScheduleLawyer] = useState<Lawyer | null>(null);
   const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([]);
   const [savingSchedule, setSavingSchedule] = useState(false);
 
   // Blocks modal
-  const [blocksDoctor, setBlocksDoctor] = useState<Doctor | null>(null);
+  const [blocksLawyer, setBlocksLawyer] = useState<Lawyer | null>(null);
   const [blocks, setBlocks] = useState<{ id: string; starts_at: string; ends_at: string; reason: string | null }[]>([]);
   const [blockForm, setBlockForm] = useState({ starts_at: "", ends_at: "", reason: "" });
   const [savingBlock, setSavingBlock] = useState(false);
@@ -46,11 +46,11 @@ export default function DoctorsPage() {
   async function fetchData() {
     try {
       const [docsRes, specsRes] = await Promise.allSettled([
-        api.get("/scheduling/doctors"),
-        api.get("/specialties/"),
+        api.get("/scheduling/lawyers"),
+        api.get("/practice-areas/"),
       ]);
-      if (docsRes.status === "fulfilled") setDoctors(docsRes.value.data);
-      if (specsRes.status === "fulfilled") setSpecialties(specsRes.value.data);
+      if (docsRes.status === "fulfilled") setLawyers(docsRes.value.data);
+      if (specsRes.status === "fulfilled") setPracticeAreas(specsRes.value.data);
     } finally {
       setLoading(false);
     }
@@ -58,16 +58,16 @@ export default function DoctorsPage() {
 
   function openCreate() {
     setEditingId(null);
-    setForm({ full_name: "", crm: "", specialty_id: "", slot_duration_minutes: 30 });
+    setForm({ full_name: "", oab: "", practice_area_id: "", slot_duration_minutes: 30 });
     setShowForm(true);
   }
 
-  function openEdit(doc: Doctor) {
+  function openEdit(doc: Lawyer) {
     setEditingId(doc.id);
     setForm({
       full_name: doc.full_name,
-      crm: doc.crm || "",
-      specialty_id: doc.specialty_id || "",
+      oab: doc.oab || "",
+      practice_area_id: doc.practice_area_id || "",
       slot_duration_minutes: doc.slot_duration_minutes,
     });
     setShowForm(true);
@@ -84,14 +84,14 @@ export default function DoctorsPage() {
     try {
       const payload = {
         full_name: form.full_name,
-        crm: form.crm || null,
-        specialty_id: form.specialty_id || null,
+        oab: form.oab || null,
+        practice_area_id: form.practice_area_id || null,
         slot_duration_minutes: form.slot_duration_minutes,
       };
       if (editingId) {
-        await api.patch(`/scheduling/doctors/${editingId}`, payload);
+        await api.patch(`/scheduling/lawyers/${editingId}`, payload);
       } else {
-        await api.post("/scheduling/doctors", payload);
+        await api.post("/scheduling/lawyers", payload);
       }
       cancelForm();
       fetchData();
@@ -102,19 +102,19 @@ export default function DoctorsPage() {
     }
   }
 
-  async function toggleActive(doc: Doctor) {
+  async function toggleActive(doc: Lawyer) {
     try {
-      await api.patch(`/scheduling/doctors/${doc.id}`, { is_active: !doc.is_active });
+      await api.patch(`/scheduling/lawyers/${doc.id}`, { is_active: !doc.is_active });
       fetchData();
     } catch {
       // ignore
     }
   }
 
-  async function openSchedule(doc: Doctor) {
-    setScheduleDoctor(doc);
+  async function openSchedule(doc: Lawyer) {
+    setScheduleLawyer(doc);
     try {
-      const { data } = await api.get(`/scheduling/doctors/${doc.id}/schedule`);
+      const { data } = await api.get(`/scheduling/lawyers/${doc.id}/schedule`);
       setScheduleItems(
         data.map((s: { day_of_week: number; start_time: string; end_time: string }) => ({
           day_of_week: s.day_of_week,
@@ -146,13 +146,13 @@ export default function DoctorsPage() {
   }
 
   async function saveSchedule() {
-    if (!scheduleDoctor) return;
+    if (!scheduleLawyer) return;
     setSavingSchedule(true);
     try {
-      await api.put(`/scheduling/doctors/${scheduleDoctor.id}/schedule`, {
+      await api.put(`/scheduling/lawyers/${scheduleLawyer.id}/schedule`, {
         schedules: scheduleItems,
       });
-      setScheduleDoctor(null);
+      setScheduleLawyer(null);
     } catch {
       alert("Erro ao salvar horários.");
     } finally {
@@ -160,11 +160,11 @@ export default function DoctorsPage() {
     }
   }
 
-  async function openBlocks(doc: Doctor) {
-    setBlocksDoctor(doc);
+  async function openBlocks(doc: Lawyer) {
+    setBlocksLawyer(doc);
     setBlockForm({ starts_at: "", ends_at: "", reason: "" });
     try {
-      const { data } = await api.get(`/scheduling/blocks?doctor_id=${doc.id}`);
+      const { data } = await api.get(`/scheduling/blocks?lawyer_id=${doc.id}`);
       setBlocks(data);
     } catch {
       setBlocks([]);
@@ -172,17 +172,17 @@ export default function DoctorsPage() {
   }
 
   async function addBlock() {
-    if (!blocksDoctor || !blockForm.starts_at || !blockForm.ends_at) return;
+    if (!blocksLawyer || !blockForm.starts_at || !blockForm.ends_at) return;
     setSavingBlock(true);
     try {
       await api.post("/scheduling/blocks", {
-        doctor_id: blocksDoctor.id,
+        lawyer_id: blocksLawyer.id,
         starts_at: blockForm.starts_at,
         ends_at: blockForm.ends_at,
         reason: blockForm.reason || null,
       });
       setBlockForm({ starts_at: "", ends_at: "", reason: "" });
-      const { data } = await api.get(`/scheduling/blocks?doctor_id=${blocksDoctor.id}`);
+      const { data } = await api.get(`/scheduling/blocks?lawyer_id=${blocksLawyer.id}`);
       setBlocks(data);
     } catch {
       alert("Erro ao criar bloqueio.");
@@ -192,7 +192,7 @@ export default function DoctorsPage() {
   }
 
   async function removeBlock(blockId: string) {
-    if (!blocksDoctor) return;
+    if (!blocksLawyer) return;
     try {
       await api.delete(`/scheduling/blocks/${blockId}`);
       setBlocks(blocks.filter((b) => b.id !== blockId));
@@ -201,7 +201,7 @@ export default function DoctorsPage() {
     }
   }
 
-  const specName = (id: string | null) => (id ? specialties.find((s) => s.id === id)?.name : null) || "—";
+  const areaName = (id: string | null) => (id ? practiceAreas.find((s) => s.id === id)?.name : null) || "—";
 
   if (loading) return <div className="p-8 text-parchment-faint">Carregando...</div>;
 
@@ -236,8 +236,8 @@ export default function DoctorsPage() {
             <div>
               <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-parchment-dim mb-1">OAB</label>
               <input
-                value={form.crm}
-                onChange={(e) => setForm({ ...form, crm: e.target.value })}
+                value={form.oab}
+                onChange={(e) => setForm({ ...form, oab: e.target.value })}
                 className="w-full border border-line rounded-sm px-3 py-2 text-sm bg-ink text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo"
                 placeholder="Opcional"
               />
@@ -245,12 +245,12 @@ export default function DoctorsPage() {
             <div>
               <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-parchment-dim mb-1">Área de Atuação</label>
               <select
-                value={form.specialty_id}
-                onChange={(e) => setForm({ ...form, specialty_id: e.target.value })}
+                value={form.practice_area_id}
+                onChange={(e) => setForm({ ...form, practice_area_id: e.target.value })}
                 className="w-full border border-line rounded-sm px-3 py-2 text-sm bg-ink text-parchment focus:border-carimbo focus:ring-1 focus:ring-carimbo"
               >
                 <option value="">Sem área de atuação</option>
-                {specialties.filter((s) => s.is_active).map((s) => (
+                {practiceAreas.filter((s) => s.is_active).map((s) => (
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
               </select>
@@ -283,11 +283,11 @@ export default function DoctorsPage() {
       )}
 
       {/* Schedule Modal */}
-      {scheduleDoctor && (
+      {scheduleLawyer && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-ink-2 rounded-sm p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto border border-line">
             <h2 className="text-lg font-display font-semibold text-parchment mb-1">
-              Horários — {scheduleDoctor.full_name}
+              Horários — {scheduleLawyer.full_name}
             </h2>
             <p className="text-sm text-parchment-dim mb-4">Configure os horários de atendimento recorrentes.</p>
 
@@ -336,7 +336,7 @@ export default function DoctorsPage() {
 
             <div className="flex gap-2 justify-end border-t border-line pt-4">
               <button
-                onClick={() => setScheduleDoctor(null)}
+                onClick={() => setScheduleLawyer(null)}
                 className="text-sm text-parchment-dim px-4 py-2"
               >
                 Cancelar
@@ -354,11 +354,11 @@ export default function DoctorsPage() {
       )}
 
       {/* Blocks Modal */}
-      {blocksDoctor && (
+      {blocksLawyer && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-ink-2 rounded-sm p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto border border-line">
             <h2 className="text-lg font-display font-semibold text-parchment mb-1">
-              Bloqueios — {blocksDoctor.full_name}
+              Bloqueios — {blocksLawyer.full_name}
             </h2>
             <p className="text-sm text-parchment-dim mb-4">
               Férias, reuniões, feriados ou qualquer período em que o advogado não atende.
@@ -432,7 +432,7 @@ export default function DoctorsPage() {
 
             <div className="flex justify-end border-t border-line pt-4">
               <button
-                onClick={() => setBlocksDoctor(null)}
+                onClick={() => setBlocksLawyer(null)}
                 className="text-sm text-parchment-dim px-4 py-2"
               >
                 Fechar
@@ -456,18 +456,18 @@ export default function DoctorsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
-            {doctors.length === 0 ? (
+            {lawyers.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-parchment-faint">
                   Nenhum advogado cadastrado.
                 </td>
               </tr>
             ) : (
-              doctors.map((doc) => (
+              lawyers.map((doc) => (
                 <tr key={doc.id} className="hover:bg-ink-3">
                   <td className="px-4 py-3 font-medium text-parchment">{doc.full_name}</td>
-                  <td className="px-4 py-3 text-parchment-dim">{doc.crm || "—"}</td>
-                  <td className="px-4 py-3 text-parchment-dim">{specName(doc.specialty_id)}</td>
+                  <td className="px-4 py-3 text-parchment-dim">{doc.oab || "—"}</td>
+                  <td className="px-4 py-3 text-parchment-dim">{areaName(doc.practice_area_id)}</td>
                   <td className="px-4 py-3 text-parchment-dim">{doc.slot_duration_minutes} min</td>
                   <td className="px-4 py-3">
                     <span

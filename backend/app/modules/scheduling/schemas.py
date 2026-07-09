@@ -1,39 +1,39 @@
-"""Pydantic schemas for doctors, schedules and appointments."""
+"""Pydantic schemas for lawyers, schedules and consultations."""
 import uuid
 from datetime import datetime, time
 
 from pydantic import BaseModel
 
 
-# --- Doctor ---
+# --- Lawyer ---
 
-class DoctorCreate(BaseModel):
+class LawyerCreate(BaseModel):
     full_name: str
-    crm: str | None = None
-    specialty_id: uuid.UUID | None = None
+    oab: str | None = None
+    practice_area_id: uuid.UUID | None = None
     scheduling_provider: str = "local_db"
     slot_duration_minutes: int = 30
 
 
-class DoctorUpdate(BaseModel):
+class LawyerUpdate(BaseModel):
     full_name: str | None = None
-    crm: str | None = None
-    specialty_id: uuid.UUID | None = None
+    oab: str | None = None
+    practice_area_id: uuid.UUID | None = None
     slot_duration_minutes: int | None = None
     is_active: bool | None = None
 
 
-class DoctorScheduleItem(BaseModel):
+class LawyerScheduleItem(BaseModel):
     day_of_week: int  # 0=Mon ... 6=Sun
     start_time: str   # "08:00"
     end_time: str      # "12:00"
 
 
-class DoctorScheduleSet(BaseModel):
-    schedules: list[DoctorScheduleItem]
+class LawyerScheduleSet(BaseModel):
+    schedules: list[LawyerScheduleItem]
 
 
-class DoctorScheduleResponse(BaseModel):
+class LawyerScheduleResponse(BaseModel):
     id: uuid.UUID
     day_of_week: int
     start_time: time
@@ -43,11 +43,11 @@ class DoctorScheduleResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class DoctorResponse(BaseModel):
+class LawyerResponse(BaseModel):
     id: uuid.UUID
     full_name: str
-    crm: str | None
-    specialty_id: uuid.UUID | None
+    oab: str | None
+    practice_area_id: uuid.UUID | None
     scheduling_provider: str
     slot_duration_minutes: int
     is_active: bool
@@ -60,7 +60,7 @@ class DoctorResponse(BaseModel):
 # --- Schedule Block ---
 
 class ScheduleBlockCreate(BaseModel):
-    doctor_id: uuid.UUID
+    lawyer_id: uuid.UUID
     starts_at: datetime
     ends_at: datetime
     reason: str | None = None
@@ -68,7 +68,7 @@ class ScheduleBlockCreate(BaseModel):
 
 class ScheduleBlockResponse(BaseModel):
     id: uuid.UUID
-    doctor_id: uuid.UUID
+    lawyer_id: uuid.UUID
     starts_at: datetime
     ends_at: datetime
     reason: str | None
@@ -77,28 +77,28 @@ class ScheduleBlockResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-# --- Appointment ---
+# --- Consultation ---
 
-class AppointmentCreate(BaseModel):
-    patient_id: uuid.UUID
-    doctor_id: uuid.UUID
-    specialty_id: uuid.UUID | None = None
+class ConsultationCreate(BaseModel):
+    client_id: uuid.UUID
+    lawyer_id: uuid.UUID
+    practice_area_id: uuid.UUID | None = None
     starts_at: datetime
     ends_at: datetime
     notes: str | None = None
     source: str = "secretary"
 
 
-class AppointmentUpdate(BaseModel):
+class ConsultationUpdate(BaseModel):
     status: str | None = None
     notes: str | None = None
 
 
-class AppointmentResponse(BaseModel):
+class ConsultationResponse(BaseModel):
     id: uuid.UUID
-    patient_id: uuid.UUID
-    doctor_id: uuid.UUID
-    specialty_id: uuid.UUID | None
+    client_id: uuid.UUID
+    lawyer_id: uuid.UUID
+    practice_area_id: uuid.UUID | None
     starts_at: datetime
     ends_at: datetime
     status: str

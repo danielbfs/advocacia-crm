@@ -31,12 +31,12 @@ class Lead(Base):
     utm_content: Mapped[str | None] = mapped_column(String(255), nullable=True)
     utm_term: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
-    # Interesse clínico
-    specialty_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("specialties.id"), nullable=True
+    # Interesse jurídico
+    practice_area_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("practice_areas.id"), nullable=True
     )
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    quote_value: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
+    proposal_value: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
 
     # Pipeline
     status: Mapped[str] = mapped_column(String(30), nullable=False, default="novo")
@@ -51,16 +51,16 @@ class Lead(Base):
     next_followup_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Conversão
-    converted_patient_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=True
+    converted_client_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("clients.id"), nullable=True
     )
     converted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    appointment_id: Mapped[uuid.UUID | None] = mapped_column(
+    consultation_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), nullable=True
     )
-    # Vínculo direto ao paciente (preenchido assim que o lead é associado)
-    patient_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=True
+    # Vínculo direto ao cliente (preenchido assim que o lead é associado)
+    client_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("clients.id"), nullable=True
     )
 
     created_at: Mapped[datetime] = mapped_column(
@@ -73,10 +73,10 @@ class Lead(Base):
     )
 
     # Relationships
-    specialty = relationship("Specialty", lazy="joined")
+    practice_area = relationship("PracticeArea", lazy="joined")
     assigned_user = relationship("User", foreign_keys=[assigned_to], lazy="joined")
     interactions = relationship("LeadInteraction", back_populates="lead", lazy="selectin", order_by="LeadInteraction.interacted_at.desc()")
-    patient = relationship("Patient", foreign_keys="Lead.patient_id", back_populates="leads", lazy="joined")
+    client = relationship("Client", foreign_keys="Lead.client_id", back_populates="leads", lazy="joined")
 
     @property
     def is_overdue(self) -> bool:

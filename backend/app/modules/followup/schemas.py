@@ -7,10 +7,10 @@ from pydantic import BaseModel
 
 class FollowupRuleCreate(BaseModel):
     name: str
-    trigger_event: str  # appointment_scheduled, appointment_confirmed, etc.
+    trigger_event: str  # consultation_scheduled, consultation_confirmed, etc.
     offset_minutes: int  # negative = before, positive = after
     message_template: str
-    channel: str | None = None  # telegram, whatsapp, or None (same as patient)
+    channel: str | None = None  # telegram, whatsapp, or None (same as client)
     is_active: bool = True
 
 
@@ -39,8 +39,8 @@ class FollowupRuleResponse(BaseModel):
 class FollowupJobResponse(BaseModel):
     id: uuid.UUID
     rule_id: uuid.UUID
-    appointment_id: uuid.UUID
-    patient_id: uuid.UUID
+    consultation_id: uuid.UUID
+    client_id: uuid.UUID
     scheduled_for: datetime
     status: str
     error_message: str | None

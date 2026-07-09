@@ -1,4 +1,4 @@
-"""Patient and PatientContact models."""
+"""Client and ClientContact models."""
 import uuid
 from datetime import datetime, timezone
 
@@ -9,8 +9,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
 
-class Patient(Base):
-    __tablename__ = "patients"
+class Client(Base):
+    __tablename__ = "clients"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
@@ -20,7 +20,7 @@ class Patient(Base):
     email: Mapped[str | None] = mapped_column(String(255), nullable=True)
     channel: Mapped[str] = mapped_column(String(20), nullable=False, default="whatsapp")
     channel_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    crm_status: Mapped[str] = mapped_column(String(30), nullable=False, default="new")
+    client_status: Mapped[str] = mapped_column(String(30), nullable=False, default="new")
     lead_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), nullable=True
     )
@@ -35,26 +35,26 @@ class Patient(Base):
     )
 
     # Relationships
-    contacts: Mapped[list["PatientContact"]] = relationship(
-        "PatientContact", back_populates="patient", lazy="selectin",
-        cascade="all, delete-orphan", order_by="PatientContact.is_primary.desc()"
+    contacts: Mapped[list["ClientContact"]] = relationship(
+        "ClientContact", back_populates="client", lazy="selectin",
+        cascade="all, delete-orphan", order_by="ClientContact.is_primary.desc()"
     )
     leads: Mapped[list] = relationship(
-        "Lead", foreign_keys="Lead.patient_id",
-        back_populates="patient", lazy="selectin",
+        "Lead", foreign_keys="Lead.client_id",
+        back_populates="client", lazy="selectin",
         order_by="Lead.created_at.desc()"
     )
 
 
-class PatientContact(Base):
-    """A single contact channel (phone/telegram/email) linked to a Patient."""
-    __tablename__ = "patient_contacts"
+class ClientContact(Base):
+    """A single contact channel (phone/telegram/email) linked to a Client."""
+    __tablename__ = "client_contacts"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False
+    client_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("clients.id", ondelete="CASCADE"), nullable=False
     )
     channel: Mapped[str] = mapped_column(String(20), nullable=False)   # whatsapp | telegram | email
     value: Mapped[str] = mapped_column(String(255), nullable=False)     # phone number / telegram id / email
@@ -63,4 +63,4 @@ class PatientContact(Base):
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
 
-    patient: Mapped["Patient"] = relationship("Patient", back_populates="contacts")
+    client: Mapped["Client"] = relationship("Client", back_populates="contacts")

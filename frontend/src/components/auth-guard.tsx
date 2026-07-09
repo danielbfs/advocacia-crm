@@ -34,7 +34,7 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
     if (allowedRoles && user && !allowedRoles.includes(user.role)) {
       const destination =
         user.role === "admin" ? "/admin" :
-        user.role === "doctor" ? "/doctor" :
+        user.role === "lawyer" ? "/lawyer" :
         "/secretary";
       router.replace(destination);
       return;

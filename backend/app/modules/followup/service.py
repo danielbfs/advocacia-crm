@@ -6,7 +6,7 @@ from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.followup.models import FollowupRule, FollowupJob
-from app.modules.scheduling.models import Appointment
+from app.modules.scheduling.models import Consultation
 
 
 # --- Rules ---
@@ -57,16 +57,16 @@ async def get_jobs(
     return list(result.scalars().unique().all())
 
 
-async def schedule_followups_for_appointment(
+async def schedule_followups_for_consultation(
     db: AsyncSession,
-    appointment: Appointment,
+    consultation: Consultation,
 ) -> list[FollowupJob]:
-    """Create follow-up jobs for a new/updated appointment based on active rules."""
+    """Create follow-up jobs for a new/updated consultation based on active rules."""
     result = await db.execute(
         select(FollowupRule).where(
             and_(
                 FollowupRule.is_active == True,
-                FollowupRule.trigger_event == "appointment_scheduled",
+                FollowupRule.trigger_event == "consultation_scheduled",
             )
         )
     )
@@ -76,7 +76,7 @@ async def schedule_followups_for_appointment(
     now = datetime.now(timezone.utc)
 
     for rule in rules:
-        scheduled_for = appointment.starts_at + timedelta(minutes=rule.offset_minutes)
+        scheduled_for = consultation.starts_at + timedelta(minutes=rule.offset_minutes)
 
         # Don't schedule in the past
         if scheduled_for <= now:
@@ -84,8 +84,8 @@ async def schedule_followups_for_appointment(
 
         job = FollowupJob(
             rule_id=rule.id,
-            appointment_id=appointment.id,
-            patient_id=appointment.patient_id,
+            consultation_id=consultation.id,
+            client_id=consultation.client_id,
             scheduled_for=scheduled_for,
             status="pending",
         )
@@ -100,15 +100,15 @@ async def schedule_followups_for_appointment(
     return jobs
 
 
-async def cancel_followups_for_appointment(
+async def cancel_followups_for_consultation(
     db: AsyncSession,
-    appointment_id: uuid.UUID,
+    consultation_id: uuid.UUID,
 ) -> int:
-    """Cancel all pending follow-up jobs for an appointment."""
+    """Cancel all pending follow-up jobs for a consultation."""
     result = await db.execute(
         select(FollowupJob).where(
             and_(
-                FollowupJob.appointment_id == appointment_id,
+                FollowupJob.consultation_id == consultation_id,
                 FollowupJob.status == "pending",
             )
         )
@@ -128,9 +128,9 @@ async def schedule_event_followups(
     db: AsyncSession,
     trigger_event: str,
     base_time: datetime | None = None,
-    patient_id: uuid.UUID | None = None,
+    client_id: uuid.UUID | None = None,
     lead_id: uuid.UUID | None = None,
-    appointment_id: uuid.UUID | None = None,
+    consultation_id: uuid.UUID | None = None,
 ) -> list[FollowupJob]:
     """Create follow-up jobs based on a generic event and active rules."""
     result = await db.execute(
@@ -154,9 +154,9 @@ async def schedule_event_followups(
 
         job = FollowupJob(
             rule_id=rule.id,
-            patient_id=patient_id,
+            client_id=client_id,
             lead_id=lead_id,
-            appointment_id=appointment_id,
+            consultation_id=consultation_id,
             scheduled_for=scheduled_for,
             status="pending",
         )
@@ -174,7 +174,7 @@ async def schedule_event_followups(
 async def cancel_event_followups(
     db: AsyncSession,
     trigger_event: str,
-    patient_id: uuid.UUID | None = None,
+    client_id: uuid.UUID | None = None,
     lead_id: uuid.UUID | None = None,
 ) -> int:
     """Cancel pending follow-ups for a specific event and user."""
@@ -184,12 +184,12 @@ async def cancel_event_followups(
             FollowupJob.status == "pending",
         )
     )
-    
-    if patient_id:
-        query = query.where(FollowupJob.patient_id == patient_id)
+
+    if client_id:
+        query = query.where(FollowupJob.client_id == client_id)
     if lead_id:
         query = query.where(FollowupJob.lead_id == lead_id)
-        
+
     result = await db.execute(query)
     jobs = list(result.scalars().all())
 

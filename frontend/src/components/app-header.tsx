@@ -15,13 +15,13 @@ interface Branding {
 const ADMIN_VIEWS = [
   { href: "/admin",     label: "Administração" },
   { href: "/secretary", label: "Comercial"     },
-  { href: "/doctor",    label: "Advogado"      },
+  { href: "/lawyer",    label: "Advogado"      },
 ];
 
 function currentViewLabel(pathname: string): string {
   if (pathname.startsWith("/admin"))     return "Administração";
   if (pathname.startsWith("/secretary")) return "Comercial";
-  if (pathname.startsWith("/doctor"))    return "Advogado";
+  if (pathname.startsWith("/lawyer"))    return "Advogado";
   return "";
 }
 
@@ -39,12 +39,12 @@ export function AppHeader() {
 
   const roleLabel =
     user.role === "admin"  ? "Administrador" :
-    user.role === "doctor" ? "Advogado"      :
+    user.role === "lawyer" ? "Advogado"      :
                              "Comercial";
 
   const homeHref =
     user.role === "admin"  ? "/admin"     :
-    user.role === "doctor" ? "/doctor"    :
+    user.role === "lawyer" ? "/lawyer"    :
                              "/secretary";
 
   const displayName = branding.name || "Open Clinic AI";

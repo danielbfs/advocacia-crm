@@ -1,4 +1,4 @@
-"""Specialty, SystemConfig and AuditLog models."""
+"""PracticeArea, SystemConfig and AuditLog models."""
 import uuid
 from datetime import datetime, timezone
 
@@ -9,8 +9,8 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.database import Base
 
 
-class Specialty(Base):
-    __tablename__ = "specialties"
+class PracticeArea(Base):
+    __tablename__ = "practice_areas"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4

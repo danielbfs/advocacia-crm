@@ -164,8 +164,8 @@ async def create_new_user(
     current_user: User = Depends(require_role("admin")),
     db: AsyncSession = Depends(get_db),
 ):
-    if body.role not in ("admin", "secretary", "doctor"):
-        raise HTTPException(status_code=422, detail="Role deve ser 'admin', 'secretary' ou 'doctor'.")
+    if body.role not in ("admin", "secretary", "lawyer"):
+        raise HTTPException(status_code=422, detail="Role deve ser 'admin', 'secretary' ou 'lawyer'.")
 
     existing = await get_user_by_username(db, body.username)
     if existing:
@@ -177,7 +177,7 @@ async def create_new_user(
         full_name=body.full_name,
         password=body.password,
         role=body.role,
-        doctor_id=body.doctor_id,
+        lawyer_id=body.lawyer_id,
     )
     await log_action(
         db,
@@ -203,8 +203,8 @@ async def update_existing_user(
     if not user:
         raise HTTPException(status_code=404, detail="Usuário não encontrado.")
 
-    if body.role is not None and body.role not in ("admin", "secretary", "doctor"):
-        raise HTTPException(status_code=422, detail="Role deve ser 'admin', 'secretary' ou 'doctor'.")
+    if body.role is not None and body.role not in ("admin", "secretary", "lawyer"):
+        raise HTTPException(status_code=422, detail="Role deve ser 'admin', 'secretary' ou 'lawyer'.")
 
     if body.username is not None:
         existing = await get_user_by_username(db, body.username)
@@ -218,7 +218,7 @@ async def update_existing_user(
         full_name=body.full_name,
         role=body.role,
         is_active=body.is_active,
-        doctor_id=body_data["doctor_id"] if "doctor_id" in body_data else _UNSET,
+        lawyer_id=body_data["lawyer_id"] if "lawyer_id" in body_data else _UNSET,
     )
     await log_action(
         db,
@@ -244,7 +244,7 @@ async def admin_reset_password(
     if not user:
         raise HTTPException(status_code=404, detail="Usuário não encontrado.")
 
-    default_password = "admin" if user.role == "admin" else "medico" if user.role == "doctor" else "secretaria"
+    default_password = "admin" if user.role == "admin" else "advogado" if user.role == "lawyer" else "secretaria"
     await change_password(db, user, default_password)
     user.must_change_password = True
     await db.commit()

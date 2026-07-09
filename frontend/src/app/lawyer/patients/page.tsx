@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
-interface Patient {
+interface Client {
   id: string;
   full_name: string | null;
   phone: string;
@@ -12,50 +12,50 @@ interface Patient {
   notes: string | null;
 }
 
-interface PatientEntry {
-  patient: Patient;
+interface ClientEntry {
+  client: Client;
   lastAppt: string;
   totalAppts: number;
 }
 
-export default function DoctorPatientsPage() {
+export default function LawyerClientsPage() {
   const { user } = useAuth();
-  const [entries, setEntries] = useState<PatientEntry[]>([]);
+  const [entries, setEntries] = useState<ClientEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    if (!user?.doctor_id) return;
-    loadPatients();
-  }, [user?.doctor_id]);
+    if (!user?.lawyer_id) return;
+    loadClients();
+  }, [user?.lawyer_id]);
 
-  async function loadPatients() {
-    if (!user?.doctor_id) return;
+  async function loadClients() {
+    if (!user?.lawyer_id) return;
     setLoading(true);
     try {
-      const { data: appointments } = await api.get(
-        `/scheduling/appointments?doctor_id=${user.doctor_id}`
+      const { data: consultations } = await api.get(
+        `/scheduling/consultations?lawyer_id=${user.lawyer_id}`
       );
 
       const map: Record<string, { lastAppt: string; count: number }> = {};
-      for (const a of appointments) {
-        if (!map[a.patient_id] || a.starts_at > map[a.patient_id].lastAppt) {
-          map[a.patient_id] = {
+      for (const a of consultations) {
+        if (!map[a.client_id] || a.starts_at > map[a.client_id].lastAppt) {
+          map[a.client_id] = {
             lastAppt: a.starts_at,
-            count: (map[a.patient_id]?.count ?? 0) + 1,
+            count: (map[a.client_id]?.count ?? 0) + 1,
           };
         } else {
-          map[a.patient_id].count++;
+          map[a.client_id].count++;
         }
       }
 
-      const patientIds = Object.keys(map);
-      const fetched: PatientEntry[] = [];
+      const clientIds = Object.keys(map);
+      const fetched: ClientEntry[] = [];
       await Promise.all(
-        patientIds.map(async (id) => {
+        clientIds.map(async (id) => {
           try {
-            const { data: p } = await api.get(`/patients/${id}`);
-            fetched.push({ patient: p, lastAppt: map[id].lastAppt, totalAppts: map[id].count });
+            const { data: p } = await api.get(`/clients/${id}`);
+            fetched.push({ client: p, lastAppt: map[id].lastAppt, totalAppts: map[id].count });
           } catch { /* ignore */ }
         })
       );
@@ -69,11 +69,11 @@ export default function DoctorPatientsPage() {
 
   const filtered = entries.filter((e) => {
     const q = search.toLowerCase();
-    const name = (e.patient.full_name || "").toLowerCase();
-    return name.includes(q) || e.patient.phone.includes(q);
+    const name = (e.client.full_name || "").toLowerCase();
+    return name.includes(q) || e.client.phone.includes(q);
   });
 
-  if (!user?.doctor_id) {
+  if (!user?.lawyer_id) {
     return (
       <main className="p-8">
         <div className="bg-selo/15 border border-line rounded-sm p-6 text-selo">
@@ -114,13 +114,13 @@ export default function DoctorPatientsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
-              {filtered.map(({ patient, lastAppt, totalAppts }) => (
-                <tr key={patient.id} className="hover:bg-ink-3">
+              {filtered.map(({ client, lastAppt, totalAppts }) => (
+                <tr key={client.id} className="hover:bg-ink-3">
                   <td className="p-4 font-medium text-parchment">
-                    {patient.full_name || <span className="text-parchment-faint italic">Sem nome</span>}
+                    {client.full_name || <span className="text-parchment-faint italic">Sem nome</span>}
                   </td>
-                  <td className="p-4 text-parchment-dim">{patient.phone}</td>
-                  <td className="p-4 text-parchment-dim">{patient.email || "—"}</td>
+                  <td className="p-4 text-parchment-dim">{client.phone}</td>
+                  <td className="p-4 text-parchment-dim">{client.email || "—"}</td>
                   <td className="p-4 text-parchment-dim">{totalAppts}</td>
                   <td className="p-4 text-parchment-dim">
                     {new Date(lastAppt).toLocaleDateString("pt-BR")}

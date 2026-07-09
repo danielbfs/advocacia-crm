@@ -42,7 +42,7 @@ interface TimelineItem {
 const STATUS_LABELS: Record<string, string> = {
   novo: "Novo",
   em_contato: "Em Contato",
-  orcamento_enviado: "Orçamento Enviado",
+  proposta_enviada: "Proposta Enviada",
   negociando: "Negociando",
   convertido: "Convertido",
   perdido: "Perdido",
@@ -51,7 +51,7 @@ const STATUS_LABELS: Record<string, string> = {
 const STATUS_COLORS: Record<string, string> = {
   novo: "bg-info",
   em_contato: "bg-selo",
-  orcamento_enviado: "bg-selo",
+  proposta_enviada: "bg-selo",
   negociando: "bg-carimbo/70",
   convertido: "bg-jade",
   perdido: "bg-parchment-faint",

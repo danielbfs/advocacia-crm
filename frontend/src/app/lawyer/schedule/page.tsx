@@ -16,7 +16,7 @@ function toHHMM(t: string) {
   return t.slice(0, 5); // "08:00:00" → "08:00"
 }
 
-export default function DoctorSchedulePage() {
+export default function LawyerSchedulePage() {
   const { user } = useAuth();
   const [rows, setRows] = useState<ScheduleRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,13 +24,13 @@ export default function DoctorSchedulePage() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    if (!user?.doctor_id) return;
+    if (!user?.lawyer_id) return;
     api
-      .get(`/scheduling/doctors/${user.doctor_id}/schedule`)
+      .get(`/scheduling/lawyers/${user.lawyer_id}/schedule`)
       .then(({ data }) => setRows(data))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [user?.doctor_id]);
+  }, [user?.lawyer_id]);
 
   function addRow() {
     setRows([...rows, { day_of_week: 0, start_time: "08:00", end_time: "12:00" }]);
@@ -45,10 +45,10 @@ export default function DoctorSchedulePage() {
   }
 
   async function save() {
-    if (!user?.doctor_id) return;
+    if (!user?.lawyer_id) return;
     setSaving(true);
     try {
-      await api.put(`/scheduling/doctors/${user.doctor_id}/schedule`, {
+      await api.put(`/scheduling/lawyers/${user.lawyer_id}/schedule`, {
         schedules: rows.map((r) => ({
           day_of_week: Number(r.day_of_week),
           start_time: toHHMM(r.start_time),
@@ -64,7 +64,7 @@ export default function DoctorSchedulePage() {
     }
   }
 
-  if (!user?.doctor_id) {
+  if (!user?.lawyer_id) {
     return (
       <main className="p-8">
         <div className="bg-selo/15 border border-line rounded-sm p-6 text-selo">

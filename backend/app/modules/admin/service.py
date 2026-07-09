@@ -1,51 +1,51 @@
-"""Specialty business logic."""
+"""Practice area business logic."""
 import uuid
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.admin.models import Specialty
+from app.modules.admin.models import PracticeArea
 
 
-async def get_all_specialties(db: AsyncSession, active_only: bool = False) -> list[Specialty]:
-    query = select(Specialty).order_by(Specialty.name)
+async def get_all_practice_areas(db: AsyncSession, active_only: bool = False) -> list[PracticeArea]:
+    query = select(PracticeArea).order_by(PracticeArea.name)
     if active_only:
-        query = query.where(Specialty.is_active == True)
+        query = query.where(PracticeArea.is_active == True)
     result = await db.execute(query)
     return list(result.scalars().all())
 
 
-async def get_specialty_by_id(db: AsyncSession, specialty_id: uuid.UUID) -> Specialty | None:
-    result = await db.execute(select(Specialty).where(Specialty.id == specialty_id))
+async def get_practice_area_by_id(db: AsyncSession, practice_area_id: uuid.UUID) -> PracticeArea | None:
+    result = await db.execute(select(PracticeArea).where(PracticeArea.id == practice_area_id))
     return result.scalar_one_or_none()
 
 
-async def create_specialty(db: AsyncSession, name: str, description: str | None = None) -> Specialty:
-    specialty = Specialty(name=name, description=description)
-    db.add(specialty)
+async def create_practice_area(db: AsyncSession, name: str, description: str | None = None) -> PracticeArea:
+    practice_area = PracticeArea(name=name, description=description)
+    db.add(practice_area)
     await db.commit()
-    await db.refresh(specialty)
-    return specialty
+    await db.refresh(practice_area)
+    return practice_area
 
 
-async def update_specialty(
+async def update_practice_area(
     db: AsyncSession,
-    specialty: Specialty,
+    practice_area: PracticeArea,
     name: str | None = None,
     description: str | None = None,
     is_active: bool | None = None,
-) -> Specialty:
+) -> PracticeArea:
     if name is not None:
-        specialty.name = name
+        practice_area.name = name
     if description is not None:
-        specialty.description = description
+        practice_area.description = description
     if is_active is not None:
-        specialty.is_active = is_active
+        practice_area.is_active = is_active
     await db.commit()
-    await db.refresh(specialty)
-    return specialty
+    await db.refresh(practice_area)
+    return practice_area
 
 
-async def delete_specialty(db: AsyncSession, specialty: Specialty) -> None:
-    specialty.is_active = False
+async def delete_practice_area(db: AsyncSession, practice_area: PracticeArea) -> None:
+    practice_area.is_active = False
     await db.commit()

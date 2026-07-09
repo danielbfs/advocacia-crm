@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.modules.admin.models import Specialty, SystemConfig
+from app.modules.admin.models import PracticeArea, SystemConfig
 from app.modules.ai.config_loader import load_ai_config
 from app.modules.leads.models import Lead, LeadInteraction
 from app.modules.leads.ai_models import LeadAgentConfig, LeadConversation, LeadMessage
@@ -19,20 +19,21 @@ logger = logging.getLogger(__name__)
 
 MAX_HISTORY = 30
 MAX_INTERACTIONS_CONTEXT = 12
-DEFAULT_LEAD_PROMPT = """Você é um agente comercial virtual da clínica. Seu objetivo é transformar leads em clientes satisfeitos.
+DEFAULT_LEAD_PROMPT = """Você é um agente comercial virtual do escritório de advocacia. Seu objetivo é transformar leads em clientes satisfeitos.
 
 Suas responsabilidades:
-1. Apresentar os serviços e valores da clínica de forma atrativa e honesta
-2. Responder dúvidas sobre procedimentos, valores e condições de pagamento
-3. Negociar e fechar consultas ou procedimentos
+1. Apresentar os serviços e áreas de atuação do escritório de forma atrativa e honesta
+2. Responder dúvidas sobre honorários e condições de pagamento (sem dar aconselhamento jurídico)
+3. Negociar e fechar a contratação da consulta jurídica
 4. Atualizar o status do lead conforme o andamento da negociação
 5. Registrar informações relevantes no histórico
 
 Regras IMPORTANTES:
 - Seja cordial, profissional e persuasivo sem ser agressivo
-- Use get_pricing_table SEMPRE antes de informar qualquer valor ao cliente — NUNCA invente preços
+- Use get_pricing_table SEMPRE antes de informar qualquer valor ao cliente — NUNCA invente honorários
+- NUNCA opine sobre o mérito ou a viabilidade do caso — direcione sempre para a consulta com o advogado
 - Se o cliente pedir desconto, parcelamento especial ou algo fora da tabela → use consult_supervisor
-- Ao fechar negócio → use convert_to_patient
+- Ao fechar negócio → use convert_to_client
 - Se o cliente definitivamente não tiver interesse → use mark_lost com motivo adequado
 - Atualize o status com update_lead_status conforme avança a negociação
 - Fale em português do Brasil com tom profissional e acolhedor
@@ -41,13 +42,13 @@ Regras IMPORTANTES:
 Regras de STATUS (atualizar durante a negociação):
 - "em_contato": ao iniciar o contato
 - "qualificado": ao confirmar interesse real
-- "orcamento_enviado": ao enviar valores
+- "proposta_enviada": ao enviar valores
 - "negociando": em negociação ativa
-- Use convert_to_patient ao fechar
+- Use convert_to_client ao fechar
 
 Quando consultar o SUPERVISOR:
 - Pedido de desconto ou condição especial
-- Serviço não listado na tabela de preços
+- Serviço não listado na tabela de honorários
 - Qualquer dúvida que precise de autorização da gestão
 """
 
@@ -128,20 +129,20 @@ async def _save_turn(
 def _build_system_prompt(
     agent_config: LeadAgentConfig | None,
     lead: Lead,
-    clinic_name: str,
-    clinic_timezone: str,
+    firm_name: str,
+    firm_timezone: str,
     pricing_table: dict | None = None,
     interactions_context: str | None = None,
 ) -> str:
-    tz = clinic_timezone or settings.CLINIC_TIMEZONE
-    clinic_tz = ZoneInfo(tz)
-    now_local = datetime.now(timezone.utc).astimezone(clinic_tz)
+    tz = firm_timezone or settings.FIRM_TIMEZONE
+    firm_tz = ZoneInfo(tz)
+    now_local = datetime.now(timezone.utc).astimezone(firm_tz)
     now_str = now_local.strftime("%Y-%m-%d %H:%M") + f" ({tz})"
 
-    specialty_name = lead.specialty.name if lead.specialty else "não informada"
-    quote_str = f"R${lead.quote_value:.2f}" if lead.quote_value else "não informado"
+    practice_area_name = lead.practice_area.name if lead.practice_area else "não informada"
+    proposal_str = f"R${lead.proposal_value:.2f}" if lead.proposal_value else "não informado"
 
-    header = f"Você é o agente comercial virtual de {clinic_name or 'a clínica'}."
+    header = f"Você é o agente comercial virtual de {firm_name or 'o escritório'}."
     context = (
         f"\nFuso horário: {tz}\n"
         f"Data/hora atual: {now_str}\n"
@@ -149,9 +150,9 @@ def _build_system_prompt(
         f"- Código: {lead.code}\n"
         f"- Nome: {lead.full_name or 'não informado'}\n"
         f"- Telefone: {lead.phone}\n"
-        f"- Especialidade de interesse: {specialty_name}\n"
+        f"- Área de atuação de interesse: {practice_area_name}\n"
         f"- Descrição: {lead.description or 'não informada'}\n"
-        f"- Valor em negociação: {quote_str}\n"
+        f"- Valor em negociação: {proposal_str}\n"
         f"- Status atual: {lead.status}\n"
     )
 
@@ -161,10 +162,10 @@ def _build_system_prompt(
     pricing_context = ""
     if pricing_table and pricing_table.get("items"):
         items_str = "\n".join([
-            f"- {item['specialty']} ({item['service']}): R${item['price']:.2f} {item.get('notes', '')}"
+            f"- {item['practice_area']} ({item['service']}): R${item['price']:.2f} {item.get('notes', '')}"
             for item in pricing_table["items"]
         ])
-        pricing_context = f"\nTABELA DE PREÇOS ATUAL:\n{items_str}\n"
+        pricing_context = f"\nTABELA DE HONORÁRIOS ATUAL:\n{items_str}\n"
         if pricing_table.get("notes"):
             pricing_context += f"Notas: {pricing_table['notes']}\n"
 
@@ -180,9 +181,9 @@ def _build_system_prompt(
 ---
 REGRAS DE USO DAS FERRAMENTAS (obrigatórias):
 - get_pricing_table → use para confirmar se há atualizações na tabela.
-- update_lead_status → atualize conforme o progresso (qualificado → orcamento_enviado → negociando)
+- update_lead_status → atualize conforme o progresso (qualificado → proposta_enviada → negociando)
 - consult_supervisor → use para desconto, parcelamento especial, serviço fora da tabela
-- convert_to_patient → ao fechar negócio confirmado pelo cliente
+- convert_to_client → ao fechar negócio confirmado pelo cliente
 - mark_lost → ao confirmar definitivamente que o cliente não tem interesse
 - escalate_to_human → último recurso quando nem a IA nem o supervisor conseguem resolver
 """
@@ -221,10 +222,10 @@ async def process_lead_message(
     ai_config = await load_ai_config(db)
 
     result = await db.execute(
-        select(SystemConfig).where(SystemConfig.key == "clinic_info")
+        select(SystemConfig).where(SystemConfig.key == "firm_info")
     )
     row = result.scalar_one_or_none()
-    clinic_cfg = row.value if row and row.value else {}
+    firm_cfg = row.value if row and row.value else {}
 
     agent_config = await load_agent_config(db, lead.status)
 
@@ -245,8 +246,8 @@ async def process_lead_message(
     system_prompt = _build_system_prompt(
         agent_config,
         lead,
-        clinic_name=clinic_cfg.get("name", ""),
-        clinic_timezone=clinic_cfg.get("timezone", settings.CLINIC_TIMEZONE),
+        firm_name=firm_cfg.get("name", ""),
+        firm_timezone=firm_cfg.get("timezone", settings.FIRM_TIMEZONE),
         pricing_table=pricing_table,
         interactions_context=interactions_context,
     )
@@ -352,10 +353,10 @@ async def resume_after_supervisor(
     """Continue the lead conversation after the supervisor has replied."""
     ai_config = await load_ai_config(db)
     result = await db.execute(
-        select(SystemConfig).where(SystemConfig.key == "clinic_info")
+        select(SystemConfig).where(SystemConfig.key == "firm_info")
     )
     row = result.scalar_one_or_none()
-    clinic_cfg = row.value if row and row.value else {}
+    firm_cfg = row.value if row and row.value else {}
 
     agent_config = await load_agent_config(db, lead.status)
     client = _get_client(ai_config)
@@ -366,8 +367,8 @@ async def resume_after_supervisor(
     system_prompt = _build_system_prompt(
         agent_config,
         lead,
-        clinic_name=clinic_cfg.get("name", ""),
-        clinic_timezone=clinic_cfg.get("timezone", settings.CLINIC_TIMEZONE),
+        firm_name=firm_cfg.get("name", ""),
+        firm_timezone=firm_cfg.get("timezone", settings.FIRM_TIMEZONE),
         interactions_context=interactions_context,
     )
 
@@ -452,7 +453,7 @@ async def send_proactive_message(
     then send it via WhatsApp/Telegram.
 
     The `initial_message` field in the config is used as an instruction hint
-    for the AI (e.g. "apresente a clínica e pergunte sobre o interesse").
+    for the AI (e.g. "apresente o escritório e pergunte sobre o interesse").
     If it's empty, fall back to a default instruction.
     """
     channel = lead.channel if lead.channel in ("whatsapp", "telegram") else "whatsapp"
@@ -464,10 +465,10 @@ async def send_proactive_message(
     ai_config = await load_ai_config(db)
 
     result = await db.execute(
-        select(SystemConfig).where(SystemConfig.key == "clinic_info")
+        select(SystemConfig).where(SystemConfig.key == "firm_info")
     )
     row = result.scalar_one_or_none()
-    clinic_cfg = row.value if row and row.value else {}
+    firm_cfg = row.value if row and row.value else {}
 
     price_result = await db.execute(
         select(SystemConfig).where(SystemConfig.key == "lead_pricing")
@@ -478,8 +479,8 @@ async def send_proactive_message(
     system_prompt = _build_system_prompt(
         agent_config,
         lead,
-        clinic_name=clinic_cfg.get("name", ""),
-        clinic_timezone=clinic_cfg.get("timezone", settings.CLINIC_TIMEZONE),
+        firm_name=firm_cfg.get("name", ""),
+        firm_timezone=firm_cfg.get("timezone", settings.FIRM_TIMEZONE),
         pricing_table=pricing_table,
         interactions_context=await _load_lead_interactions_context(db, lead.id),
     )
@@ -489,7 +490,7 @@ async def send_proactive_message(
     if not hint:
         hint = (
             "Faça o primeiro contato com este lead de forma acolhedora. "
-            "Apresente-se, mencione a clínica e pergunte como pode ajudar."
+            "Apresente-se, mencione o escritório e pergunte como pode ajudar."
         )
 
     user_instruction = (

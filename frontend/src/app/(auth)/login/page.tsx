@@ -27,6 +27,8 @@ export default function LoginPage() {
         router.push("/change-password");
       } else if (user?.role === "admin") {
         router.push("/admin");
+      } else if (user?.role === "lawyer") {
+        router.push("/lawyer");
       } else {
         router.push("/secretary");
       }

@@ -12,14 +12,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.modules.scheduling.service import (
     SlotNotAvailableError,
-    get_appointments,
+    get_consultations,
     get_available_slots,
-    get_available_slots_by_specialty,
-    get_appointment_by_id,
-    create_appointment,
-    cancel_appointment,
-    update_appointment,
-    get_doctor_by_id,
+    get_available_slots_by_practice_area,
+    get_consultation_by_id,
+    create_consultation,
+    cancel_consultation,
+    update_consultation,
+    get_lawyer_by_id,
 )
 from app.modules.leads.service import dispatch_proactive_on_status_change
 
@@ -45,18 +45,18 @@ TOOL_DEFINITIONS = [
             "name": "check_availability",
             "description": (
                 "Verifica horários disponíveis para agendamento. "
-                "Use quando o paciente quer marcar consulta."
+                "Use quando o cliente quer marcar consulta."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "specialty_id": {
+                    "practice_area_id": {
                         "type": "string",
-                        "description": "UUID da especialidade (opcional se doctor_id fornecido)",
+                        "description": "UUID da área de atuação (opcional se lawyer_id fornecido)",
                     },
-                    "doctor_id": {
+                    "lawyer_id": {
                         "type": "string",
-                        "description": "UUID do médico específico (opcional)",
+                        "description": "UUID do advogado específico (opcional)",
                     },
                     "date_from": {
                         "type": "string",
@@ -73,79 +73,79 @@ TOOL_DEFINITIONS = [
     {
         "type": "function",
         "function": {
-            "name": "book_appointment",
+            "name": "book_consultation",
             "description": (
-                "Agenda uma consulta para o paciente. "
-                "SEMPRE confirme o horário com o paciente antes de chamar esta função. "
-                "Se estiver REMARCANDO, informe replaces_appointment_id para cancelar o agendamento anterior."
+                "Agenda uma consulta para o cliente. "
+                "SEMPRE confirme o horário com o cliente antes de chamar esta função. "
+                "Se estiver REMARCANDO, informe replaces_consultation_id para cancelar a consulta anterior."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "doctor_id": {
+                    "lawyer_id": {
                         "type": "string",
-                        "description": "UUID do médico",
+                        "description": "UUID do advogado",
                     },
                     "starts_at": {
                         "type": "string",
                         "description": "Data/hora de início (ISO 8601)",
                     },
-                    "patient_notes": {
+                    "client_notes": {
                         "type": "string",
-                        "description": "Observações do paciente (queixa principal, etc.)",
+                        "description": "Observações do cliente (resumo do caso, etc.)",
                     },
-                    "replaces_appointment_id": {
+                    "replaces_consultation_id": {
                         "type": "string",
-                        "description": "UUID do agendamento anterior a cancelar (obrigatório ao remarcar)",
+                        "description": "UUID da consulta anterior a cancelar (obrigatório ao remarcar)",
                     },
                 },
-                "required": ["doctor_id", "starts_at"],
+                "required": ["lawyer_id", "starts_at"],
             },
         },
     },
     {
         "type": "function",
         "function": {
-            "name": "cancel_appointment",
-            "description": "Cancela um agendamento existente do paciente.",
+            "name": "cancel_consultation",
+            "description": "Cancela uma consulta existente do cliente.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "appointment_id": {
+                    "consultation_id": {
                         "type": "string",
-                        "description": "UUID do agendamento a cancelar",
+                        "description": "UUID da consulta a cancelar",
                     },
                 },
-                "required": ["appointment_id"],
+                "required": ["consultation_id"],
             },
         },
     },
     {
         "type": "function",
         "function": {
-            "name": "reschedule_appointment",
-            "description": "Remarca um agendamento existente para novo horário.",
+            "name": "reschedule_consultation",
+            "description": "Remarca uma consulta existente para novo horário.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "appointment_id": {
+                    "consultation_id": {
                         "type": "string",
-                        "description": "UUID do agendamento a remarcar",
+                        "description": "UUID da consulta a remarcar",
                     },
                     "new_starts_at": {
                         "type": "string",
                         "description": "Nova data/hora de início (ISO 8601)",
                     },
                 },
-                "required": ["appointment_id", "new_starts_at"],
+                "required": ["consultation_id", "new_starts_at"],
             },
         },
     },
     {
         "type": "function",
         "function": {
-            "name": "get_patient_appointments",
-            "description": "Lista os agendamentos do paciente atual.",
+            "name": "get_client_consultations",
+            "description": "Lista as consultas do cliente atual.",
             "parameters": {
                 "type": "object",
                 "properties": {},
@@ -157,8 +157,8 @@ TOOL_DEFINITIONS = [
         "function": {
             "name": "escalate_to_human",
             "description": (
-                "Transfere a conversa para atendimento humano (secretária). "
-                "Use quando não conseguir resolver o pedido do paciente."
+                "Transfere a conversa para atendimento humano (equipe comercial). "
+                "Use quando não conseguir resolver o pedido do cliente."
             ),
             "parameters": {
                 "type": "object",
@@ -178,27 +178,27 @@ TOOL_DEFINITIONS = [
             "name": "create_lead",
             "description": (
                 "Registra um lead (oportunidade de venda) no CRM. "
-                "Use quando o paciente pedir orçamento/preço, demonstrar interesse mas não quiser agendar agora, "
+                "Use quando o cliente pedir orçamento/honorários, demonstrar interesse mas não quiser agendar agora, "
                 "ou quando houver potencial de conversão futura."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "patient_name": {
+                    "client_name": {
                         "type": "string",
-                        "description": "Nome do paciente mencionado na conversa (se informado)",
+                        "description": "Nome do cliente mencionado na conversa (se informado)",
                     },
-                    "specialty_id": {
+                    "practice_area_id": {
                         "type": "string",
-                        "description": "UUID da especialidade de interesse (opcional)",
+                        "description": "UUID da área de atuação de interesse (opcional)",
                     },
                     "description": {
                         "type": "string",
-                        "description": "O que o paciente busca — tratamento, orçamento, dúvida, etc.",
+                        "description": "O que o cliente busca — resumo do caso, orçamento, dúvida, etc.",
                     },
-                    "quote_value": {
+                    "proposal_value": {
                         "type": "number",
-                        "description": "Valor de orçamento mencionado (opcional)",
+                        "description": "Valor de honorários mencionado (opcional)",
                     },
                 },
                 "required": ["description"],
@@ -212,24 +212,24 @@ async def execute_tool(
     tool_name: str,
     arguments: dict,
     db: AsyncSession,
-    patient_id: uuid.UUID,
+    client_id: uuid.UUID,
 ) -> str:
     """Execute a tool call and return the result as a string."""
     try:
         if tool_name == "check_availability":
             return await _check_availability(db, arguments)
-        elif tool_name == "book_appointment":
-            return await _book_appointment(db, patient_id, arguments)
-        elif tool_name == "cancel_appointment":
-            return await _cancel_appointment(db, arguments)
-        elif tool_name == "reschedule_appointment":
-            return await _reschedule_appointment(db, arguments)
-        elif tool_name == "get_patient_appointments":
-            return await _get_patient_appointments(db, patient_id)
+        elif tool_name == "book_consultation":
+            return await _book_consultation(db, client_id, arguments)
+        elif tool_name == "cancel_consultation":
+            return await _cancel_consultation(db, arguments)
+        elif tool_name == "reschedule_consultation":
+            return await _reschedule_consultation(db, arguments)
+        elif tool_name == "get_client_consultations":
+            return await _get_client_consultations(db, client_id)
         elif tool_name == "escalate_to_human":
-            return await _escalate_to_human(db, patient_id, arguments)
+            return await _escalate_to_human(db, client_id, arguments)
         elif tool_name == "create_lead":
-            return await _create_lead(db, patient_id, arguments)
+            return await _create_lead(db, client_id, arguments)
         else:
             return json.dumps({"error": f"Tool desconhecida: {tool_name}"})
     except Exception as e:
@@ -246,80 +246,80 @@ async def _check_availability(db: AsyncSession, args: dict) -> str:
         else date_from + timedelta(days=7)
     )
 
-    if args.get("doctor_id"):
+    if args.get("lawyer_id"):
         slots = await get_available_slots(
-            db, uuid.UUID(args["doctor_id"]), date_from, date_to
+            db, uuid.UUID(args["lawyer_id"]), date_from, date_to
         )
-    elif args.get("specialty_id"):
-        slots = await get_available_slots_by_specialty(
-            db, uuid.UUID(args["specialty_id"]), date_from, date_to
+    elif args.get("practice_area_id"):
+        slots = await get_available_slots_by_practice_area(
+            db, uuid.UUID(args["practice_area_id"]), date_from, date_to
         )
     else:
-        return json.dumps({"error": "Informe doctor_id ou specialty_id"})
+        return json.dumps({"error": "Informe lawyer_id ou practice_area_id"})
 
     # Mantém starts_at em UTC (para o LLM copiar literalmente ao agendar).
-    # Adiciona campo "display" em hora local para o LLM mostrar ao paciente.
+    # Adiciona campo "display" em hora local para o LLM mostrar ao cliente.
     # NUNCA retornar starts_at em hora local com offset — o LLM reconverteria
     # para UTC e causaria dupla conversão.
-    clinic_tz = ZoneInfo(settings.CLINIC_TIMEZONE)
+    firm_tz = ZoneInfo(settings.FIRM_TIMEZONE)
     result_slots = []
     for slot in slots[:15]:
         start_utc = datetime.fromisoformat(slot["starts_at"])
         end_utc   = datetime.fromisoformat(slot["ends_at"])
-        start_loc = start_utc.astimezone(clinic_tz)
-        end_loc   = end_utc.astimezone(clinic_tz)
+        start_loc = start_utc.astimezone(firm_tz)
+        end_loc   = end_utc.astimezone(firm_tz)
         entry: dict = {
             "starts_at": slot["starts_at"],                          # UTC — copiar exatamente
             "ends_at":   slot["ends_at"],                            # UTC
             "display":   start_loc.strftime("%d/%m/%Y %H:%M"),       # hora local para exibir
             "display_end": end_loc.strftime("%H:%M"),
         }
-        if "doctor_id"   in slot: entry["doctor_id"]   = slot["doctor_id"]
-        if "doctor_name" in slot: entry["doctor_name"] = slot["doctor_name"]
+        if "lawyer_id"   in slot: entry["lawyer_id"]   = slot["lawyer_id"]
+        if "lawyer_name" in slot: entry["lawyer_name"] = slot["lawyer_name"]
         result_slots.append(entry)
 
     return json.dumps({"available_slots": result_slots, "total": len(slots)})
 
 
-async def _book_appointment(
-    db: AsyncSession, patient_id: uuid.UUID, args: dict
+async def _book_consultation(
+    db: AsyncSession, client_id: uuid.UUID, args: dict
 ) -> str:
-    doctor_id = uuid.UUID(args["doctor_id"])
+    lawyer_id = uuid.UUID(args["lawyer_id"])
     starts_at = _parse_datetime_aware(args["starts_at"])
 
-    doctor = await get_doctor_by_id(db, doctor_id)
-    if not doctor:
-        return json.dumps({"error": "Médico não encontrado"})
+    lawyer = await get_lawyer_by_id(db, lawyer_id)
+    if not lawyer:
+        return json.dumps({"error": "Advogado não encontrado"})
 
-    ends_at = starts_at + timedelta(minutes=doctor.slot_duration_minutes)
+    ends_at = starts_at + timedelta(minutes=lawyer.slot_duration_minutes)
 
-    # Se for remarcação, cancela o agendamento anterior antes de criar o novo
+    # Se for remarcação, cancela a consulta anterior antes de criar a nova
     cancelled_old_id = None
-    if args.get("replaces_appointment_id"):
+    if args.get("replaces_consultation_id"):
         try:
-            old_appt = await get_appointment_by_id(db, uuid.UUID(args["replaces_appointment_id"]))
-            if old_appt and old_appt.status not in ("cancelled",):
-                await cancel_appointment(db, old_appt)
-                cancelled_old_id = str(old_appt.id)
-                logger.info("Agendamento anterior %s cancelado na remarcação", cancelled_old_id)
+            old_consultation = await get_consultation_by_id(db, uuid.UUID(args["replaces_consultation_id"]))
+            if old_consultation and old_consultation.status not in ("cancelled",):
+                await cancel_consultation(db, old_consultation)
+                cancelled_old_id = str(old_consultation.id)
+                logger.info("Consulta anterior %s cancelada na remarcação", cancelled_old_id)
         except Exception:
-            logger.exception("Falha ao cancelar agendamento anterior na remarcação")
+            logger.exception("Falha ao cancelar consulta anterior na remarcação")
 
     try:
-        appt = await create_appointment(
+        consultation = await create_consultation(
             db,
-            patient_id=patient_id,
-            doctor_id=doctor_id,
+            client_id=client_id,
+            lawyer_id=lawyer_id,
             starts_at=starts_at,
             ends_at=ends_at,
-            specialty_id=doctor.specialty_id,
+            practice_area_id=lawyer.practice_area_id,
             source="ai_chat",
-            notes=args.get("patient_notes"),
+            notes=args.get("client_notes"),
         )
         return json.dumps({
             "success": True,
-            "appointment_id": str(appt.id),
-            "doctor_name": doctor.full_name,
+            "consultation_id": str(consultation.id),
+            "lawyer_name": lawyer.full_name,
             "starts_at": starts_at.isoformat(),
             "ends_at": ends_at.isoformat(),
             "cancelled_previous": cancelled_old_id,
@@ -330,31 +330,31 @@ async def _book_appointment(
         return json.dumps({"error": f"Não foi possível agendar: {e}"})
 
 
-async def _cancel_appointment(db: AsyncSession, args: dict) -> str:
-    appt_id = uuid.UUID(args["appointment_id"])
-    appt = await get_appointment_by_id(db, appt_id)
-    if not appt:
-        return json.dumps({"error": "Agendamento não encontrado"})
-    if appt.status == "cancelled":
-        return json.dumps({"error": "Agendamento já foi cancelado"})
+async def _cancel_consultation(db: AsyncSession, args: dict) -> str:
+    consultation_id = uuid.UUID(args["consultation_id"])
+    consultation = await get_consultation_by_id(db, consultation_id)
+    if not consultation:
+        return json.dumps({"error": "Consulta não encontrada"})
+    if consultation.status == "cancelled":
+        return json.dumps({"error": "Consulta já foi cancelada"})
 
-    await cancel_appointment(db, appt)
-    return json.dumps({"success": True, "message": "Agendamento cancelado"})
+    await cancel_consultation(db, consultation)
+    return json.dumps({"success": True, "message": "Consulta cancelada"})
 
 
-async def _reschedule_appointment(db: AsyncSession, args: dict) -> str:
-    appt_id = uuid.UUID(args["appointment_id"])
+async def _reschedule_consultation(db: AsyncSession, args: dict) -> str:
+    consultation_id = uuid.UUID(args["consultation_id"])
     new_starts_at = _parse_datetime_aware(args["new_starts_at"])
 
-    appt = await get_appointment_by_id(db, appt_id)
-    if not appt:
-        return json.dumps({"error": "Agendamento não encontrado"})
+    consultation = await get_consultation_by_id(db, consultation_id)
+    if not consultation:
+        return json.dumps({"error": "Consulta não encontrada"})
 
-    doctor = await get_doctor_by_id(db, appt.doctor_id)
-    new_ends_at = new_starts_at + timedelta(minutes=doctor.slot_duration_minutes)
+    lawyer = await get_lawyer_by_id(db, consultation.lawyer_id)
+    new_ends_at = new_starts_at + timedelta(minutes=lawyer.slot_duration_minutes)
 
-    await update_appointment(
-        db, appt, starts_at=new_starts_at, ends_at=new_ends_at
+    await update_consultation(
+        db, consultation, starts_at=new_starts_at, ends_at=new_ends_at
     )
     return json.dumps({
         "success": True,
@@ -363,62 +363,62 @@ async def _reschedule_appointment(db: AsyncSession, args: dict) -> str:
     })
 
 
-async def _get_patient_appointments(db: AsyncSession, patient_id: uuid.UUID) -> str:
-    appts = await get_appointments(db, patient_id=patient_id)
-    active = [a for a in appts if a.status not in ("cancelled",)]
+async def _get_client_consultations(db: AsyncSession, client_id: uuid.UUID) -> str:
+    consultations = await get_consultations(db, client_id=client_id)
+    active = [a for a in consultations if a.status not in ("cancelled",)]
     result = []
     for a in active[:10]:
         result.append({
-            "appointment_id": str(a.id),
-            "doctor_name": a.doctor.full_name if a.doctor else "—",
-            "specialty": a.specialty.name if a.specialty else "—",
+            "consultation_id": str(a.id),
+            "lawyer_name": a.lawyer.full_name if a.lawyer else "—",
+            "practice_area": a.practice_area.name if a.practice_area else "—",
             "starts_at": a.starts_at.isoformat(),
             "ends_at": a.ends_at.isoformat(),
             "status": a.status,
         })
-    return json.dumps({"appointments": result})
+    return json.dumps({"consultations": result})
 
 
 async def _escalate_to_human(
-    db: AsyncSession, patient_id: uuid.UUID, args: dict
+    db: AsyncSession, client_id: uuid.UUID, args: dict
 ) -> str:
-    """Marca o paciente como escalonado, encerra sessão IA e notifica humano.
+    """Marca o cliente como escalonado, encerra sessão IA e notifica humano.
 
     Sempre tenta criar (ou atualizar) o lead para garantir registro no CRM,
     independente de o LLM ter chamado create_lead antes.
     """
     from app.modules.admin.models import SystemConfig
     from app.modules.ai.session import clear_session
-    from app.modules.crm.models import Patient
+    from app.modules.clients.models import Client
     from app.modules.messaging.gateway import send_message
 
-    reason = args.get("reason", "Paciente solicitou atendimento humano")
+    reason = args.get("reason", "Cliente solicitou atendimento humano")
 
     # Auto-cria lead ao escalar — garante registro mesmo que o LLM não tenha chamado create_lead
     try:
-        lead_result = await _create_lead(db, patient_id, {
+        lead_result = await _create_lead(db, client_id, {
             "description": f"Escalonado para atendimento humano. Motivo: {reason}",
         })
         lead_data = json.loads(lead_result)
         if lead_data.get("success") and not lead_data.get("already_existed"):
             logger.info("Lead auto-criado na escalação: %s", lead_data.get("lead_id"))
     except Exception:
-        logger.exception("Falha ao criar lead automático na escalação para paciente %s", patient_id)
+        logger.exception("Falha ao criar lead automático na escalação para cliente %s", client_id)
 
-    # 1. Marca o paciente — usamos crm_status para indicar revisão humana
-    patient = await db.get(Patient, patient_id)
-    if patient:
-        existing_notes = patient.notes or ""
+    # 1. Marca o cliente — usamos client_status para indicar revisão humana
+    client = await db.get(Client, client_id)
+    if client:
+        existing_notes = client.notes or ""
         prefix = "[ESCALONADO PARA HUMANO] "
         if not existing_notes.startswith(prefix):
-            patient.notes = f"{prefix}{reason}\n{existing_notes}".strip()
+            client.notes = f"{prefix}{reason}\n{existing_notes}".strip()
         await db.commit()
 
     # 2. Limpa sessão IA para que próximas mensagens não continuem o fluxo automatizado
     try:
-        await clear_session(patient_id)
+        await clear_session(client_id)
     except Exception:
-        logger.exception("Failed to clear AI session for patient %s", patient_id)
+        logger.exception("Failed to clear AI session for client %s", client_id)
 
     # 3. Notifica via Telegram (se configurado)
     try:
@@ -427,12 +427,12 @@ async def _escalate_to_human(
         )
         row = result.scalar_one_or_none()
         chat_id = (row.value or {}).get("escalation_telegram_chat_id") if row else ""
-        if chat_id and patient:
-            name = patient.full_name or patient.phone
+        if chat_id and client:
+            name = client.full_name or client.phone
             text = (
                 f"🆘 *Atendimento humano solicitado*\n\n"
-                f"Paciente: {name}\n"
-                f"Canal: {patient.channel}\n"
+                f"Cliente: {name}\n"
+                f"Canal: {client.channel}\n"
                 f"Motivo: {reason}"
             )
             await send_message("telegram", chat_id, text)
@@ -442,7 +442,7 @@ async def _escalate_to_human(
     return json.dumps({
         "escalated": True,
         "message": (
-            "Conversa encaminhada para a secretária. "
+            "Conversa encaminhada para a equipe comercial. "
             f"Motivo: {reason}. "
             "Em breve alguém entrará em contato."
         ),
@@ -450,29 +450,29 @@ async def _escalate_to_human(
 
 
 async def _create_lead(
-    db: AsyncSession, patient_id: uuid.UUID, args: dict
+    db: AsyncSession, client_id: uuid.UUID, args: dict
 ) -> str:
     """Cria um lead no CRM a partir da conversa do chatbot."""
     from app.modules.admin.models import SystemConfig
-    from app.modules.crm.models import Patient
+    from app.modules.clients.models import Client
     from app.modules.leads.models import Lead
 
     now = datetime.now(timezone.utc)
 
-    # Busca dados reais do paciente (telefone, canal)
-    patient = await db.get(Patient, patient_id)
-    if not patient:
-        # Sessão de teste — sem paciente real no banco
+    # Busca dados reais do cliente (telefone, canal)
+    client = await db.get(Client, client_id)
+    if not client:
+        # Sessão de teste — sem cliente real no banco
         return json.dumps({
             "success": False,
             "message": (
-                "Simulação: em produção criaria um lead com o telefone do paciente. "
+                "Simulação: em produção criaria um lead com o telefone do cliente. "
                 "Nenhum dado foi salvo nesta sessão de teste."
             ),
         })
 
-    phone   = patient.phone
-    channel = patient.channel or "outro"
+    phone   = client.phone
+    channel = client.channel or "outro"
 
     # Evita duplicata: verifica lead ativo para este telefone
     existing_q = await db.execute(
@@ -495,7 +495,7 @@ async def _create_lead(
         })
 
     # Lê SLA do banco ou usa padrão das configurações
-    sla_hours = settings.CLINIC_SLA_HOURS
+    sla_hours = settings.FIRM_SLA_HOURS
     try:
         row = (await db.execute(
             select(SystemConfig).where(SystemConfig.key == "sla")
@@ -505,21 +505,21 @@ async def _create_lead(
     except Exception:
         pass
 
-    specialty_id = None
-    if args.get("specialty_id"):
+    practice_area_id = None
+    if args.get("practice_area_id"):
         try:
-            specialty_id = uuid.UUID(args["specialty_id"])
+            practice_area_id = uuid.UUID(args["practice_area_id"])
         except ValueError:
             pass
 
-    quote_value = None
-    if args.get("quote_value"):
+    proposal_value = None
+    if args.get("proposal_value"):
         try:
-            quote_value = float(args["quote_value"])
+            proposal_value = float(args["proposal_value"])
         except (TypeError, ValueError):
             pass
 
-    full_name = args.get("patient_name") or patient.full_name
+    full_name = args.get("client_name") or client.full_name
 
     from app.modules.leads.service import _generate_lead_code
     code = await _generate_lead_code(db)
@@ -532,16 +532,16 @@ async def _create_lead(
         status="em_contato",
         contacted_at=now,
         sla_deadline=now + timedelta(hours=sla_hours),
-        specialty_id=specialty_id,
+        practice_area_id=practice_area_id,
         description=args.get("description"),
-        quote_value=quote_value,
+        proposal_value=proposal_value,
     )
     db.add(lead)
     await db.commit()
     await db.refresh(lead)
     dispatch_proactive_on_status_change(lead, None, lead.status)
 
-    logger.info("Lead criado via chatbot: %s (paciente %s)", lead.id, patient_id)
+    logger.info("Lead criado via chatbot: %s (cliente %s)", lead.id, client_id)
     return json.dumps({
         "success": True,
         "lead_id": str(lead.id),

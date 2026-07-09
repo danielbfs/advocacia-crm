@@ -15,8 +15,8 @@ class Conversation(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    patient_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=True
+    client_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("clients.id"), nullable=True
     )
     channel: Mapped[str] = mapped_column(String(20), nullable=False)
     control: Mapped[str] = mapped_column(String(20), default="ai")  # "ai" or "human"

@@ -14,16 +14,16 @@ from app.config import settings
 # transitively import Lead (which references User via relationship).
 # ---------------------------------------------------------------------------
 import app.modules.auth.models  # noqa: F401  — User
-import app.modules.admin.models  # noqa: F401  — Specialty, SystemConfig, AuditLog
-import app.modules.scheduling.models  # noqa: F401  — Doctor, Appointment, etc.
-import app.modules.crm.models  # noqa: F401  — Patient
+import app.modules.admin.models  # noqa: F401  — PracticeArea, SystemConfig, AuditLog
+import app.modules.scheduling.models  # noqa: F401  — Lawyer, Consultation, etc.
+import app.modules.clients.models  # noqa: F401  — Client
 import app.modules.leads.models  # noqa: F401  — Lead, LeadInteraction
 import app.modules.leads.ai_models  # noqa: F401  — LeadAgentConfig, LeadConversation, etc.
 import app.modules.messaging.models  # noqa: F401  — Conversation, Message
 import app.modules.followup.models  # noqa: F401  — FollowupRule, FollowupJob
 
 celery_app = Celery(
-    "openclinic",
+    "advocacia_crm",
     broker=settings.REDIS_URL,
     backend=settings.REDIS_URL,
     include=[
@@ -37,7 +37,7 @@ celery_app.conf.update(
     task_serializer="json",
     accept_content=["json"],
     result_serializer="json",
-    timezone=settings.CLINIC_TIMEZONE,
+    timezone=settings.FIRM_TIMEZONE,
     enable_utc=True,
     task_track_started=True,
     task_acks_late=True,

@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 _DEFAULTS = {
     "ai": {"type": "openai", "model": "gpt-4o-mini", "use_local_llm": False, "local_llm_url": "", "local_llm_model": ""},
     "chatbot": {"system_prompt": "", "max_tool_calls": 3, "temperature": 0.3},
-    "clinic_info": {"name": "Minha Clínica", "timezone": "America/Sao_Paulo"},
+    "firm_info": {"name": "Meu Escritório", "timezone": "America/Sao_Paulo"},
 }
 
 
@@ -57,12 +57,12 @@ async def load_chatbot_config(db: AsyncSession) -> dict:
     return {"system_prompt": "", "max_tool_calls": 3, "temperature": 0.3}
 
 
-async def load_clinic_config(db: AsyncSession) -> dict:
-    """Load clinic info from DB."""
+async def load_firm_config(db: AsyncSession) -> dict:
+    """Load firm info from DB."""
     result = await db.execute(
-        select(SystemConfig).where(SystemConfig.key == "clinic_info")
+        select(SystemConfig).where(SystemConfig.key == "firm_info")
     )
     row = result.scalar_one_or_none()
     if row and row.value:
         return row.value
-    return {"name": "Minha Clínica", "timezone": settings.CLINIC_TIMEZONE}
+    return {"name": "Meu Escritório", "timezone": settings.FIRM_TIMEZONE}

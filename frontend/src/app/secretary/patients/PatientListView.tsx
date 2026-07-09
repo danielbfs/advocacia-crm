@@ -7,7 +7,7 @@ import { api } from "@/lib/api";
 // ─────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────
-interface PatientContact {
+interface ClientContact {
   id: string;
   channel: string;
   value: string;
@@ -23,16 +23,16 @@ interface LeadSummary {
   created_at: string;
 }
 
-interface Patient {
+interface Client {
   id: string;
   full_name: string | null;
   phone: string;
   email: string | null;
   channel: string;
-  crm_status: string;
+  client_status: string;
   notes: string | null;
   created_at: string;
-  contacts: PatientContact[];
+  contacts: ClientContact[];
   leads: LeadSummary[];
 }
 
@@ -62,7 +62,7 @@ const LEAD_STATUS_LABELS: Record<string, string> = {
   novo: "Novo",
   em_contato: "Em Contato",
   qualificado: "Qualificado",
-  orcamento_enviado: "Proposta Enviada",
+  proposta_enviada: "Proposta Enviada",
   negociando: "Negociando",
   convertido: "Cliente Fechado",
   perdido: "Perdido",
@@ -79,7 +79,7 @@ const LEAD_STATUS_COLORS: Record<string, string> = {
   novo: "bg-info/15 text-info",
   em_contato: "bg-selo/15 text-selo",
   qualificado: "bg-ink-3 text-parchment-dim",
-  orcamento_enviado: "bg-selo/15 text-selo",
+  proposta_enviada: "bg-selo/15 text-selo",
   negociando: "bg-carimbo/10 text-carimbo",
   convertido: "bg-jade/15 text-jade",
   perdido: "bg-ink-3 text-parchment-faint",
@@ -90,21 +90,21 @@ const LEAD_STATUS_COLORS: Record<string, string> = {
 // ─────────────────────────────────────────────────────────────────
 function UnifyModal({
   lead,
-  patients,
+  clients,
   onClose,
   onDone,
 }: {
   lead: UnmatchedLead;
-  patients: Patient[];
+  clients: Client[];
   onClose: () => void;
   onDone: () => void;
 }) {
   const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState<Patient | null>(null);
+  const [selected, setSelected] = useState<Client | null>(null);
   const [saving, setSaving] = useState(false);
   const [createNew, setCreateNew] = useState(false);
 
-  const filtered = patients.filter((p) => {
+  const filtered = clients.filter((p) => {
     const q = search.toLowerCase();
     return (
       p.full_name?.toLowerCase().includes(q) ||
@@ -117,7 +117,7 @@ function UnifyModal({
     if (!selected) return;
     setSaving(true);
     try {
-      await api.post(`/patients/${selected.id}/link-lead`, { lead_id: lead.lead_id });
+      await api.post(`/clients/${selected.id}/link-lead`, { lead_id: lead.lead_id });
       onDone();
     } catch {
       alert("Erro ao vincular. Tente novamente.");
@@ -130,13 +130,13 @@ function UnifyModal({
     setSaving(true);
     try {
       const clean = lead.phone.replace(/^(whatsapp:|telegram:)/, "");
-      const { data: newPatient } = await api.post("/patients/", {
+      const { data: newClient } = await api.post("/clients/", {
         full_name: lead.full_name,
         phone: clean,
         email: lead.email,
         channel: lead.channel,
       });
-      await api.post(`/patients/${newPatient.id}/link-lead`, { lead_id: lead.lead_id });
+      await api.post(`/clients/${newClient.id}/link-lead`, { lead_id: lead.lead_id });
       onDone();
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
@@ -248,7 +248,7 @@ function UnifyModal({
 // ─────────────────────────────────────────────────────────────────
 export function PatientListView({ basePath = "/secretary/patients" }: { basePath?: string }) {
   const router = useRouter();
-  const [patients, setPatients] = useState<Patient[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [unmatched, setUnmatched] = useState<UnmatchedLead[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -259,13 +259,13 @@ export function PatientListView({ basePath = "/secretary/patients" }: { basePath
     try {
       const params = search ? `?search=${encodeURIComponent(search)}` : "";
       const [pRes, uRes] = await Promise.all([
-        api.get(`/patients/${params}`),
-        api.get("/patients/unmatched"),
+        api.get(`/clients/${params}`),
+        api.get("/clients/unmatched"),
       ]);
-      setPatients(pRes.data);
+      setClients(pRes.data);
       setUnmatched(uRes.data);
     } catch {
-      setPatients([]);
+      setClients([]);
       setUnmatched([]);
     } finally {
       setLoading(false);
@@ -319,12 +319,12 @@ export function PatientListView({ basePath = "/secretary/patients" }: { basePath
       <section>
         <h2 className="text-base font-semibold text-parchment mb-3">
           Clientes Cadastrados
-          <span className="ml-2 text-sm font-normal text-parchment-faint">({patients.length})</span>
+          <span className="ml-2 text-sm font-normal text-parchment-faint">({clients.length})</span>
         </h2>
 
         {loading ? (
           <p className="text-parchment-faint text-sm">Carregando...</p>
-        ) : patients.length === 0 ? (
+        ) : clients.length === 0 ? (
           <p className="text-parchment-faint text-sm">Nenhum cliente encontrado.</p>
         ) : (
           <div className="bg-ink-2 border border-line rounded-sm overflow-hidden">
@@ -340,7 +340,7 @@ export function PatientListView({ basePath = "/secretary/patients" }: { basePath
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
-                {patients.map((p) => (
+                {clients.map((p) => (
                   <tr
                     key={p.id}
                     className="hover:bg-ink-3 cursor-pointer"
@@ -388,7 +388,7 @@ export function PatientListView({ basePath = "/secretary/patients" }: { basePath
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-ink-3 text-parchment-dim">
-                        {STATUS_LABELS[p.crm_status] || p.crm_status}
+                        {STATUS_LABELS[p.client_status] || p.client_status}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-parchment-dim text-xs">
@@ -486,7 +486,7 @@ export function PatientListView({ basePath = "/secretary/patients" }: { basePath
       {unifyTarget && (
         <UnifyModal
           lead={unifyTarget}
-          patients={patients}
+          clients={clients}
           onClose={() => setUnifyTarget(null)}
           onDone={() => {
             setUnifyTarget(null);

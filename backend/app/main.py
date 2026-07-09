@@ -1,5 +1,5 @@
 """
-Open Clinic AI — FastAPI Application Entry Point
+AdvocacIA CRM — FastAPI Application Entry Point
 """
 from contextlib import asynccontextmanager
 
@@ -18,8 +18,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Open Clinic AI",
-    description="Sistema open-source para clínicas — API Backend",
+    title="AdvocacIA CRM",
+    description="Gestão comercial para escritórios de advocacia — API Backend",
     version="0.1.0",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
@@ -36,9 +36,9 @@ app.add_middleware(
 )
 
 from app.modules.auth.router import router as auth_router
-from app.modules.admin.router import router as specialties_router
+from app.modules.admin.router import router as practice_areas_router
 from app.modules.scheduling.router import router as scheduling_router
-from app.modules.crm.router import router as patients_router
+from app.modules.clients.router import router as clients_router
 
 from app.modules.leads.router import router as leads_router
 from app.modules.leads.ai_router import router as leads_ai_router
@@ -47,9 +47,9 @@ from app.modules.admin.setup_router import router as admin_setup_router
 from app.modules.followup.router import router as followup_router
 
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
-app.include_router(specialties_router, prefix="/api/v1/specialties", tags=["specialties"])
+app.include_router(practice_areas_router, prefix="/api/v1/practice-areas", tags=["practice-areas"])
 app.include_router(scheduling_router, prefix="/api/v1/scheduling", tags=["scheduling"])
-app.include_router(patients_router, prefix="/api/v1/patients", tags=["patients"])
+app.include_router(clients_router, prefix="/api/v1/clients", tags=["clients"])
 app.include_router(leads_ai_router, prefix="/api/v1/leads", tags=["leads-ai"])
 app.include_router(leads_router, prefix="/api/v1/leads", tags=["leads"])
 app.include_router(webhooks_router, prefix="/webhooks", tags=["webhooks"])

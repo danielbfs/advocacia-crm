@@ -18,9 +18,9 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(150), unique=True, nullable=False)
     full_name: Mapped[str] = mapped_column(String(255), nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
-    role: Mapped[str] = mapped_column(String(50), nullable=False)  # 'admin', 'secretary', 'doctor'
-    doctor_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("doctors.id", ondelete="SET NULL"), nullable=True
+    role: Mapped[str] = mapped_column(String(50), nullable=False)  # 'admin', 'secretary', 'lawyer'
+    lawyer_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("lawyers.id", ondelete="SET NULL"), nullable=True
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     must_change_password: Mapped[bool] = mapped_column(Boolean, default=True)

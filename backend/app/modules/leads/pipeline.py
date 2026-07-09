@@ -13,7 +13,7 @@ PIPELINE_ORDER: list[str] = [
     "novo",
     "em_contato",
     "qualificado",
-    "orcamento_enviado",
+    "proposta_enviada",
     "negociando",
     "convertido",
 ]
@@ -27,27 +27,27 @@ TERMINAL_STATUSES: set[str] = {"convertido"}
 # Status que requerem motivo
 REQUIRES_LOST_REASON: set[str] = {"perdido"}
 
-# Status que requerem criação de paciente
-REQUIRES_PATIENT: set[str] = {"convertido"}
+# Status que requerem criação de cliente
+REQUIRES_CLIENT: set[str] = {"convertido"}
 
 # Mapa de transições permitidas (origem → destinos)
 ALLOWED_TRANSITIONS: dict[str, set[str]] = {
-    "novo": {"em_contato", "qualificado", "orcamento_enviado", "negociando", "convertido", "perdido"},
-    "em_contato": {"qualificado", "orcamento_enviado", "negociando", "convertido", "perdido"},
-    "qualificado": {"em_contato", "orcamento_enviado", "negociando", "convertido", "perdido"},
-    "orcamento_enviado": {"em_contato", "qualificado", "negociando", "convertido", "perdido"},
-    "negociando": {"em_contato", "qualificado", "orcamento_enviado", "convertido", "perdido"},
+    "novo": {"em_contato", "qualificado", "proposta_enviada", "negociando", "convertido", "perdido"},
+    "em_contato": {"qualificado", "proposta_enviada", "negociando", "convertido", "perdido"},
+    "qualificado": {"em_contato", "proposta_enviada", "negociando", "convertido", "perdido"},
+    "proposta_enviada": {"em_contato", "qualificado", "negociando", "convertido", "perdido"},
+    "negociando": {"em_contato", "qualificado", "proposta_enviada", "convertido", "perdido"},
     "convertido": set(),
-    "perdido": {"em_contato", "qualificado", "orcamento_enviado", "negociando"},
+    "perdido": {"em_contato", "qualificado", "proposta_enviada", "negociando"},
 }
 
 # Motivos padronizados de perda (drop-down)
 LOST_REASONS: list[dict[str, str]] = [
     {"value": "sem_resposta", "label": "Sem resposta"},
-    {"value": "preco", "label": "Preço"},
-    {"value": "ja_atendido", "label": "Já atendido em outro lugar"},
-    {"value": "fora_de_perfil", "label": "Fora do perfil"},
-    {"value": "sem_disponibilidade", "label": "Sem disponibilidade"},
+    {"value": "honorarios", "label": "Honorários (preço)"},
+    {"value": "ja_tem_advogado", "label": "Já tem advogado / contratou outro"},
+    {"value": "fora_de_area", "label": "Fora das áreas de atuação"},
+    {"value": "sem_viabilidade", "label": "Caso sem viabilidade jurídica"},
     {"value": "mudou_de_ideia", "label": "Mudou de ideia"},
     {"value": "duplicado", "label": "Lead duplicado"},
     {"value": "outro", "label": "Outro"},
@@ -57,9 +57,9 @@ STATUS_LABELS: dict[str, str] = {
     "novo": "Novo",
     "em_contato": "Em Contato",
     "qualificado": "Qualificado",
-    "orcamento_enviado": "Orçamento Enviado",
+    "proposta_enviada": "Proposta de Honorários Enviada",
     "negociando": "Negociando",
-    "convertido": "Convertido",
+    "convertido": "Cliente Fechado",
     "perdido": "Perdido",
 }
 

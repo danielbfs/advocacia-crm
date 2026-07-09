@@ -3,13 +3,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import type { User, Specialty, Doctor, Lead, PipelineStageMetric } from "@/types";
+import type { User, PracticeArea, Lawyer, Lead, PipelineStageMetric } from "@/types";
 import { Users, Activity, Stethoscope, Users as LeadsIcon, AlertCircle, TrendingUp, CheckCircle, Clock } from "lucide-react";
 
 interface DashboardData {
   users: User[];
-  specialties: Specialty[];
-  doctors: Doctor[];
+  practiceAreas: PracticeArea[];
+  lawyers: Lawyer[];
   leads: Lead[];
   sla: { total: number; within_sla: number; overdue: number; sla_rate: number } | null;
   pipeline: PipelineStageMetric[];
@@ -17,17 +17,17 @@ interface DashboardData {
 
 export default function AdminPage() {
   const [data, setData] = useState<DashboardData>({
-    users: [], specialties: [], doctors: [], leads: [], sla: null, pipeline: []
+    users: [], practiceAreas: [], lawyers: [], leads: [], sla: null, pipeline: []
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchAll() {
       try {
-        const [usersRes, specsRes, docsRes, leadsRes, slaRes, pipeRes] = await Promise.allSettled([
+        const [usersRes, areasRes, lawyersRes, leadsRes, slaRes, pipeRes] = await Promise.allSettled([
           api.get("/auth/users"),
-          api.get("/specialties/"),
-          api.get("/scheduling/doctors"),
+          api.get("/practice-areas/"),
+          api.get("/scheduling/lawyers"),
           api.get("/leads/"),
           api.get("/leads/reports/sla?period=30d"),
           api.get("/leads/reports/pipeline?period=30d"),
@@ -35,8 +35,8 @@ export default function AdminPage() {
 
         setData({
           users: usersRes.status === "fulfilled" ? usersRes.value.data : [],
-          specialties: specsRes.status === "fulfilled" ? specsRes.value.data : [],
-          doctors: docsRes.status === "fulfilled" ? docsRes.value.data : [],
+          practiceAreas: areasRes.status === "fulfilled" ? areasRes.value.data : [],
+          lawyers: lawyersRes.status === "fulfilled" ? lawyersRes.value.data : [],
           leads: leadsRes.status === "fulfilled" ? leadsRes.value.data : [],
           sla: slaRes.status === "fulfilled" ? slaRes.value.data : null,
           pipeline: pipeRes.status === "fulfilled" ? pipeRes.value.data : [],
@@ -71,8 +71,8 @@ export default function AdminPage() {
       {/* Cards resumo */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card title="Usuários" value={data.users.length} subtitle={`${data.users.filter(u => u.is_active).length} ativos`} href="/admin/users" icon={<Users className="text-carimbo" size={24} />} />
-        <Card title="Áreas de Atuação" value={data.specialties.length} href="/admin/practice-areas" icon={<Activity className="text-jade" size={24} />} />
-        <Card title="Advogados" value={data.doctors.length} subtitle={`${data.doctors.filter(d => d.is_active).length} ativos`} href="/admin/lawyers" icon={<Stethoscope className="text-selo" size={24} />} />
+        <Card title="Áreas de Atuação" value={data.practiceAreas.length} href="/admin/practice-areas" icon={<Activity className="text-jade" size={24} />} />
+        <Card title="Advogados" value={data.lawyers.length} subtitle={`${data.lawyers.filter(d => d.is_active).length} ativos`} href="/admin/lawyers" icon={<Stethoscope className="text-selo" size={24} />} />
         <Card title="Leads" value={data.leads.length} subtitle={`${newLeads.length} novos`} href="/admin/leads" icon={<LeadsIcon className="text-info" size={24} />} />
       </div>
 

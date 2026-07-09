@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { ToastMessage } from "@/components/toast-message";
 import type {
-  Doctor,
+  Lawyer,
   Lead,
   LeadStatus,
   PipelineConfig,
@@ -20,7 +20,7 @@ const STATUS_COLORS: Record<string, string> = {
   novo: "bg-info",
   em_contato: "bg-selo",
   qualificado: "bg-parchment-dim",
-  orcamento_enviado: "bg-selo",
+  proposta_enviada: "bg-selo",
   negociando: "bg-carimbo",
   convertido: "bg-jade",
   perdido: "bg-parchment-faint",
@@ -30,7 +30,7 @@ const STATUS_BORDER: Record<string, string> = {
   novo: "border-info/30",
   em_contato: "border-selo/30",
   qualificado: "border-parchment-dim/30",
-  orcamento_enviado: "border-selo/30",
+  proposta_enviada: "border-selo/30",
   negociando: "border-carimbo/30",
   convertido: "border-jade/30",
   perdido: "border-line",
@@ -40,7 +40,7 @@ const STATUS_BG_LIGHT: Record<string, string> = {
   novo: "bg-info/10",
   em_contato: "bg-selo/10",
   qualificado: "bg-ink-2/30",
-  orcamento_enviado: "bg-selo/10",
+  proposta_enviada: "bg-selo/10",
   negociando: "bg-carimbo/10",
   convertido: "bg-jade/10",
   perdido: "bg-ink-2/30",
@@ -732,9 +732,9 @@ function KanbanBoard({
                             👤 Humano
                           </span>
                         )}
-                        {lead.quote_value && (
+                        {lead.proposal_value && (
                           <span className="font-medium text-selo font-mono">
-                            {formatCurrency(lead.quote_value)}
+                            {formatCurrency(lead.proposal_value)}
                           </span>
                         )}
                       </div>
@@ -879,7 +879,7 @@ function LeadsTable({
                 className="px-3 py-2 text-right text-parchment-dim"
                 onClick={() => onClick(lead)}
               >
-                {formatCurrency(lead.quote_value)}
+                {formatCurrency(lead.proposal_value)}
               </td>
               <td className="px-3 py-2" onClick={() => onClick(lead)}>
                 {lead.is_overdue ? (
@@ -926,7 +926,7 @@ function CreateLeadModal({
     email: "",
     channel: "whatsapp",
     description: "",
-    quote_value: "",
+    proposal_value: "",
   });
   const [saving, setSaving] = useState(false);
 
@@ -940,7 +940,7 @@ function CreateLeadModal({
         email: form.email || null,
         channel: form.channel,
         description: form.description || null,
-        quote_value: form.quote_value ? Number(form.quote_value) : null,
+        proposal_value: form.proposal_value ? Number(form.proposal_value) : null,
       });
       onCreated();
     } catch {
@@ -993,8 +993,8 @@ function CreateLeadModal({
             <input
               type="number"
               step="0.01"
-              value={form.quote_value}
-              onChange={(e) => setForm({ ...form, quote_value: e.target.value })}
+              value={form.proposal_value}
+              onChange={(e) => setForm({ ...form, proposal_value: e.target.value })}
               className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
             />
           </Field>
@@ -1116,12 +1116,12 @@ function ConvertLeadModal({
   onClose: () => void;
   onConverted: () => void;
 }) {
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [lawyers, setLawyers] = useState<Lawyer[]>([]);
   const [createAppt, setCreateAppt] = useState(false);
   const [form, setForm] = useState({
-    patient_name: lead.full_name || "",
-    appointment_notes: lead.description || "",
-    doctor_id: "",
+    client_name: lead.full_name || "",
+    consultation_notes: lead.description || "",
+    lawyer_id: "",
     starts_at: "",
   });
   const [slots, setSlots] = useState<{ starts_at: string; ends_at: string }[]>([]);
@@ -1130,20 +1130,20 @@ function ConvertLeadModal({
 
   useEffect(() => {
     api
-      .get("/scheduling/doctors?active_only=true")
-      .then(({ data }) => setDoctors(data))
-      .catch(() => setDoctors([]));
+      .get("/scheduling/lawyers?active_only=true")
+      .then(({ data }) => setLawyers(data))
+      .catch(() => setLawyers([]));
   }, []);
 
   async function loadSlots() {
-    if (!form.doctor_id || !form.starts_at) return;
+    if (!form.lawyer_id || !form.starts_at) return;
     setLoadingSlots(true);
     try {
       const day = form.starts_at.slice(0, 10);
       const dateFrom = `${day}T00:00:00Z`;
       const dateTo = `${day}T23:59:59Z`;
       const { data } = await api.get(
-        `/scheduling/slots?doctor_id=${form.doctor_id}&date_from=${dateFrom}&date_to=${dateTo}`,
+        `/scheduling/slots?lawyer_id=${form.lawyer_id}&date_from=${dateFrom}&date_to=${dateTo}`,
       );
       setSlots(data);
     } catch {
@@ -1156,17 +1156,17 @@ function ConvertLeadModal({
   useEffect(() => {
     if (createAppt) loadSlots();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.doctor_id, form.starts_at, createAppt]);
+  }, [form.lawyer_id, form.starts_at, createAppt]);
 
   async function submit() {
     setSaving(true);
     try {
       const body: Record<string, unknown> = {
-        patient_name: form.patient_name || null,
-        appointment_notes: form.appointment_notes || null,
+        client_name: form.client_name || null,
+        consultation_notes: form.consultation_notes || null,
       };
-      if (createAppt && form.doctor_id && form.starts_at) {
-        body.doctor_id = form.doctor_id;
+      if (createAppt && form.lawyer_id && form.starts_at) {
+        body.lawyer_id = form.lawyer_id;
         body.starts_at = form.starts_at;
       }
       await api.post(`/leads/${lead.id}/convert`, body);
@@ -1187,8 +1187,8 @@ function ConvertLeadModal({
 
       <Field label="Nome do cliente">
         <input
-          value={form.patient_name}
-          onChange={(e) => setForm({ ...form, patient_name: e.target.value })}
+          value={form.client_name}
+          onChange={(e) => setForm({ ...form, client_name: e.target.value })}
           className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
         />
       </Field>
@@ -1206,12 +1206,12 @@ function ConvertLeadModal({
         <div className="space-y-3 border-l-2 border-selo/40 pl-3 ml-1">
           <Field label="Advogado *">
             <select
-              value={form.doctor_id}
-              onChange={(e) => setForm({ ...form, doctor_id: e.target.value })}
+              value={form.lawyer_id}
+              onChange={(e) => setForm({ ...form, lawyer_id: e.target.value })}
               className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
             >
               <option value="">Selecione...</option>
-              {doctors.map((d) => (
+              {lawyers.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.full_name}
                 </option>
@@ -1229,7 +1229,7 @@ function ConvertLeadModal({
             />
           </Field>
 
-          {form.doctor_id && form.starts_at.slice(0, 10) && (
+          {form.lawyer_id && form.starts_at.slice(0, 10) && (
             <Field label="Horário disponível *">
               {loadingSlots ? (
                 <p className="text-sm text-parchment-faint">Buscando horários...</p>
@@ -1266,9 +1266,9 @@ function ConvertLeadModal({
 
           <Field label="Observações">
             <textarea
-              value={form.appointment_notes}
+              value={form.consultation_notes}
               onChange={(e) =>
-                setForm({ ...form, appointment_notes: e.target.value })
+                setForm({ ...form, consultation_notes: e.target.value })
               }
               rows={2}
               className="w-full border border-line bg-ink/60 text-parchment rounded-sm px-3 py-2 text-sm focus:border-carimbo focus:ring-1 focus:ring-carimbo focus:outline-none"
@@ -1282,7 +1282,7 @@ function ConvertLeadModal({
           Cancelar
         </button>
         <button
-          disabled={saving || (createAppt && (!form.doctor_id || !form.starts_at.includes("T") || form.starts_at.endsWith("T00:00:00")))}
+          disabled={saving || (createAppt && (!form.lawyer_id || !form.starts_at.includes("T") || form.starts_at.endsWith("T00:00:00")))}
           onClick={submit}
           className="bg-jade text-parchment px-4 py-2 rounded-sm text-sm font-semibold hover:bg-jade/80 disabled:opacity-50"
         >

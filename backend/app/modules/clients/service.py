@@ -1,63 +1,63 @@
-"""Patient business logic."""
+"""Client business logic."""
 import uuid
 from datetime import datetime, timezone
 
 from sqlalchemy import select, or_, and_, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.crm.models import Patient, PatientContact
+from app.modules.clients.models import Client, ClientContact
 
 
 # ---------------------------------------------------------------------------
-# Patients
+# Clients
 # ---------------------------------------------------------------------------
 
-async def get_all_patients(
+async def get_all_clients(
     db: AsyncSession,
     status: str | None = None,
     search: str | None = None,
-) -> list[Patient]:
-    query = select(Patient).order_by(Patient.created_at.desc())
+) -> list[Client]:
+    query = select(Client).order_by(Client.created_at.desc())
     if status:
-        query = query.where(Patient.crm_status == status)
+        query = query.where(Client.client_status == status)
     if search:
         pattern = f"%{search}%"
         query = query.where(
             or_(
-                Patient.full_name.ilike(pattern),
-                Patient.phone.ilike(pattern),
-                Patient.email.ilike(pattern),
+                Client.full_name.ilike(pattern),
+                Client.phone.ilike(pattern),
+                Client.email.ilike(pattern),
             )
         )
     result = await db.execute(query)
     return list(result.scalars().unique().all())
 
 
-async def get_patient_by_id(db: AsyncSession, patient_id: uuid.UUID) -> Patient | None:
-    result = await db.execute(select(Patient).where(Patient.id == patient_id))
+async def get_client_by_id(db: AsyncSession, client_id: uuid.UUID) -> Client | None:
+    result = await db.execute(select(Client).where(Client.id == client_id))
     return result.scalar_one_or_none()
 
 
-async def get_patient_by_phone(db: AsyncSession, phone: str) -> Patient | None:
-    """Find patient by phone — searches both patients.phone and patient_contacts."""
+async def get_client_by_phone(db: AsyncSession, phone: str) -> Client | None:
+    """Find client by phone — searches both clients.phone and client_contacts."""
     # First try the legacy column
-    result = await db.execute(select(Patient).where(Patient.phone == phone))
-    patient = result.scalar_one_or_none()
-    if patient:
-        return patient
-    # Then try patient_contacts
-    return await get_patient_by_contact(db, "whatsapp", phone)
+    result = await db.execute(select(Client).where(Client.phone == phone))
+    client = result.scalar_one_or_none()
+    if client:
+        return client
+    # Then try client_contacts
+    return await get_client_by_contact(db, "whatsapp", phone)
 
 
-async def get_patient_by_contact(db: AsyncSession, channel: str, value: str) -> Patient | None:
-    """Find a patient via any of their linked contact channels."""
+async def get_client_by_contact(db: AsyncSession, channel: str, value: str) -> Client | None:
+    """Find a client via any of their linked contact channels."""
     result = await db.execute(
-        select(Patient)
-        .join(PatientContact, PatientContact.patient_id == Patient.id)
+        select(Client)
+        .join(ClientContact, ClientContact.client_id == Client.id)
         .where(
             and_(
-                PatientContact.channel == channel,
-                PatientContact.value == value,
+                ClientContact.channel == channel,
+                ClientContact.value == value,
             )
         )
         .limit(1)
@@ -65,7 +65,7 @@ async def get_patient_by_contact(db: AsyncSession, channel: str, value: str) -> 
     return result.scalar_one_or_none()
 
 
-async def create_patient(
+async def create_client(
     db: AsyncSession,
     phone: str,
     full_name: str | None = None,
@@ -73,8 +73,8 @@ async def create_patient(
     channel: str = "whatsapp",
     channel_id: str | None = None,
     notes: str | None = None,
-) -> Patient:
-    patient = Patient(
+) -> Client:
+    client = Client(
         full_name=full_name,
         phone=phone,
         email=email,
@@ -82,12 +82,12 @@ async def create_patient(
         channel_id=channel_id,
         notes=notes,
     )
-    db.add(patient)
-    await db.flush()  # get patient.id before adding contact
+    db.add(client)
+    await db.flush()  # get client.id before adding contact
 
-    # Register contact in patient_contacts
-    contact = PatientContact(
-        patient_id=patient.id,
+    # Register contact in client_contacts
+    contact = ClientContact(
+        client_id=client.id,
         channel=channel,
         value=phone,
         is_primary=True,
@@ -95,54 +95,54 @@ async def create_patient(
     db.add(contact)
 
     await db.commit()
-    await db.refresh(patient)
-    return patient
+    await db.refresh(client)
+    return client
 
 
-async def update_patient(
+async def update_client(
     db: AsyncSession,
-    patient: Patient,
+    client: Client,
     full_name: str | None = None,
     phone: str | None = None,
     email: str | None = None,
-    crm_status: str | None = None,
+    client_status: str | None = None,
     notes: str | None = None,
-) -> Patient:
+) -> Client:
     if full_name is not None:
-        patient.full_name = full_name
+        client.full_name = full_name
     if phone is not None:
-        patient.phone = phone
+        client.phone = phone
     if email is not None:
-        patient.email = email
-    if crm_status is not None:
-        patient.crm_status = crm_status
+        client.email = email
+    if client_status is not None:
+        client.client_status = client_status
     if notes is not None:
-        patient.notes = notes
+        client.notes = notes
     await db.commit()
-    await db.refresh(patient)
-    return patient
+    await db.refresh(client)
+    return client
 
 
-async def add_patient_contact(
+async def add_client_contact(
     db: AsyncSession,
-    patient_id: uuid.UUID,
+    client_id: uuid.UUID,
     channel: str,
     value: str,
     is_primary: bool = False,
-) -> PatientContact:
-    """Add a new contact channel to a patient. Ignores if already exists."""
+) -> ClientContact:
+    """Add a new contact channel to a client. Ignores if already exists."""
     existing = await db.execute(
-        select(PatientContact).where(
-            PatientContact.channel == channel,
-            PatientContact.value == value,
+        select(ClientContact).where(
+            ClientContact.channel == channel,
+            ClientContact.value == value,
         )
     )
     if existing.scalar_one_or_none():
-        # Already registered (possibly to another patient) — do nothing
+        # Already registered (possibly to another client) — do nothing
         return existing.scalar_one_or_none()  # type: ignore[return-value]
 
-    contact = PatientContact(
-        patient_id=patient_id,
+    contact = ClientContact(
+        client_id=client_id,
         channel=channel,
         value=value,
         is_primary=is_primary,
@@ -157,73 +157,73 @@ async def add_patient_contact(
 # Merge
 # ---------------------------------------------------------------------------
 
-async def merge_patients(
+async def merge_clients(
     db: AsyncSession,
     source_id: uuid.UUID,
     target_id: uuid.UUID,
-) -> Patient:
+) -> Client:
     """
-    Merge source patient into target patient.
-    All leads, contacts, conversations and appointments from source are
+    Merge source client into target client.
+    All leads, contacts, conversations and consultations from source are
     re-linked to target. Source record is then deleted.
     """
     from sqlalchemy import update as sa_update
     from app.modules.leads.models import Lead
-    from app.modules.scheduling.models import Appointment
+    from app.modules.scheduling.models import Consultation
     from app.modules.messaging.models import Conversation
 
-    source = await get_patient_by_id(db, source_id)
-    target = await get_patient_by_id(db, target_id)
+    source = await get_client_by_id(db, source_id)
+    target = await get_client_by_id(db, target_id)
 
     if not source or not target:
-        raise ValueError("Paciente não encontrado")
+        raise ValueError("Cliente não encontrado")
 
-    # Migrate leads (patient_id and converted_patient_id)
+    # Migrate leads (client_id and converted_client_id)
     await db.execute(
         sa_update(Lead)
-        .where(Lead.patient_id == source_id)
-        .values(patient_id=target_id)
+        .where(Lead.client_id == source_id)
+        .values(client_id=target_id)
     )
     await db.execute(
         sa_update(Lead)
-        .where(Lead.converted_patient_id == source_id)
-        .values(converted_patient_id=target_id)
+        .where(Lead.converted_client_id == source_id)
+        .values(converted_client_id=target_id)
     )
 
-    # Migrate appointments
+    # Migrate consultations
     try:
         await db.execute(
-            sa_update(Appointment)
-            .where(Appointment.patient_id == source_id)
-            .values(patient_id=target_id)
+            sa_update(Consultation)
+            .where(Consultation.client_id == source_id)
+            .values(client_id=target_id)
         )
     except Exception:
-        pass  # Appointment may not have this column yet
+        pass  # Consultation may not have this column yet
 
     # Migrate conversations
     try:
         await db.execute(
             sa_update(Conversation)
-            .where(Conversation.patient_id == source_id)
-            .values(patient_id=target_id)
+            .where(Conversation.client_id == source_id)
+            .values(client_id=target_id)
         )
     except Exception:
         pass
 
-    # Migrate patient_contacts (avoiding duplicates)
+    # Migrate client_contacts (avoiding duplicates)
     contacts_result = await db.execute(
-        select(PatientContact).where(PatientContact.patient_id == source_id)
+        select(ClientContact).where(ClientContact.client_id == source_id)
     )
     for contact in contacts_result.scalars().all():
         existing = await db.execute(
-            select(PatientContact).where(
-                PatientContact.channel == contact.channel,
-                PatientContact.value == contact.value,
-                PatientContact.patient_id == target_id,
+            select(ClientContact).where(
+                ClientContact.channel == contact.channel,
+                ClientContact.value == contact.value,
+                ClientContact.client_id == target_id,
             )
         )
         if not existing.scalar_one_or_none():
-            contact.patient_id = target_id
+            contact.client_id = target_id
         else:
             await db.delete(contact)
 
@@ -245,32 +245,32 @@ async def merge_patients(
 
 
 # ---------------------------------------------------------------------------
-# Unmatched leads (no patient_id) — for the "pending unification" section
+# Unmatched leads (no client_id) — for the "pending unification" section
 # ---------------------------------------------------------------------------
 
 async def get_unmatched_leads(db: AsyncSession, limit: int = 50):
-    """Return recent leads that have not been linked to any patient yet."""
+    """Return recent leads that have not been linked to any client yet."""
     from app.modules.leads.models import Lead
     result = await db.execute(
         select(Lead)
-        .where(Lead.patient_id.is_(None))
+        .where(Lead.client_id.is_(None))
         .order_by(Lead.created_at.desc())
         .limit(limit)
     )
     return list(result.scalars().unique().all())
 
 
-async def link_lead_to_patient(
+async def link_lead_to_client(
     db: AsyncSession,
     lead_id: uuid.UUID,
-    patient_id: uuid.UUID,
+    client_id: uuid.UUID,
 ) -> None:
-    """Link a lead to an existing patient (manual unification)."""
+    """Link a lead to an existing client (manual unification)."""
     from app.modules.leads.models import Lead
     from sqlalchemy import update as sa_update
     await db.execute(
         sa_update(Lead)
         .where(Lead.id == lead_id)
-        .values(patient_id=patient_id)
+        .values(client_id=client_id)
     )
     await db.commit()

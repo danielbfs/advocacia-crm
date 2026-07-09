@@ -29,7 +29,7 @@ class LeadAgentConfigSchema(BaseModel):
     proactive_delay_minutes: int = 0
     inactivity_followup_message: str | None = None
     auto_lost_after_hours: int = 72
-    convert_on_appointment: bool = True
+    convert_on_consultation: bool = True
 
     model_config = {"from_attributes": True}
 
@@ -79,7 +79,7 @@ class SupervisorConfigSchema(BaseModel):
 
 
 class LeadAIGlobalConfigSchema(BaseModel):
-    convert_on_appointment: bool = True
+    convert_on_consultation: bool = True
     delay_between_leads_minutes: int = 0
 
 

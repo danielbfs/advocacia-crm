@@ -1,4 +1,4 @@
-"""Admin setup endpoints — clinic settings, Telegram webhook, integrations status."""
+"""Admin setup endpoints — firm settings, Telegram webhook, integrations status."""
 import logging
 import uuid
 from dataclasses import dataclass
@@ -44,8 +44,8 @@ class WhatsAppWebhookResult(BaseModel):
     webhook_url: str
 
 
-class ClinicSettings(BaseModel):
-    name: str = "Minha Clínica"
+class FirmSettings(BaseModel):
+    name: str = "Meu Escritório"
     timezone: str = "America/Sao_Paulo"
     phone: str = ""
     address: str = ""
@@ -76,7 +76,7 @@ class NotificationsSettings(BaseModel):
 
 
 class AllSettings(BaseModel):
-    clinic: ClinicSettings
+    firm: FirmSettings
     sla: SLASettings
     ai: AISettings
     chatbot: ChatbotSettings
@@ -127,10 +127,10 @@ async def _set_config(db: AsyncSession, key: str, value: dict, user_id=None) -> 
 
 @router.get("/branding")
 async def get_branding(db: AsyncSession = Depends(get_db)):
-    """Endpoint público — retorna nome e logo da clínica para exibição no header."""
-    clinic_raw = await _get_config(db, "clinic_info")
-    name = clinic_raw.get("name", "Open Clinic AI") if clinic_raw else "Open Clinic AI"
-    logo_url = clinic_raw.get("logo_url", "") if clinic_raw else ""
+    """Endpoint público — retorna nome e logo do escritório para exibição no header."""
+    firm_raw = await _get_config(db, "firm_info")
+    name = firm_raw.get("name", "AdvocacIA CRM") if firm_raw else "AdvocacIA CRM"
+    logo_url = firm_raw.get("logo_url", "") if firm_raw else ""
     return {"name": name, "logo_url": logo_url}
 
 
@@ -205,14 +205,14 @@ async def get_all_settings(
     current_user: User = Depends(require_role("admin")),
     db: AsyncSession = Depends(get_db),
 ):
-    clinic_raw = await _get_config(db, "clinic_info")
+    firm_raw = await _get_config(db, "firm_info")
     sla_raw = await _get_config(db, "sla")
     ai_raw = await _get_config(db, "ai_provider")
     chatbot_raw = await _get_config(db, "chatbot")
     notif_raw = await _get_config(db, "notifications")
 
     return AllSettings(
-        clinic=ClinicSettings(**clinic_raw) if clinic_raw else ClinicSettings(),
+        firm=FirmSettings(**firm_raw) if firm_raw else FirmSettings(),
         sla=SLASettings(**sla_raw) if sla_raw else SLASettings(),
         ai=AISettings(**ai_raw) if ai_raw else AISettings(),
         chatbot=ChatbotSettings(**chatbot_raw) if chatbot_raw else ChatbotSettings(),
@@ -222,18 +222,18 @@ async def get_all_settings(
     )
 
 
-@router.patch("/settings/clinic", response_model=ClinicSettings)
-async def update_clinic_settings(
-    payload: ClinicSettings,
+@router.patch("/settings/firm", response_model=FirmSettings)
+async def update_firm_settings(
+    payload: FirmSettings,
     request: Request,
     current_user: User = Depends(require_role("admin")),
     db: AsyncSession = Depends(get_db),
 ):
     data = payload.model_dump()
-    await _set_config(db, "clinic_info", data, current_user.id)
+    await _set_config(db, "firm_info", data, current_user.id)
     await log_action(
         db,
-        action="settings.clinic.update",
+        action="settings.firm.update",
         user_id=current_user.id,
         entity_type="system_config",
         payload=data,
@@ -483,8 +483,8 @@ async def list_audit_logs(
 # ── Test chat ─────────────────────────────────────────────────────────────────
 
 @dataclass
-class _TestPatient:
-    """Paciente virtual para sessões de teste. Não é persistido no banco."""
+class _TestClient:
+    """Cliente virtual para sessões de teste. Não é persistido no banco."""
     id: uuid.UUID
     full_name: str = "Admin (Teste)"
 
@@ -496,7 +496,7 @@ async def test_chat(
     db: AsyncSession = Depends(get_db),
 ):
     """Envia uma mensagem para a IA usando o mesmo engine do Telegram/WhatsApp.
-    A sessão é armazenada no Redis com TTL de 24h e não cria pacientes reais.
+    A sessão é armazenada no Redis com TTL de 24h e não cria clientes reais.
     """
     from app.modules.ai.engine import process_message
 
@@ -505,8 +505,8 @@ async def test_chat(
     except ValueError:
         session_uuid = uuid.uuid4()
 
-    patient = _TestPatient(id=session_uuid)
-    response = await process_message(db, patient, body.message)  # type: ignore[arg-type]
+    client = _TestClient(id=session_uuid)
+    response = await process_message(db, client, body.message)  # type: ignore[arg-type]
     return {"response": response, "session_id": str(session_uuid)}
 
 

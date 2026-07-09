@@ -32,7 +32,7 @@ async def is_messaging_allowed(db: AsyncSession) -> bool:
     if not config.get("enabled", True):
         return True
 
-    tz_name = config.get("timezone", settings.CLINIC_TIMEZONE)
+    tz_name = config.get("timezone", settings.FIRM_TIMEZONE)
     try:
         tz = ZoneInfo(tz_name)
     except (ZoneInfoNotFoundError, Exception):
@@ -70,7 +70,7 @@ async def next_allowed_window(db: AsyncSession) -> str | None:
     if not config.get("enabled", True):
         return None
 
-    tz_name = config.get("timezone", settings.CLINIC_TIMEZONE)
+    tz_name = config.get("timezone", settings.FIRM_TIMEZONE)
     try:
         tz = ZoneInfo(tz_name)
     except Exception:

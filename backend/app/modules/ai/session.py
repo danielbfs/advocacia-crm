@@ -22,14 +22,14 @@ async def get_redis() -> aioredis.Redis:
     return _redis
 
 
-def _session_key(patient_id: uuid.UUID) -> str:
-    return f"session:{patient_id}"
+def _session_key(client_id: uuid.UUID) -> str:
+    return f"session:{client_id}"
 
 
-async def load_session(patient_id: uuid.UUID) -> list[dict]:
+async def load_session(client_id: uuid.UUID) -> list[dict]:
     """Load conversation history from Redis."""
     r = await get_redis()
-    key = _session_key(patient_id)
+    key = _session_key(client_id)
     data = await r.get(key)
     if not data:
         return []
@@ -40,15 +40,15 @@ async def load_session(patient_id: uuid.UUID) -> list[dict]:
         return []
 
 
-async def save_session(patient_id: uuid.UUID, messages: list[dict]) -> None:
+async def save_session(client_id: uuid.UUID, messages: list[dict]) -> None:
     """Save conversation history to Redis with TTL."""
     r = await get_redis()
-    key = _session_key(patient_id)
+    key = _session_key(client_id)
     trimmed = messages[-MAX_HISTORY:]
     await r.setex(key, SESSION_TTL, json.dumps(trimmed, ensure_ascii=False))
 
 
-async def clear_session(patient_id: uuid.UUID) -> None:
-    """Clear a patient's conversation session."""
+async def clear_session(client_id: uuid.UUID) -> None:
+    """Clear a client's conversation session."""
     r = await get_redis()
-    await r.delete(_session_key(patient_id))
+    await r.delete(_session_key(client_id))

@@ -1,6 +1,6 @@
 export interface MessagingConversation {
   id: string;
-  patient_id: string | null;
+  client_id: string | null;
   lead_id: string | null;
   channel: 'telegram' | 'whatsapp';
   control: 'ai' | 'human';

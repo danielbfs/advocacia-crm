@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import type { Doctor } from "@/types";
+import type { Lawyer } from "@/types";
 
-interface Appointment {
+interface Consultation {
   id: string;
-  patient_id: string;
-  doctor_id: string;
+  client_id: string;
+  lawyer_id: string;
   starts_at: string;
   ends_at: string;
   status: string;
@@ -19,8 +19,8 @@ interface Appointment {
 interface Slot {
   starts_at: string;
   ends_at: string;
-  doctor_id?: string;
-  doctor_name?: string;
+  lawyer_id?: string;
+  lawyer_name?: string;
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -39,9 +39,9 @@ const STATUS_COLORS: Record<string, string> = {
   no_show: "bg-selo/15 text-selo",
 };
 
-export default function AppointmentsPage() {
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
+export default function ConsultationsPage() {
+  const [consultations, setConsultations] = useState<Consultation[]>([]);
+  const [lawyers, setLawyers] = useState<Lawyer[]>([]);
   const [loading, setLoading] = useState(true);
   const [hideCancelled, setHideCancelled] = useState(true);
 
@@ -49,8 +49,8 @@ export default function AppointmentsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [createStep, setCreateStep] = useState(1); // 1=form, 2=pick slot
   const [createForm, setCreateForm] = useState({
-    patient_phone: "",
-    doctor_id: "",
+    client_phone: "",
+    lawyer_id: "",
     date: "",
     notes: "",
   });
@@ -68,25 +68,25 @@ export default function AppointmentsPage() {
 
   async function fetchData() {
     try {
-      const [apptRes, docsRes] = await Promise.allSettled([
-        api.get("/scheduling/appointments"),
-        api.get("/scheduling/doctors?active_only=true"),
+      const [consultRes, lawyersRes] = await Promise.allSettled([
+        api.get("/scheduling/consultations"),
+        api.get("/scheduling/lawyers?active_only=true"),
       ]);
-      if (apptRes.status === "fulfilled") setAppointments(apptRes.value.data);
-      if (docsRes.status === "fulfilled") setDoctors(docsRes.value.data);
+      if (consultRes.status === "fulfilled") setConsultations(consultRes.value.data);
+      if (lawyersRes.status === "fulfilled") setLawyers(lawyersRes.value.data);
     } finally {
       setLoading(false);
     }
   }
 
   async function searchSlots() {
-    if (!createForm.doctor_id || !createForm.date) return;
+    if (!createForm.lawyer_id || !createForm.date) return;
     setLoadingSlots(true);
     try {
       const dateFrom = `${createForm.date}T00:00:00Z`;
       const dateTo = `${createForm.date}T23:59:59Z`;
       const { data } = await api.get(
-        `/scheduling/slots?doctor_id=${createForm.doctor_id}&date_from=${dateFrom}&date_to=${dateTo}`
+        `/scheduling/slots?lawyer_id=${createForm.lawyer_id}&date_from=${dateFrom}&date_to=${dateTo}`
       );
       setSlots(data);
       setCreateStep(2);
@@ -97,29 +97,29 @@ export default function AppointmentsPage() {
     }
   }
 
-  async function createAppointment() {
-    if (!selectedSlot || !createForm.patient_phone) return;
+  async function createConsultation() {
+    if (!selectedSlot || !createForm.client_phone) return;
     setSaving(true);
     try {
-      // First find or note patient by phone
-      const patientsRes = await api.get(`/patients/?search=${encodeURIComponent(createForm.patient_phone)}`);
-      const patients = patientsRes.data;
+      // First find or note client by phone
+      const clientsRes = await api.get(`/clients/?search=${encodeURIComponent(createForm.client_phone)}`);
+      const clients = clientsRes.data;
 
-      let patientId: string;
-      if (patients.length > 0) {
-        patientId = patients[0].id;
+      let clientId: string;
+      if (clients.length > 0) {
+        clientId = clients[0].id;
       } else {
-        // Create patient
-        const newPatient = await api.post("/patients/", {
-          phone: createForm.patient_phone,
+        // Create client
+        const newClient = await api.post("/clients/", {
+          phone: createForm.client_phone,
           channel: "whatsapp",
         });
-        patientId = newPatient.data.id;
+        clientId = newClient.data.id;
       }
 
-      await api.post("/scheduling/appointments", {
-        patient_id: patientId,
-        doctor_id: createForm.doctor_id,
+      await api.post("/scheduling/consultations", {
+        client_id: clientId,
+        lawyer_id: createForm.lawyer_id,
         starts_at: selectedSlot.starts_at,
         ends_at: selectedSlot.ends_at,
         notes: createForm.notes || null,
@@ -128,7 +128,7 @@ export default function AppointmentsPage() {
 
       setShowCreate(false);
       setCreateStep(1);
-      setCreateForm({ patient_phone: "", doctor_id: "", date: "", notes: "" });
+      setCreateForm({ client_phone: "", lawyer_id: "", date: "", notes: "" });
       setSelectedSlot(null);
       setSlots([]);
       fetchData();
@@ -139,10 +139,10 @@ export default function AppointmentsPage() {
     }
   }
 
-  async function updateStatus(apptId: string, newStatus: string) {
-    setChangingStatus(apptId);
+  async function updateStatus(consultId: string, newStatus: string) {
+    setChangingStatus(consultId);
     try {
-      await api.patch(`/scheduling/appointments/${apptId}`, { status: newStatus });
+      await api.patch(`/scheduling/consultations/${consultId}`, { status: newStatus });
       fetchData();
     } catch {
       alert("Erro ao alterar status.");
@@ -151,20 +151,20 @@ export default function AppointmentsPage() {
     }
   }
 
-  async function cancelAppointment(apptId: string) {
+  async function cancelConsultation(consultId: string) {
     if (!confirm("Deseja cancelar esta consulta?")) return;
     try {
-      await api.delete(`/scheduling/appointments/${apptId}`);
+      await api.delete(`/scheduling/consultations/${consultId}`);
       fetchData();
     } catch {
       alert("Erro ao cancelar.");
     }
   }
 
-  const doctorName = (id: string) => doctors.find((d) => d.id === id)?.full_name || "—";
-  const visibleAppointments = hideCancelled
-    ? appointments.filter((a) => a.status !== "cancelled")
-    : appointments;
+  const lawyerName = (id: string) => lawyers.find((d) => d.id === id)?.full_name || "—";
+  const visibleConsultations = hideCancelled
+    ? consultations.filter((a) => a.status !== "cancelled")
+    : consultations;
 
   return (
     <main className="p-8">
@@ -204,8 +204,8 @@ export default function AppointmentsPage() {
                 <div>
                   <label className="block text-xs text-parchment-dim mb-1">Telefone do Cliente *</label>
                   <input
-                    value={createForm.patient_phone}
-                    onChange={(e) => setCreateForm({ ...createForm, patient_phone: e.target.value })}
+                    value={createForm.client_phone}
+                    onChange={(e) => setCreateForm({ ...createForm, client_phone: e.target.value })}
                     required
                     className="w-full border border-line rounded-sm px-3 py-2 text-sm"
                     placeholder="11999999999"
@@ -214,12 +214,12 @@ export default function AppointmentsPage() {
                 <div>
                   <label className="block text-xs text-parchment-dim mb-1">Advogado *</label>
                   <select
-                    value={createForm.doctor_id}
-                    onChange={(e) => setCreateForm({ ...createForm, doctor_id: e.target.value })}
+                    value={createForm.lawyer_id}
+                    onChange={(e) => setCreateForm({ ...createForm, lawyer_id: e.target.value })}
                     className="w-full border border-line rounded-sm px-3 py-2 text-sm"
                   >
                     <option value="">Selecione...</option>
-                    {doctors.map((d) => (
+                    {lawyers.map((d) => (
                       <option key={d.id} value={d.id}>{d.full_name}</option>
                     ))}
                   </select>
@@ -245,7 +245,7 @@ export default function AppointmentsPage() {
               </div>
               <button
                 onClick={searchSlots}
-                disabled={!createForm.doctor_id || !createForm.date || !createForm.patient_phone || loadingSlots}
+                disabled={!createForm.lawyer_id || !createForm.date || !createForm.client_phone || loadingSlots}
                 className="bg-carimbo text-parchment px-4 py-2 rounded-sm text-sm font-semibold hover:bg-carimbo-bright disabled:opacity-50"
               >
                 {loadingSlots ? "Buscando..." : "Ver Horários Disponíveis"}
@@ -287,7 +287,7 @@ export default function AppointmentsPage() {
               )}
               {selectedSlot && (
                 <button
-                  onClick={createAppointment}
+                  onClick={createConsultation}
                   disabled={saving}
                   className="bg-jade text-ink px-4 py-2 rounded-sm text-sm font-semibold hover:opacity-90 disabled:opacity-50"
                 >
@@ -299,12 +299,12 @@ export default function AppointmentsPage() {
         </div>
       )}
 
-      {/* Appointments List */}
+      {/* Consultations List */}
       {loading ? (
         <p className="text-parchment-faint">Carregando...</p>
-      ) : visibleAppointments.length === 0 ? (
+      ) : visibleConsultations.length === 0 ? (
         <p className="text-parchment-faint">
-          {hideCancelled && appointments.some((a) => a.status === "cancelled")
+          {hideCancelled && consultations.some((a) => a.status === "cancelled")
             ? "Nenhuma consulta ativa. Desmarque \"Ocultar cancelados\" para ver todos."
             : "Nenhuma consulta encontrada."}
         </p>
@@ -321,7 +321,7 @@ export default function AppointmentsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
-              {visibleAppointments.map((appt) => (
+              {visibleConsultations.map((appt) => (
                 <tr key={appt.id} className="hover:bg-ink-3">
                   <td className="px-4 py-3">
                     <div className="font-medium text-parchment">
@@ -337,7 +337,7 @@ export default function AppointmentsPage() {
                       {new Date(appt.ends_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-parchment-dim">{doctorName(appt.doctor_id)}</td>
+                  <td className="px-4 py-3 text-parchment-dim">{lawyerName(appt.lawyer_id)}</td>
                   <td className="px-4 py-3">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[appt.status] || "bg-ink-3 text-parchment-dim"}`}>
                       {STATUS_LABELS[appt.status] || appt.status}
@@ -358,7 +358,7 @@ export default function AppointmentsPage() {
                             Confirmar
                           </button>
                           <button
-                            onClick={() => cancelAppointment(appt.id)}
+                            onClick={() => cancelConsultation(appt.id)}
                             className="text-xs text-carimbo-bright hover:underline"
                           >
                             Cancelar
@@ -382,7 +382,7 @@ export default function AppointmentsPage() {
                             No-show
                           </button>
                           <button
-                            onClick={() => cancelAppointment(appt.id)}
+                            onClick={() => cancelConsultation(appt.id)}
                             className="text-xs text-carimbo-bright hover:underline"
                           >
                             Cancelar

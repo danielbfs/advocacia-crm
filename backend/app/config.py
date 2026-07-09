@@ -47,9 +47,9 @@ class Settings(BaseSettings):
     EVOLUTION_API_KEY: str = ""
     EVOLUTION_INSTANCE_NAME: str = ""
 
-    # Clínica
-    CLINIC_TIMEZONE: str = "America/Sao_Paulo"
-    CLINIC_SLA_HOURS: int = 2
+    # Escritório
+    FIRM_TIMEZONE: str = "America/Sao_Paulo"
+    FIRM_SLA_HOURS: int = 2
 
     # Webhook de leads externos
     LEADS_WEBHOOK_API_KEY: str = ""

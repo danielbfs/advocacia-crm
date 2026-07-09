@@ -26,9 +26,9 @@ def send_followup_message(self, job_id: str):
 async def _send_followup(task, job_id: str):
     from app.modules.leads.ai_tasks import _celery_db_session
     from app.modules.followup.models import FollowupJob
-    from app.modules.crm.models import Patient
+    from app.modules.clients.models import Client
     from app.modules.leads.models import Lead
-    from app.modules.scheduling.models import Appointment
+    from app.modules.scheduling.models import Consultation
     from app.modules.messaging.gateway import send_message
     from app.config import settings
     from sqlalchemy import select
@@ -49,62 +49,62 @@ async def _send_followup(task, job_id: str):
             logger.info("Job %s already processed (status=%s)", job_id, job.status)
             return
 
-        # Load target (Patient or Lead)
+        # Load target (Client or Lead)
         target = None
-        if job.patient_id:
-            target = await db.get(Patient, job.patient_id)
+        if job.client_id:
+            target = await db.get(Client, job.client_id)
         elif job.lead_id:
             target = await db.get(Lead, job.lead_id)
 
         if not target:
             job.status = "failed"
-            job.error_message = "Patient or Lead not found"
+            job.error_message = "Client or Lead not found"
             job.executed_at = datetime.now(timezone.utc)
             await db.commit()
             return
 
-        # Load appointment with doctor and specialty relationships
-        appointment = None
-        if job.appointment_id:
-            appt_result = await db.execute(
-                select(Appointment)
+        # Load consultation with lawyer and practice area relationships
+        consultation = None
+        if job.consultation_id:
+            consultation_result = await db.execute(
+                select(Consultation)
                 .options(
-                    joinedload(Appointment.doctor),
-                    joinedload(Appointment.specialty),
+                    joinedload(Consultation.lawyer),
+                    joinedload(Consultation.practice_area),
                 )
-                .where(Appointment.id == job.appointment_id)
+                .where(Consultation.id == job.consultation_id)
             )
-            appointment = appt_result.scalar_one_or_none()
+            consultation = consultation_result.scalar_one_or_none()
 
         # Render template — replace all supported variables
         rule = job.rule
         message = rule.message_template
-        clinic_tz = ZoneInfo(settings.CLINIC_TIMEZONE)
+        firm_tz = ZoneInfo(settings.FIRM_TIMEZONE)
 
-        message = message.replace("{patient_name}", target.full_name or target.phone)
+        message = message.replace("{client_name}", target.full_name or target.phone)
 
-        if appointment:
-            appt_local = appointment.starts_at.astimezone(clinic_tz)
+        if consultation:
+            consultation_local = consultation.starts_at.astimezone(firm_tz)
             message = message.replace(
-                "{appointment_date}",
-                appt_local.strftime("%d/%m/%Y às %H:%M"),
+                "{consultation_date}",
+                consultation_local.strftime("%d/%m/%Y às %H:%M"),
             )
             message = message.replace(
-                "{doctor_name}",
-                appointment.doctor.full_name if appointment.doctor else "",
+                "{lawyer_name}",
+                consultation.lawyer.full_name if consultation.lawyer else "",
             )
             message = message.replace(
-                "{specialty}",
-                appointment.specialty.name if appointment.specialty else "",
+                "{practice_area}",
+                consultation.practice_area.name if consultation.practice_area else "",
             )
         else:
-            # Remove placeholders gracefully if no appointment
-            for var in ("{appointment_date}", "{doctor_name}", "{specialty}"):
+            # Remove placeholders gracefully if no consultation
+            for var in ("{consultation_date}", "{lawyer_name}", "{practice_area}"):
                 message = message.replace(var, "")
 
         # Determine channel
         channel = rule.channel or target.channel
-        
+
         chat_id = None
         if hasattr(target, "channel_id") and target.channel_id:
             chat_id = target.channel_id
@@ -113,7 +113,7 @@ async def _send_followup(task, job_id: str):
 
         if not chat_id:
             job.status = "failed"
-            job.error_message = "Patient has no channel_id"
+            job.error_message = "Client has no channel_id"
             job.executed_at = datetime.now(timezone.utc)
             await db.commit()
             return

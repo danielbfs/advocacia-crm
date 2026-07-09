@@ -35,11 +35,11 @@ class FollowupJob(Base):
     rule_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("followup_rules.id"), nullable=False
     )
-    appointment_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("appointments.id"), nullable=True
+    consultation_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("consultations.id"), nullable=True
     )
-    patient_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=True
+    client_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("clients.id"), nullable=True
     )
     lead_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("leads.id", ondelete="CASCADE"), nullable=True
@@ -51,6 +51,6 @@ class FollowupJob(Base):
     executed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     rule = relationship("FollowupRule", lazy="joined")
-    appointment = relationship("Appointment", lazy="joined")
-    patient = relationship("Patient", lazy="joined")
+    consultation = relationship("Consultation", lazy="joined")
+    client = relationship("Client", lazy="joined")
     lead = relationship("Lead", lazy="joined")

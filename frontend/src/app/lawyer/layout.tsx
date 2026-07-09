@@ -7,16 +7,16 @@ import { AppHeader } from "@/components/app-header";
 import { Scale } from "lucide-react";
 
 const NAV_ITEMS = [
-  { href: "/doctor", label: "Minha Agenda" },
-  { href: "/doctor/patients", label: "Meus Clientes" },
-  { href: "/doctor/schedule", label: "Meus Horários" },
+  { href: "/lawyer", label: "Minha Agenda" },
+  { href: "/lawyer/patients", label: "Meus Clientes" },
+  { href: "/lawyer/schedule", label: "Meus Horários" },
 ];
 
-export default function DoctorLayout({ children }: { children: React.ReactNode }) {
+export default function LawyerLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <AuthGuard allowedRoles={["doctor", "admin"]}>
+    <AuthGuard allowedRoles={["lawyer", "admin"]}>
       <div className="min-h-screen bg-ink">
         <AppHeader />
         <div className="flex">
@@ -31,7 +31,7 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
               </span>
             </div>
             {NAV_ITEMS.map(({ href, label }) => {
-              const active = href === "/doctor" ? pathname === "/doctor" : pathname.startsWith(href);
+              const active = href === "/lawyer" ? pathname === "/lawyer" : pathname.startsWith(href);
               return (
                 <Link
                   key={href}

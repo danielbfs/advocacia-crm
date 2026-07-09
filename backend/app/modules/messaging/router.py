@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
-from app.modules.crm.models import Patient
+from app.modules.clients.models import Client
 from app.modules.messaging.gateway import gateway, send_message
 from app.modules.messaging.schemas import IncomingMessage
 from app.modules.messaging.service import messaging_service
@@ -226,38 +226,38 @@ async def _handle_lead_message(db: AsyncSession, msg: IncomingMessage) -> bool:
 # Common message handler
 # ---------------------------------------------------------------------------
 
-async def get_or_create_patient(
+async def get_or_create_client(
     db: AsyncSession,
     channel: str,
     channel_user_id: str,
     user_name: str | None = None,
-) -> Patient:
+) -> Client:
     result = await db.execute(
-        select(Patient).where(
-            Patient.channel == channel,
-            Patient.channel_id == channel_user_id,
+        select(Client).where(
+            Client.channel == channel,
+            Client.channel_id == channel_user_id,
         )
     )
-    patient = result.scalar_one_or_none()
+    client = result.scalar_one_or_none()
 
-    if patient:
-        if user_name and not patient.full_name:
-            patient.full_name = user_name
+    if client:
+        if user_name and not client.full_name:
+            client.full_name = user_name
             await db.commit()
-            await db.refresh(patient)
-        return patient
+            await db.refresh(client)
+        return client
 
-    patient = Patient(
+    client = Client(
         full_name=user_name,
         phone=f"{channel}:{channel_user_id}",
         channel=channel,
         channel_id=channel_user_id,
-        crm_status="new",
+        client_status="new",
     )
-    db.add(patient)
+    db.add(client)
     await db.commit()
-    await db.refresh(patient)
-    return patient
+    await db.refresh(client)
+    return client
 
 
 async def handle_incoming_message(
@@ -293,8 +293,8 @@ async def handle_incoming_message(
     if handled:
         return {"ok": True}
 
-    # 3. Patient flow (unchanged)
-    patient = await get_or_create_patient(
+    # 3. Client flow (unchanged)
+    client = await get_or_create_client(
         db,
         channel=channel,
         channel_user_id=msg.channel_user_id,
@@ -303,21 +303,21 @@ async def handle_incoming_message(
 
     from app.modules.messaging.models import Conversation, Message
     from datetime import datetime, timezone
-    
+
     now = datetime.now(timezone.utc)
-    
+
     conv_result = await db.execute(
         select(Conversation).where(
             Conversation.channel == channel,
-            Conversation.patient_id == patient.id,
+            Conversation.client_id == client.id,
             Conversation.status == "active",
         )
     )
     conversation = conv_result.scalar_one_or_none()
-    
+
     if not conversation:
         conversation = Conversation(
-            patient_id=patient.id,
+            client_id=client.id,
             channel=channel,
             status="active",
             control="ai",
@@ -339,9 +339,9 @@ async def handle_incoming_message(
 
     try:
         from app.modules.ai.engine import process_message
-        response_text = await process_message(db, patient, msg.text)
+        response_text = await process_message(db, client, msg.text)
     except Exception:
-        logger.exception("AI engine error for patient %s", patient.id)
+        logger.exception("AI engine error for client %s", client.id)
         response_text = (
             "Desculpe, estou com dificuldades no momento. "
             "Por favor, tente novamente em alguns instantes."

@@ -19,7 +19,7 @@ LEAD_TOOL_DEFINITIONS = [
         "type": "function",
         "function": {
             "name": "get_lead_info",
-            "description": "Retorna informações completas do lead atual (nome, especialidade, histórico, status).",
+            "description": "Retorna informações completas do lead atual (nome, área de atuação, histórico, status).",
             "parameters": {"type": "object", "properties": {}},
         },
     },
@@ -28,7 +28,7 @@ LEAD_TOOL_DEFINITIONS = [
         "function": {
             "name": "get_pricing_table",
             "description": (
-                "Retorna a tabela de preços configurada para as especialidades da clínica. "
+                "Retorna a tabela de honorários configurada para as áreas de atuação do escritório. "
                 "Use SEMPRE antes de informar valores ao cliente."
             ),
             "parameters": {"type": "object", "properties": {}},
@@ -49,7 +49,7 @@ LEAD_TOOL_DEFINITIONS = [
                         "type": "string",
                         "description": (
                             "Novo status. Valores: em_contato, qualificado, "
-                            "orcamento_enviado, negociando"
+                            "proposta_enviada, negociando"
                         ),
                     },
                     "note": {
@@ -98,9 +98,9 @@ LEAD_TOOL_DEFINITIONS = [
     {
         "type": "function",
         "function": {
-            "name": "convert_to_patient",
+            "name": "convert_to_client",
             "description": (
-                "Converte o lead em paciente (fecha a venda). "
+                "Converte o lead em cliente (fecha a venda). "
                 "Use quando o cliente confirmar interesse em iniciar o atendimento."
             ),
             "parameters": {
@@ -125,8 +125,8 @@ LEAD_TOOL_DEFINITIONS = [
                     "lost_reason": {
                         "type": "string",
                         "description": (
-                            "Motivo da perda. Valores: sem_resposta, preco, ja_atendido, "
-                            "fora_de_perfil, sem_disponibilidade, mudou_de_ideia, outro"
+                            "Motivo da perda. Valores: sem_resposta, honorarios, ja_tem_advogado, "
+                            "fora_de_area, sem_viabilidade, mudou_de_ideia, outro"
                         ),
                     },
                 },
@@ -183,8 +183,8 @@ LEAD_TOOL_DEFINITIONS = [
     {
         "type": "function",
         "function": {
-            "name": "list_doctors",
-            "description": "Lista os médicos/especialistas disponíveis na clínica. Use antes de book_appointment.",
+            "name": "list_lawyers",
+            "description": "Lista os advogados/áreas de atuação disponíveis no escritório. Use antes de book_consultation.",
             "parameters": {"type": "object", "properties": {}},
         },
     },
@@ -193,41 +193,41 @@ LEAD_TOOL_DEFINITIONS = [
         "function": {
             "name": "list_available_slots",
             "description": (
-                "Lista os horários disponíveis de um médico para agendamento. "
-                "Use antes de book_appointment para mostrar opções ao cliente."
+                "Lista os horários disponíveis de um advogado para agendamento. "
+                "Use antes de book_consultation para mostrar opções ao cliente."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "doctor_id": {
+                    "lawyer_id": {
                         "type": "string",
-                        "description": "UUID do médico",
+                        "description": "UUID do advogado",
                     },
                     "date": {
                         "type": "string",
                         "description": "Data para verificar (YYYY-MM-DD). Se omitida, retorna próximos dias.",
                     },
                 },
-                "required": ["doctor_id"],
+                "required": ["lawyer_id"],
             },
         },
     },
     {
         "type": "function",
         "function": {
-            "name": "book_appointment",
+            "name": "book_consultation",
             "description": (
-                "Agenda uma consulta para o lead na clínica. "
+                "Agenda uma consulta para o lead no escritório. "
                 "Use SOMENTE após o lead confirmar data/hora. "
                 "Se a configuração 'converter ao agendar' estiver ativa, "
-                "o lead será automaticamente convertido em paciente."
+                "o lead será automaticamente convertido em cliente."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "doctor_id": {
+                    "lawyer_id": {
                         "type": "string",
-                        "description": "UUID do médico",
+                        "description": "UUID do advogado",
                     },
                     "starts_at": {
                         "type": "string",
@@ -238,7 +238,7 @@ LEAD_TOOL_DEFINITIONS = [
                         "description": "Observações (opcional)",
                     },
                 },
-                "required": ["doctor_id", "starts_at"],
+                "required": ["lawyer_id", "starts_at"],
             },
         },
     },
@@ -265,20 +265,20 @@ async def execute_lead_tool(
             return await _add_interaction(db, lead, arguments)
         elif tool_name == "schedule_followup":
             return await _schedule_followup(db, lead, arguments)
-        elif tool_name == "convert_to_patient":
-            return await _convert_to_patient(db, lead, conversation, arguments)
+        elif tool_name == "convert_to_client":
+            return await _convert_to_client(db, lead, conversation, arguments)
         elif tool_name == "mark_lost":
             return await _mark_lost(db, lead, conversation, arguments)
         elif tool_name == "consult_supervisor":
             return await _consult_supervisor(db, lead, conversation, arguments)
         elif tool_name == "escalate_to_human":
             return await _escalate_to_human(db, lead, conversation, arguments)
-        elif tool_name == "list_doctors":
-            return await _list_doctors(db)
+        elif tool_name == "list_lawyers":
+            return await _list_lawyers(db)
         elif tool_name == "list_available_slots":
             return await _list_available_slots(db, arguments)
-        elif tool_name == "book_appointment":
-            return await _book_appointment(db, lead, conversation, arguments, agent_config)
+        elif tool_name == "book_consultation":
+            return await _book_consultation(db, lead, conversation, arguments, agent_config)
         else:
             return json.dumps({"error": f"Tool desconhecida: {tool_name}"})
     except Exception as e:
@@ -288,16 +288,16 @@ async def execute_lead_tool(
 
 
 async def _get_lead_info(lead: Lead) -> str:
-    specialty_name = lead.specialty.name if lead.specialty else None
+    practice_area_name = lead.practice_area.name if lead.practice_area else None
     return json.dumps({
         "code": lead.code,
         "full_name": lead.full_name,
         "phone": lead.phone,
         "email": lead.email,
         "channel": lead.channel,
-        "specialty": specialty_name,
+        "practice_area": practice_area_name,
         "description": lead.description,
-        "quote_value": float(lead.quote_value) if lead.quote_value else None,
+        "proposal_value": float(lead.proposal_value) if lead.proposal_value else None,
         "status": lead.status,
         "status_label": STATUS_LABELS.get(lead.status, lead.status),
         "created_at": lead.created_at.isoformat(),
@@ -314,7 +314,7 @@ async def _get_pricing_table(db: AsyncSession) -> str:
         return json.dumps(row.value)
     return json.dumps({
         "items": [],
-        "notes": "Tabela de preços não configurada. Consulte o administrador.",
+        "notes": "Tabela de honorários não configurada. Consulte o administrador.",
     })
 
 
@@ -324,7 +324,7 @@ async def _update_lead_status(db: AsyncSession, lead: Lead, args: dict) -> str:
 
     if to_status == "convertido":
         return json.dumps({
-            "error": "Para converter use a ferramenta convert_to_patient"
+            "error": "Para converter use a ferramenta convert_to_client"
         })
     if to_status == "perdido":
         return json.dumps({
@@ -379,15 +379,15 @@ async def _schedule_followup(db: AsyncSession, lead: Lead, args: dict) -> str:
     return json.dumps({"success": True, "scheduled_at": lead.next_followup_at.isoformat()})
 
 
-async def _convert_to_patient(
+async def _convert_to_client(
     db: AsyncSession, lead: Lead, conversation: LeadConversation, args: dict
 ) -> str:
-    from app.modules.crm.service import get_patient_by_phone, create_patient
+    from app.modules.clients.service import get_client_by_phone, create_client
 
-    patient = await get_patient_by_phone(db, lead.phone)
-    if not patient:
+    client = await get_client_by_phone(db, lead.phone)
+    if not client:
         channel = lead.channel if lead.channel in ("telegram", "whatsapp") else "whatsapp"
-        patient = await create_patient(
+        client = await create_client(
             db,
             phone=lead.phone,
             full_name=lead.full_name,
@@ -398,7 +398,7 @@ async def _convert_to_patient(
     now = datetime.now(timezone.utc)
     from_status = lead.status
     lead.status = "convertido"
-    lead.converted_patient_id = patient.id
+    lead.converted_client_id = client.id
     lead.converted_at = now
     if lead.contacted_at is None:
         lead.contacted_at = now
@@ -407,7 +407,7 @@ async def _convert_to_patient(
     interaction = LeadInteraction(
         lead_id=lead.id,
         type="nota",
-        content=f"[IA] Lead convertido em paciente. {notes}".strip(),
+        content=f"[IA] Lead convertido em cliente. {notes}".strip(),
     )
     db.add(interaction)
 
@@ -418,7 +418,7 @@ async def _convert_to_patient(
 
     return json.dumps({
         "success": True,
-        "patient_id": str(patient.id),
+        "client_id": str(client.id),
         "message": "Ótimo! Cadastro realizado. Em breve nossa equipe entrará em contato para agendar.",
     })
 
@@ -484,14 +484,14 @@ async def _consult_supervisor(
         })
 
     # Build supervisor message
-    specialty_name = lead.specialty.name if lead.specialty else "não informada"
-    quote_str = f"R${float(lead.quote_value):.2f}" if lead.quote_value else "não informado"
+    practice_area_name = lead.practice_area.name if lead.practice_area else "não informada"
+    proposal_str = f"R${float(lead.proposal_value):.2f}" if lead.proposal_value else "não informado"
     supervisor_text = (
         f"❓ *Consulta do Agente Comercial*\n\n"
         f"*Lead:* {lead.code} — {lead.full_name or 'sem nome'}\n"
         f"*Canal:* {lead.channel}\n"
-        f"*Especialidade:* {specialty_name}\n"
-        f"*Valor em negociação:* {quote_str}\n\n"
+        f"*Área de atuação:* {practice_area_name}\n"
+        f"*Valor em negociação:* {proposal_str}\n\n"
         f"*Contexto:*\n{context_summary}\n\n"
         f"*Pergunta:*\n{question}\n\n"
         f"_Responda esta mensagem diretamente (use Reply ↩️) para que eu repasse ao cliente._"
@@ -568,43 +568,43 @@ async def _escalate_to_human(
     })
 
 
-async def _list_doctors(db: AsyncSession) -> str:
-    """Return all active doctors with their specialties."""
-    from app.modules.scheduling.models import Doctor
+async def _list_lawyers(db: AsyncSession) -> str:
+    """Return all active lawyers with their practice areas."""
+    from app.modules.scheduling.models import Lawyer
     from sqlalchemy.orm import selectinload
 
     result = await db.execute(
-        select(Doctor)
-        .options(selectinload(Doctor.specialty))
-        .where(Doctor.is_active == True)  # noqa: E712
-        .order_by(Doctor.full_name)
+        select(Lawyer)
+        .options(selectinload(Lawyer.practice_area))
+        .where(Lawyer.is_active == True)  # noqa: E712
+        .order_by(Lawyer.full_name)
     )
-    doctors = result.scalars().all()
+    lawyers = result.scalars().all()
 
     return json.dumps([
         {
-            "id": str(d.id),
-            "full_name": d.full_name,
-            "crm": d.crm,
-            "specialty": d.specialty.name if d.specialty else None,
-            "slot_duration_minutes": d.slot_duration_minutes,
+            "id": str(l.id),
+            "full_name": l.full_name,
+            "oab": l.oab,
+            "practice_area": l.practice_area.name if l.practice_area else None,
+            "slot_duration_minutes": l.slot_duration_minutes,
         }
-        for d in doctors
+        for l in lawyers
     ])
 
 
 async def _list_available_slots(db: AsyncSession, args: dict) -> str:
-    """Return available time slots for a doctor."""
+    """Return available time slots for a lawyer."""
     from app.modules.scheduling.service import get_available_slots
     from datetime import date as date_type
 
-    doctor_id_str = args.get("doctor_id", "")
+    lawyer_id_str = args.get("lawyer_id", "")
     date_str = args.get("date")
 
     try:
-        doctor_id = uuid.UUID(doctor_id_str)
+        lawyer_id = uuid.UUID(lawyer_id_str)
     except ValueError:
-        return json.dumps({"error": "doctor_id inválido"})
+        return json.dumps({"error": "lawyer_id inválido"})
 
     now = datetime.now(timezone.utc)
 
@@ -621,16 +621,16 @@ async def _list_available_slots(db: AsyncSession, args: dict) -> str:
         date_to = now + timedelta(days=7)
 
     try:
-        slots = await get_available_slots(db, doctor_id, date_from, date_to)
+        slots = await get_available_slots(db, lawyer_id, date_from, date_to)
         # Limit to 20 slots to avoid huge responses
         return json.dumps({"slots": slots[:20], "total": len(slots)})
     except Exception as e:
-        logger.exception("Error fetching slots for doctor %s", doctor_id_str)
+        logger.exception("Error fetching slots for lawyer %s", lawyer_id_str)
         return json.dumps({"error": str(e)})
 
 
 
-async def _book_appointment(
+async def _book_consultation(
     db: AsyncSession,
     lead: Lead,
     conversation: LeadConversation,
@@ -638,22 +638,22 @@ async def _book_appointment(
     agent_config=None,
 ) -> str:
     """
-    Book an appointment for the lead and optionally convert them to a patient.
-    If agent_config.convert_on_appointment is True (default), the lead is
+    Book a consultation for the lead and optionally convert them to a client.
+    If agent_config.convert_on_consultation is True (default), the lead is
     automatically converted to 'convertido' status after a successful booking.
     """
-    from app.modules.scheduling.models import Doctor, Appointment
+    from app.modules.scheduling.models import Lawyer, Consultation
     from app.modules.admin.models import SystemConfig
-    from app.modules.crm.service import get_patient_by_phone, create_patient
+    from app.modules.clients.service import get_client_by_phone, create_client
 
-    doctor_id_str = args.get("doctor_id", "")
+    lawyer_id_str = args.get("lawyer_id", "")
     starts_at_str = args.get("starts_at", "")
     notes = args.get("notes", "")
 
     try:
-        doctor_id = uuid.UUID(doctor_id_str)
+        lawyer_id = uuid.UUID(lawyer_id_str)
     except ValueError:
-        return json.dumps({"error": "doctor_id inválido"})
+        return json.dumps({"error": "lawyer_id inválido"})
 
     try:
         # Parse ISO 8601 — accept with or without timezone
@@ -663,23 +663,23 @@ async def _book_appointment(
     except ValueError:
         return json.dumps({"error": "Formato de data/hora inválido. Use ISO 8601 (ex: 2026-05-10T14:00:00)"})
 
-    # Load doctor
-    doctor = await db.get(Doctor, doctor_id)
-    if not doctor:
-        return json.dumps({"error": "Médico não encontrado"})
+    # Load lawyer
+    lawyer = await db.get(Lawyer, lawyer_id)
+    if not lawyer:
+        return json.dumps({"error": "Advogado não encontrado"})
 
-    ends_at = starts_at + timedelta(minutes=doctor.slot_duration_minutes or 30)
+    ends_at = starts_at + timedelta(minutes=lawyer.slot_duration_minutes or 30)
 
-    # Ensure patient exists
+    # Ensure client exists
     clean_phone = lead.phone
     for prefix in ("whatsapp:", "telegram:"):
         if clean_phone.startswith(prefix):
             clean_phone = clean_phone[len(prefix):]
 
-    patient = await get_patient_by_phone(db, clean_phone)
-    if not patient:
+    client = await get_client_by_phone(db, clean_phone)
+    if not client:
         channel = lead.channel if lead.channel in ("telegram", "whatsapp") else "whatsapp"
-        patient = await create_patient(
+        client = await create_client(
             db,
             phone=clean_phone,
             full_name=lead.full_name,
@@ -687,11 +687,11 @@ async def _book_appointment(
             channel=channel,
         )
 
-    # Create appointment
-    appointment = Appointment(
-        patient_id=patient.id,
-        doctor_id=doctor.id,
-        specialty_id=doctor.specialty_id,
+    # Create consultation
+    consultation = Consultation(
+        client_id=client.id,
+        lawyer_id=lawyer.id,
+        practice_area_id=lawyer.practice_area_id,
         starts_at=starts_at,
         ends_at=ends_at,
         status="agendado",
@@ -699,15 +699,15 @@ async def _book_appointment(
         notes=f"[IA Comercial] {notes}".strip() if notes else "[IA Comercial] Agendado pelo atendente IA",
         created_by_user=None,
     )
-    db.add(appointment)
-    await db.flush()  # get appointment.id before commit
+    db.add(consultation)
+    await db.flush()  # get consultation.id before commit
 
     # Log interaction
     db.add(LeadInteraction(
         lead_id=lead.id,
         type="nota",
         content=(
-            f"[IA] Consulta agendada com Dr(a). {doctor.full_name} "
+            f"[IA] Consulta agendada com Dr(a). {lawyer.full_name} "
             f"em {starts_at.strftime('%d/%m/%Y às %H:%M')}."
         ),
     ))
@@ -719,15 +719,15 @@ async def _book_appointment(
     )
     cfg_row = cfg_result.scalar_one_or_none()
     if cfg_row and cfg_row.value:
-        should_convert = bool(cfg_row.value.get("convert_on_appointment", True))
+        should_convert = bool(cfg_row.value.get("convert_on_consultation", True))
 
     if should_convert:
         now = datetime.now(timezone.utc)
         from_status = lead.status
         lead.status = "convertido"
-        lead.converted_patient_id = patient.id
+        lead.converted_client_id = client.id
         lead.converted_at = now
-        lead.appointment_id = appointment.id
+        lead.consultation_id = consultation.id
         if lead.contacted_at is None:
             lead.contacted_at = now
 
@@ -744,20 +744,20 @@ async def _book_appointment(
     if should_convert:
         dispatch_proactive_on_status_change(lead, from_status, lead.status)
 
-    specialty_name = doctor.specialty.name if doctor.specialty else "consulta"
+    practice_area_name = lawyer.practice_area.name if lawyer.practice_area else "consulta"
     date_fmt = starts_at.strftime("%d/%m/%Y às %H:%M")
 
     return json.dumps({
         "success": True,
-        "appointment_id": str(appointment.id),
-        "doctor": doctor.full_name,
-        "specialty": specialty_name,
+        "consultation_id": str(consultation.id),
+        "lawyer": lawyer.full_name,
+        "practice_area": practice_area_name,
         "starts_at": date_fmt,
         "lead_converted": should_convert,
         "message": (
             f"Consulta agendada com sucesso! ✅\n"
             f"📅 {date_fmt}\n"
-            f"👨‍⚕️ Dr(a). {doctor.full_name} — {specialty_name}\n"
-            f"{'Você já está cadastrado(a) como paciente!' if should_convert else ''}"
+            f"⚖️ Dr(a). {lawyer.full_name} — {practice_area_name}\n"
+            f"{'Você já está cadastrado(a) como cliente!' if should_convert else ''}"
         ).strip(),
     })

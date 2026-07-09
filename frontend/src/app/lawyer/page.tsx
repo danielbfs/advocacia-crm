@@ -4,17 +4,17 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
-interface Appointment {
+interface Consultation {
   id: string;
-  patient_id: string;
-  doctor_id: string;
+  client_id: string;
+  lawyer_id: string;
   starts_at: string;
   ends_at: string;
   status: string;
   notes: string | null;
 }
 
-interface PatientLite {
+interface ClientLite {
   id: string;
   full_name: string | null;
   phone: string;
@@ -54,13 +54,13 @@ function addDays(d: Date, n: number): Date {
   return out;
 }
 
-export default function DoctorCalendarPage() {
+export default function LawyerCalendarPage() {
   const { user } = useAuth();
   const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date()));
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [patients, setPatients] = useState<Record<string, PatientLite>>({});
+  const [consultations, setConsultations] = useState<Consultation[]>([]);
+  const [clients, setClients] = useState<Record<string, ClientLite>>({});
   const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState<Appointment | null>(null);
+  const [selected, setSelected] = useState<Consultation | null>(null);
 
   const weekEnd = useMemo(() => addDays(weekStart, 7), [weekStart]);
   const days = useMemo(
@@ -69,49 +69,49 @@ export default function DoctorCalendarPage() {
   );
 
   useEffect(() => {
-    if (!user?.doctor_id) return;
+    if (!user?.lawyer_id) return;
     fetchWeek();
-  }, [weekStart, user?.doctor_id]);
+  }, [weekStart, user?.lawyer_id]);
 
   async function fetchWeek() {
-    if (!user?.doctor_id) return;
+    if (!user?.lawyer_id) return;
     setLoading(true);
     try {
       const params = new URLSearchParams({
-        doctor_id: user.doctor_id,
+        lawyer_id: user.lawyer_id,
         date_from: weekStart.toISOString(),
         date_to: weekEnd.toISOString(),
       });
-      const { data } = await api.get(`/scheduling/appointments?${params}`);
-      setAppointments(data);
+      const { data } = await api.get(`/scheduling/consultations?${params}`);
+      setConsultations(data);
 
-      const ids = Array.from(new Set(data.map((a: Appointment) => a.patient_id))) as string[];
-      const fetched: Record<string, PatientLite> = { ...patients };
+      const ids = Array.from(new Set(data.map((a: Consultation) => a.client_id))) as string[];
+      const fetched: Record<string, ClientLite> = { ...clients };
       await Promise.all(
         ids
           .filter((id) => !fetched[id])
           .map(async (id) => {
             try {
-              const { data: p } = await api.get(`/patients/${id}`);
+              const { data: p } = await api.get(`/clients/${id}`);
               fetched[id] = p;
             } catch { /* ignore */ }
           })
       );
-      setPatients(fetched);
+      setClients(fetched);
     } finally {
       setLoading(false);
     }
   }
 
-  function appointmentsForDay(day: Date): Appointment[] {
+  function consultationsForDay(day: Date): Consultation[] {
     const start = new Date(day); start.setHours(0, 0, 0, 0);
     const end = addDays(start, 1);
-    return appointments
+    return consultations
       .filter((a) => { const s = new Date(a.starts_at); return s >= start && s < end; })
       .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
   }
 
-  function gridPos(a: Appointment) {
+  function gridPos(a: Consultation) {
     const start = new Date(a.starts_at);
     const end = new Date(a.ends_at);
     const top = ((start.getHours() - HOUR_START) * 60 + start.getMinutes()) / 60 * 48;
@@ -119,14 +119,14 @@ export default function DoctorCalendarPage() {
     return { top, height };
   }
 
-  function patientLabel(patientId: string) {
-    const p = patients[patientId];
+  function clientLabel(clientId: string) {
+    const p = clients[clientId];
     return p ? (p.full_name || p.phone) : "...";
   }
 
   async function changeStatus(id: string, status: string) {
     try {
-      await api.patch(`/scheduling/appointments/${id}`, { status });
+      await api.patch(`/scheduling/consultations/${id}`, { status });
       setSelected(null);
       fetchWeek();
     } catch { alert("Erro ao atualizar."); }
@@ -135,13 +135,13 @@ export default function DoctorCalendarPage() {
   async function cancelAppt(id: string) {
     if (!confirm("Cancelar esta consulta?")) return;
     try {
-      await api.delete(`/scheduling/appointments/${id}`);
+      await api.delete(`/scheduling/consultations/${id}`);
       setSelected(null);
       fetchWeek();
     } catch { alert("Erro ao cancelar."); }
   }
 
-  if (!user?.doctor_id) {
+  if (!user?.lawyer_id) {
     return (
       <main className="p-8">
         <div className="rounded-sm border border-selo/40 bg-selo/15 p-6 text-selo">
@@ -193,7 +193,7 @@ export default function DoctorCalendarPage() {
             {days.map((day, di) => (
               <div key={di} className="border-r border-line last:border-r-0 relative" style={{ height: `${HOURS.length * 48}px` }}>
                 {HOURS.map((h) => <div key={h} className="h-12 border-b border-line" />)}
-                {appointmentsForDay(day).map((a) => {
+                {consultationsForDay(day).map((a) => {
                   const { top, height } = gridPos(a);
                   if (top < 0 || top > HOURS.length * 48) return null;
                   const color = STATUS_COLORS[a.status] || "#3b82f6";
@@ -205,7 +205,7 @@ export default function DoctorCalendarPage() {
                       style={{ top, height, backgroundColor: color }}
                     >
                       <div className="font-semibold truncate">
-                        {new Date(a.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} {patientLabel(a.patient_id)}
+                        {new Date(a.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} {clientLabel(a.client_id)}
                       </div>
                     </button>
                   );
@@ -229,7 +229,7 @@ export default function DoctorCalendarPage() {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-ink-2 border border-line rounded-sm p-6 w-full max-w-md">
             <div className="flex items-start justify-between mb-3">
-              <h2 className="text-lg font-display font-semibold text-parchment">{patientLabel(selected.patient_id)}</h2>
+              <h2 className="text-lg font-display font-semibold text-parchment">{clientLabel(selected.client_id)}</h2>
               <span className="text-xs px-2 py-0.5 rounded-full font-medium text-white" style={{ backgroundColor: STATUS_COLORS[selected.status] || "#6b7280" }}>
                 {STATUS_LABELS[selected.status] || selected.status}
               </span>
