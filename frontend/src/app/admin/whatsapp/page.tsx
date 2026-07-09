@@ -207,7 +207,7 @@ export default function WhatsAppPage() {
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && createInstance()}
-                placeholder="Nome da instância (ex: openclinic)"
+                placeholder="Nome da instância (ex: advocacia-crm)"
                 className="flex-1 border border-line rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-carimbo focus:border-carimbo"
                 disabled={creating}
               />
@@ -350,7 +350,7 @@ export default function WhatsAppPage() {
             <li>Aguarde o serviço Evolution API ficar online (até ~30s na primeira inicialização)</li>
             <li>
               Crie uma instância com o nome{" "}
-              <code className="bg-ink-3 px-1 rounded-sm">openclinic</code>{" "}
+              <code className="bg-ink-3 px-1 rounded-sm">advocacia-crm</code>{" "}
               (ou o valor de <code className="bg-ink-3 px-1 rounded-sm">EVOLUTION_INSTANCE_NAME</code> no .env)
             </li>
             <li>Escaneie o QR Code com o WhatsApp do número do escritório</li>

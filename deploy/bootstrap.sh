@@ -33,6 +33,22 @@ fi
 echo "==> bootstrap: garantindo serviço docker ativo no boot"
 sudo systemctl enable --now docker >/dev/null 2>&1 || true
 
+echo "==> bootstrap: compatibilidade da API do Docker com o Traefik"
+# Docker Engine recente (API >= 1.44) rejeita o client 1.24 que o Traefik usa,
+# e a negociação de versão falha já no handshake. Rebaixamos o mínimo do daemon
+# para 1.24 para o provider docker do Traefik conseguir ler os labels.
+DROPIN=/etc/systemd/system/docker.service.d/min-api.conf
+if ! sudo grep -q 'DOCKER_MIN_API_VERSION=1.24' "$DROPIN" 2>/dev/null; then
+  echo "    aplicando DOCKER_MIN_API_VERSION=1.24 e reiniciando docker"
+  sudo mkdir -p /etc/systemd/system/docker.service.d
+  printf '[Service]\nEnvironment=DOCKER_MIN_API_VERSION=1.24\n' | sudo tee "$DROPIN" >/dev/null
+  sudo systemctl daemon-reload
+  sudo systemctl restart docker
+  sleep 8
+else
+  echo "    DOCKER_MIN_API_VERSION já configurado"
+fi
+
 echo "==> bootstrap: verificando swap (recomendado em instâncias de 1GB)"
 if ! sudo swapon --show | grep -q .; then
   echo "    sem swap — criando /swapfile de 2GB"

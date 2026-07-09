@@ -43,7 +43,7 @@ services:
 
   # ── TRAEFIK REVERSE PROXY & SSL ──────────────────────────
   traefik:
-    image: traefik:v3.1
+    image: traefik:v3.5
     restart: unless-stopped
     ports:
       - "80:80"
