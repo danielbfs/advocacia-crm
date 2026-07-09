@@ -39,7 +39,7 @@ class Client(Base):
         "ClientContact", back_populates="client", lazy="selectin",
         cascade="all, delete-orphan", order_by="ClientContact.is_primary.desc()"
     )
-    leads: Mapped[list] = relationship(
+    leads: Mapped[list["Lead"]] = relationship(
         "Lead", foreign_keys="Lead.client_id",
         back_populates="client", lazy="selectin",
         order_by="Lead.created_at.desc()"
