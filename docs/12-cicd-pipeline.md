@@ -1,275 +1,175 @@
 ---
-tags: [advocacia-crm, cicd, github-actions, deploy]
+tags: [advocacia-crm, cicd, github-actions, deploy, lightsail, neon]
 created: 2026-07-02
-status: aguardando-aprovacao
+updated: 2026-07-09
+status: implementado
 ---
 
-# CI/CD — Deploy Automático via GitHub Actions — AdvocacIA CRM
+# CI/CD — Deploy Automático Zero-Touch (Lightsail + Neon) — AdvocacIA CRM
 
-Plano completo do pipeline: todo merge em `main` valida, publica imagens Docker no GitHub Container Registry (ghcr.io) e atualiza a VPS de produção automaticamente, com migrations e healthcheck.
+Pipeline completo de implantação. **Único pré-requisito manual:** a instância Lightsail existir, o SSH liberado e os secrets cadastrados no GitHub. Todo o resto — Docker, swap, `.env`, Traefik/SSL, migrations, seed — o pipeline provisiona sozinho a cada `push` na `main`.
+
+Arquivos que implementam isto (já no repo):
+- `.github/workflows/ci.yml` — validação em PR (build do frontend + import do backend).
+- `.github/workflows/deploy.yml` — build/push das imagens + deploy SSH auto-provisionado.
+- `docker-compose.prod.yml` — serviços com imagens do ghcr (a VPS nunca compila).
+- `deploy/bootstrap.sh` — provisionamento idempotente da máquina.
+- `traefik/traefik.yml` + `traefik/dynamic/` — proxy/SSL e middlewares.
 
 ---
 
-## 1. Visão geral
+## 1. Ambiente-alvo (concreto)
+
+| Item | Valor |
+|---|---|
+| VPS | AWS Lightsail — Ubuntu, IP **54.232.3.5**, usuário **ubuntu**, auth por chave (`advocacia-crm.pem`) |
+| Domínio | **advocacia-crm.sigame.tec.br** → 54.232.3.5 (registro A já criado) |
+| Banco | **Neon DB** — database `advocacia-crm` (app) + database `evolution` (WhatsApp) |
+| Registry | `ghcr.io/danielbfs/advocacia-crm-backend` e `-frontend` |
+| Diretório na VPS | `/home/ubuntu/advocacia-crm` |
+
+---
+
+## 2. Fluxo
 
 ```
-Pull Request → [ci.yml]  lint + typecheck + build (bloqueia merge se falhar)
+Pull Request → [ci.yml] frontend build + backend import (bloqueia merge se falhar)
       │
-   merge em main
+   merge/push em main
       ▼
 [deploy.yml]
-  job 1: build-push   → imagens ghcr.io/danielbfs/advocacia-crm-{backend,frontend}
-                        tags: latest + sha do commit
-  job 2: deploy (needs: build-push)
-          → SSH na VPS
-          → docker compose pull && up -d
-          → alembic upgrade head
-          → healthcheck https://DOMAIN/health
-          → falhou? rollback para a tag anterior
+  job build-push  → constrói imagens no runner e publica no ghcr (tags latest + sha)
+      │
+      ▼  ⏸ APROVAÇÃO MANUAL (environment "production") — antes de QUALQUER SSH
+  job deploy
+      → scp: envia compose.prod.yml + traefik/ + bootstrap.sh para a VPS
+      → ssh:
+          1. bootstrap idempotente (instala Docker/compose/swap se faltarem)
+          2. gera .env a partir dos GitHub Secrets
+          3. docker login ghcr + pull das imagens (tag = sha do commit)
+          4. docker compose up -d
+          5. alembic upgrade head (migrations)
+          6. seed 1x (marcador .seeded; ou force_seed manual)
+          7. prune de imagens antigas
+      → healthcheck público https://DOMÍNIO/health (12 tentativas)
+      → falhou? rollback automático para a imagem anterior
 ```
 
-Princípio: **a VPS nunca compila nada** (as instâncias de 1 GB da Lightsail não aguentam build do Next.js). Quem compila é o runner do GitHub; a VPS só faz `pull` de imagens prontas. Isso substitui o fluxo atual de `git pull + docker compose build` dos scripts `update*.sh`.
+**Princípio:** a VPS **nunca compila** (instâncias de 1 GB não aguentam build do Next.js). Quem compila é o runner do GitHub; a VPS só faz `pull` de imagens prontas.
 
 ---
 
-## 2. Pré-requisitos (setup único)
+## 3. Aprovação manual antes do SSH (obrigatório configurar 1x)
 
-### 2.1 Na VPS (Lightsail ou outra)
+O job `deploy` declara `environment: production`. Para que ele **pause pedindo sua aprovação** logo após o build e **antes de tocar na VPS**, configure o environment uma vez:
 
-1. Docker + Docker Compose instalados; usuário `ubuntu` no grupo `docker`.
-2. Diretório da aplicação: `/home/ubuntu/advocacia-crm` contendo apenas:
-   - `docker-compose.prod.yml` (ver §4)
-   - `.env` (a partir de `.env.lightsail.example`, com `DOMAIN`, `ACME_EMAIL`, `DATABASE_URL` do Neon etc.)
-   - `traefik/dynamic/` (middlewares)
-3. Login no ghcr (necessário apenas se o repositório for privado):
-   ```bash
-   echo $GHCR_PAT | docker login ghcr.io -u danielbfs --password-stdin
-   ```
-   Para repositório público com imagens públicas, o `pull` dispensa login.
-4. Par de chaves SSH dedicado ao deploy (**não** reutilizar a chave pessoal):
-   ```bash
-   ssh-keygen -t ed25519 -C "github-deploy" -f deploy_key
-   cat deploy_key.pub >> ~/.ssh/authorized_keys
-   ```
+1. GitHub → repositório → **Settings → Environments → New environment** → nome exatamente **`production`**.
+2. Marque **Required reviewers** e adicione **você mesmo** (danielbfs). Salve.
 
-### 2.2 Secrets no repositório GitHub (`Settings → Secrets and variables → Actions`)
+Resultado: todo deploy roda o `build-push` livremente, e então **espera seu clique em "Review deployments → Approve"** para executar o scp/ssh. É exatamente **uma** aprovação, no ponto do envio de dados via SSH. O `build-push` (que não acessa a VPS) nunca pede aprovação.
 
-| Secret | Conteúdo |
+> Opcional: em Environments você também pode restringir a branch `main` e adicionar um "wait timer".
+
+---
+
+## 4. Secrets a cadastrar (GitHub → Settings → Secrets and variables → Actions → New repository secret)
+
+### SSH / infra
+| Secret | Valor |
 |---|---|
-| `DEPLOY_HOST` | IP estático da VPS |
+| `DEPLOY_HOST` | `54.232.3.5` |
 | `DEPLOY_USER` | `ubuntu` |
-| `DEPLOY_SSH_KEY` | Conteúdo de `deploy_key` (chave privada) |
+| `DEPLOY_SSH_KEY` | conteúdo COMPLETO do arquivo `advocacia-crm.pem` (da linha `-----BEGIN...` até `-----END...`) |
 | `DEPLOY_PATH` | `/home/ubuntu/advocacia-crm` |
-| `DEPLOY_DOMAIN` | domínio de produção (para o healthcheck) |
 
-`GITHUB_TOKEN` (automático) já basta para push no ghcr do próprio repo.
-
----
-
-## 3. Workflows
-
-### 3.1 `.github/workflows/ci.yml` (validação em PR)
-
-```yaml
-name: CI
-
-on:
-  pull_request:
-    branches: [main]
-  push:
-    branches-ignore: [main]
-
-jobs:
-  frontend:
-    runs-on: ubuntu-latest
-    defaults: { run: { working-directory: frontend } }
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: npm, cache-dependency-path: frontend/package-lock.json }
-      - run: npm ci
-      - run: npx tsc --noEmit
-      - run: npm run build
-        env: { NEXT_TELEMETRY_DISABLED: "1" }
-
-  backend:
-    runs-on: ubuntu-latest
-    defaults: { run: { working-directory: backend } }
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.12", cache: pip }
-      - run: pip install -r requirements.txt
-      - run: python -m compileall app  # substituir por ruff + pytest quando existirem
-```
-
-### 3.2 `.github/workflows/deploy.yml` (substitui o `publish.yml` atual)
-
-```yaml
-name: Deploy Produção
-
-on:
-  push:
-    branches: [main]
-  workflow_dispatch: {}   # deploy manual pelo botão "Run workflow"
-
-concurrency:
-  group: production-deploy
-  cancel-in-progress: false   # nunca interromper um deploy no meio
-
-jobs:
-  build-push:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: docker/setup-buildx-action@v3
-
-      - name: Build & push backend
-        uses: docker/build-push-action@v6
-        with:
-          context: ./backend
-          push: true
-          tags: |
-            ghcr.io/danielbfs/advocacia-crm-backend:latest
-            ghcr.io/danielbfs/advocacia-crm-backend:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build & push frontend
-        uses: docker/build-push-action@v6
-        with:
-          context: ./frontend
-          push: true
-          tags: |
-            ghcr.io/danielbfs/advocacia-crm-frontend:latest
-            ghcr.io/danielbfs/advocacia-crm-frontend:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  deploy:
-    needs: build-push
-    runs-on: ubuntu-latest
-    environment: production
-    steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script_stop: true
-          script: |
-            cd ${{ secrets.DEPLOY_PATH }}
-            export IMAGE_TAG=${{ github.sha }}
-
-            # Guarda a tag atual para rollback
-            docker compose -f docker-compose.prod.yml ps -q backend > /dev/null 2>&1 \
-              && cp .image_tag .image_tag.previous 2>/dev/null || true
-            echo "$IMAGE_TAG" > .image_tag
-
-            docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d --remove-orphans
-
-            # Migrations
-            docker compose -f docker-compose.prod.yml exec -T backend alembic upgrade head
-
-            # Limpeza de imagens antigas
-            docker image prune -f
-
-      - name: Healthcheck
-        run: |
-          sleep 20
-          for i in $(seq 1 10); do
-            code=$(curl -s -o /dev/null -w "%{http_code}" "https://${{ secrets.DEPLOY_DOMAIN }}/health" || true)
-            [ "$code" = "200" ] && echo "Saudável." && exit 0
-            echo "Tentativa $i: HTTP $code — aguardando..."
-            sleep 10
-          done
-          echo "::error::Healthcheck falhou após o deploy"
-          exit 1
-
-      - name: Rollback em caso de falha
-        if: failure()
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script: |
-            cd ${{ secrets.DEPLOY_PATH }}
-            if [ -f .image_tag.previous ]; then
-              export IMAGE_TAG=$(cat .image_tag.previous)
-              docker compose -f docker-compose.prod.yml pull
-              docker compose -f docker-compose.prod.yml up -d --remove-orphans
-              echo "Rollback para $IMAGE_TAG concluído."
-            else
-              echo "Sem tag anterior registrada — rollback manual necessário."
-            fi
-```
-
----
-
-## 4. `docker-compose.prod.yml` (novo arquivo na raiz)
-
-Derivado do `docker-compose.lightsail.yml` atual com duas mudanças: serviços `backend`, `frontend`, `celery_worker` e `celery_beat` trocam `build:` por `image:` parametrizada, e os nomes/labels usam `advocacia-crm`:
-
-```yaml
-# Trecho — padrão que se repete nos 4 serviços de aplicação:
-services:
-  backend:
-    image: ghcr.io/danielbfs/advocacia-crm-backend:${IMAGE_TAG:-latest}
-    # ... (env, networks e labels iguais ao lightsail, com prefixo advocacia-crm)
-
-  frontend:
-    image: ghcr.io/danielbfs/advocacia-crm-frontend:${IMAGE_TAG:-latest}
-    # ...
-```
-
-`IMAGE_TAG` é exportada pelo script de deploy (sha do commit); default `latest` para subida manual. Traefik, Redis e Evolution API permanecem como no compose da Lightsail (rede `advocacia_crm_internal`, banco no Neon).
-
-O arquivo `docker-compose.lightsail.yml` (com `build:`) permanece como fallback para instalação inicial/manual; `install_lightsail.sh` passa a usar o `prod` com `latest`.
-
----
-
-## 5. Estratégia de branch e releases
-
-- `main` = produção. Todo push (merge) dispara deploy — manter `main` protegida (require PR + CI verde).
-- Desenvolvimento em branches `feature/*`; PR roda `ci.yml`.
-- Tags `v*` (ex.: `v1.0.0`): opcionalmente adicionar job de release notes; as imagens já ficam rastreáveis pelo sha.
-- Deploy manual/emergencial: botão **Run workflow** (`workflow_dispatch`).
-
-## 6. Observabilidade do deploy
-
-- O job `deploy` usa o **environment `production`** do GitHub — histórico de deploys visível na aba Environments; opcionalmente exigir aprovação manual (required reviewers) antes do job rodar.
-- Falha em qualquer passo (pull, migration, healthcheck) marca o workflow como falho e aciona rollback automático.
-- Logs da aplicação continuam via `docker compose logs -f` na VPS.
-
-## 7. Migração do fluxo atual
-
-| Hoje (openclinic) | Depois (advocacia-crm) |
+### Aplicação / banco
+| Secret | Valor |
 |---|---|
-| `publish.yml` só publica imagens; deploy manual via SSH + `update_lightsail.sh` | `deploy.yml` publica **e** atualiza a VPS |
-| VPS compila imagens (`docker compose build`, precisa de SWAP p/ Next.js) | VPS só faz `pull` — build no runner do GitHub |
-| Sem healthcheck/rollback | Healthcheck + rollback automático por tag |
-| `update_lightsail.sh` manual | Mantido apenas como contingência |
+| `DOMAIN` | `advocacia-crm.sigame.tec.br` |
+| `ACME_EMAIL` | seu e-mail (Let's Encrypt) |
+| `DATABASE_URL` | `postgresql+asyncpg://neondb_owner:...@ep-...-pooler.../advocacia-crm` (formato asyncpg, sem `channel_binding`) |
+| `ALEMBIC_DATABASE_URL` | `postgresql+psycopg2://neondb_owner:...@ep-.../advocacia-crm?sslmode=require` (Alembic/sync) |
+| `SECRET_KEY` | chave JWT forte (≥64 chars aleatórios) |
+| `EVOLUTION_DATABASE_URL` | connection string do database `evolution` no Neon |
+| `EVOLUTION_API_KEY` | chave da Evolution API (defina uma) |
+| `OPENAI_API_KEY` | chave OpenAI (IA Comercial) |
 
-## 8. Checklist de implantação do pipeline
+### Opcionais (deixe vazios se não usar — têm default no compose)
+`OPENAI_MODEL`, `TELEGRAM_BOT_TOKEN`, `EVOLUTION_INSTANCE_NAME`, `FIRM_TIMEZONE`, `FIRM_SLA_HOURS`, `LEADS_WEBHOOK_API_KEY`, `ENCRYPTION_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`.
 
-- [ ] Criar repo `danielbfs/advocacia-crm` e trocar `origin`
-- [ ] Apagar `publish.yml` e workflows `gemini-*` (decisão pendente — ver [[10-transformation-plan]] §8)
-- [ ] Commitar `ci.yml`, `deploy.yml`, `docker-compose.prod.yml`
-- [ ] Gerar chave SSH de deploy na VPS e cadastrar os 5 secrets
-- [ ] Proteger a branch `main` (require PR + status checks)
-- [ ] Criar environment `production` (com aprovação manual, se desejado)
-- [ ] Teste fim-a-fim: commit trivial em `main` → verificar imagens no ghcr → containers atualizados → healthcheck verde
-- [ ] Teste de rollback: forçar healthcheck falho num deploy de teste e confirmar retorno à tag anterior
+> `GITHUB_TOKEN` é automático — usado para publicar e puxar as imagens do ghcr (inclusive em repositório privado, durante o run). Não precisa criar.
+
+---
+
+## 5. Pré-requisitos manuais (feitos 1x no console AWS — o pipeline não cobre)
+
+O pipeline faz tudo por SSH, mas três coisas vivem fora do alcance do SSH:
+
+1. **Instância Lightsail criada** com a chave `advocacia-crm.pem` (✅ já feito).
+2. **Firewall Lightsail** (aba *Networking* da instância) liberando **80/tcp** e **443/tcp** (além do 22). Sem isso o Let's Encrypt (desafio HTTP-01) e o HTTPS não funcionam.
+3. **DNS** do domínio apontando para o IP (✅ `advocacia-crm.sigame.tec.br` → 54.232.3.5).
+
+Tudo o mais (Docker, swap, `.env`, Traefik, migrations, seed) é automático.
+
+---
+
+## 6. Primeira execução
+
+1. Configure o environment `production` com Required reviewers (§3).
+2. Cadastre os secrets (§4).
+3. Confirme o firewall Lightsail (§5.2).
+4. Faça `push` na `main` (ou **Actions → Deploy Produção → Run workflow**).
+5. Aprove o deployment quando o GitHub pedir (⏸ antes do SSH).
+6. Acompanhe os logs do job. Ao final, o healthcheck valida `https://advocacia-crm.sigame.tec.br/health`.
+7. Acesse o sistema e faça login com `admin` / `admin` (criado pelo seed) — **troque a senha no primeiro acesso**.
+
+O `.seeded` na VPS garante que o seed roda **só na primeira vez**. Para re-semear: **Run workflow** com `force_seed = true`.
+
+> **Nota sobre o seed:** o `backend/seed.py` atual inclui dados de demonstração (leads/clientes de exemplo). Para um ambiente de produção limpo, edite `seed.py` para manter apenas usuários (admin/comercial), áreas de atuação e advogados reais antes do primeiro deploy — ou rode o deploy, faça login e limpe os dados demo.
+
+---
+
+## 7. Rollback
+
+Automático: se o healthcheck falhar após o deploy, o pipeline reimplanta a imagem anterior (`.image_tag.prev`) e marca o workflow como falho. Manual, se necessário, via SSH:
+
+```bash
+cd /home/ubuntu/advocacia-crm
+sudo docker compose -f docker-compose.prod.yml logs --tail=100 backend
+# apontar IMAGE_TAG no .env para um sha anterior e:
+sudo docker compose -f docker-compose.prod.yml pull
+sudo docker compose -f docker-compose.prod.yml up -d
+```
+
+---
+
+## 8. Operação do dia a dia
+
+- **Atualizar produção:** basta `merge`/`push` na `main` e aprovar o deploy. Sem SSH manual.
+- **Ver logs:** `sudo docker compose -f docker-compose.prod.yml logs -f backend` (ou `celery_worker`).
+- **Status:** `sudo docker compose -f docker-compose.prod.yml ps`.
+- **Migrations avulsas:** já rodam a cada deploy (`alembic upgrade head`, idempotente).
+- **WhatsApp (Evolution):** primeira conexão via QR code após o serviço subir.
+
+---
+
+## 9. Segurança
+
+- Nenhum secret fica no repositório: o `.env` é gerado na VPS a cada deploy a partir dos GitHub Secrets (permissão `umask 077`).
+- O SSH usa a chave privada (`DEPLOY_SSH_KEY`); recomenda-se uma chave dedicada ao deploy, não a pessoal.
+- Aprovação manual (§3) impede deploys não intencionais na produção.
+- Portas de banco/Redis não são expostas (só 80/443 pelo Traefik).
+- **Rotacione** qualquer credencial que tenha trafegado fora do cofre de secrets (ex.: a senha do Neon compartilhada em texto).
+
+---
+
+## 10. Checklist de implantação
+
+- [ ] Environment `production` criado com Required reviewers (§3)
+- [ ] Secrets SSH cadastrados (`DEPLOY_HOST/USER/SSH_KEY/PATH`)
+- [ ] Secrets de app/banco cadastrados (`DOMAIN`, `DATABASE_URL`, `ALEMBIC_DATABASE_URL`, `SECRET_KEY`, `ACME_EMAIL`, `EVOLUTION_DATABASE_URL`, `EVOLUTION_API_KEY`, `OPENAI_API_KEY`)
+- [ ] Firewall Lightsail liberando 80/443 (§5.2)
+- [ ] DNS apontando (✅)
+- [ ] Primeiro deploy aprovado e healthcheck verde
+- [ ] Login `admin`/`admin` e troca de senha
+- [ ] (Produção) Ajuste do seed para remover dados demo

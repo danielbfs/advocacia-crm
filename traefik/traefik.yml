@@ -21,7 +21,7 @@ certificatesResolvers:
 providers:
   docker:
     exposedByDefault: false
-    network: openclinic_internal
+    network: advocacia_crm_internal
   file:
     directory: /etc/traefik/dynamic
     watch: true

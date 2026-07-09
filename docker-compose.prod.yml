@@ -1,0 +1,177 @@
+# ============================================================
+# AdvocacIA CRM — docker-compose.prod.yml (PRODUÇÃO / CI-CD)
+#
+# Usado pelo pipeline de deploy automático (GitHub Actions).
+# Diferente do docker-compose.lightsail.yml: aqui os serviços de
+# aplicação usam IMAGENS PRONTAS do ghcr.io (parametrizadas por
+# IMAGE_TAG) em vez de `build:` — a VPS nunca compila.
+#
+# Banco: Neon DB (sem postgres local). Todas as variáveis vêm do
+# arquivo .env, que o pipeline gera na VPS a partir dos GitHub Secrets.
+# ============================================================
+
+x-backend-env: &backend-env
+  DATABASE_URL: ${DATABASE_URL}
+  ALEMBIC_DATABASE_URL: ${ALEMBIC_DATABASE_URL:-}
+  REDIS_URL: redis://redis:6379/0
+  SECRET_KEY: ${SECRET_KEY}
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+  TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+  EVOLUTION_API_URL: http://evolution_api:8080
+  EVOLUTION_API_KEY: ${EVOLUTION_API_KEY:-advocacia-crm-evo-key}
+  EVOLUTION_INSTANCE_NAME: ${EVOLUTION_INSTANCE_NAME:-advocacia-crm}
+  FIRM_TIMEZONE: ${FIRM_TIMEZONE:-America/Sao_Paulo}
+  FIRM_SLA_HOURS: ${FIRM_SLA_HOURS:-2}
+  LEADS_WEBHOOK_API_KEY: ${LEADS_WEBHOOK_API_KEY:-}
+  ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
+  GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+  GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+  ENVIRONMENT: production
+  DOMAIN: ${DOMAIN}
+
+networks:
+  internal:
+    name: advocacia_crm_internal
+
+volumes:
+  redis_data:
+  evolution_instances:
+  traefik_acme:
+
+services:
+
+  # ── TRAEFIK REVERSE PROXY & SSL ──────────────────────────
+  traefik:
+    image: traefik:v3.1
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    command:
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=advocacia_crm_internal"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/dynamic:/etc/traefik/dynamic:ro
+      - traefik_acme:/letsencrypt
+    networks:
+      - internal
+
+  # ── CACHE + FILA ─────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - internal
+
+  # ── BACKEND API ──────────────────────────────────────────
+  backend:
+    image: ghcr.io/danielbfs/advocacia-crm-backend:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      <<: *backend-env
+    depends_on:
+      - redis
+    networks:
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.advocacia-crm-backend.rule=Host(`${DOMAIN}`) && (PathPrefix(`/api`) || PathPrefix(`/webhooks`) || PathPrefix(`/health`))"
+      - "traefik.http.routers.advocacia-crm-backend.tls=true"
+      - "traefik.http.routers.advocacia-crm-backend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.advocacia-crm-backend.loadbalancer.server.port=8000"
+      - "traefik.http.routers.advocacia-crm-backend.middlewares=security-headers@file,api-ratelimit@file"
+
+  # ── FRONTEND ─────────────────────────────────────────────
+  frontend:
+    image: ghcr.io/danielbfs/advocacia-crm-frontend:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+    networks:
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.advocacia-crm-frontend.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.advocacia-crm-frontend.tls=true"
+      - "traefik.http.routers.advocacia-crm-frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.advocacia-crm-frontend.loadbalancer.server.port=3000"
+      - "traefik.http.routers.advocacia-crm-frontend.priority=1"
+      - "traefik.http.routers.advocacia-crm-frontend.middlewares=security-headers@file"
+
+  # ── WORKERS CELERY ───────────────────────────────────────
+  celery_worker:
+    image: ghcr.io/danielbfs/advocacia-crm-backend:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      <<: *backend-env
+    command: celery -A celery_app worker --loglevel=info -Q default,followup,leads --concurrency=4
+    depends_on:
+      - redis
+    networks:
+      - internal
+
+  # ── CELERY BEAT (CRON) ───────────────────────────────────
+  celery_beat:
+    image: ghcr.io/danielbfs/advocacia-crm-backend:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      <<: *backend-env
+    command: celery -A celery_app beat --loglevel=info
+    depends_on:
+      - redis
+    networks:
+      - internal
+
+  # ── WHATSAPP (EVOLUTION API) ─────────────────────────────
+  evolution_api:
+    image: evoapicloud/evolution-api:v2.3.7
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: "8080"
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY:-advocacia-crm-evo-key}
+      DATABASE_ENABLED: "true"
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: ${EVOLUTION_DATABASE_URL}
+      DATABASE_CONNECTION_CLIENT_NAME: evolution_api
+      DATABASE_SAVE_DATA_INSTANCE: "true"
+      DATABASE_SAVE_DATA_NEW_MESSAGE: "true"
+      DATABASE_SAVE_MESSAGE_UPDATE: "true"
+      DATABASE_SAVE_DATA_CONTACTS: "true"
+      DATABASE_SAVE_DATA_CHATS: "true"
+      REDIS_ENABLED: "true"
+      REDIS_URI: "redis://redis:6379/1"
+      REDIS_PREFIX_KEY: "evolution"
+      CACHE_REDIS_ENABLED: "true"
+      CACHE_REDIS_URI: "redis://redis:6379/2"
+      CACHE_REDIS_PREFIX_KEY: "cache"
+      RABBITMQ_ENABLED: "false"
+      WEBSOCKET_ENABLED: "false"
+      DEL_INSTANCE: "false"
+      QRCODE_LIMIT: "10"
+      LOG_LEVEL: "WARN"
+      LOG_COLOR: "false"
+      LOG_BAILEYS: "fatal"
+      LANGUAGE: "pt-BR"
+    volumes:
+      - evolution_instances:/evolution/instances
+    depends_on:
+      - redis
+    networks:
+      - internal

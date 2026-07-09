@@ -1,0 +1,216 @@
+name: Deploy Produção
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      force_seed:
+        description: "Rodar o seed mesmo que já tenha sido semeado (marcador .seeded)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false   # nunca interromper um deploy no meio
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/danielbfs/advocacia-crm
+
+jobs:
+  # ────────────────────────────────────────────────────────
+  # 1) Build das imagens no runner do GitHub e push no ghcr.io
+  #    (a VPS nunca compila — só faz pull)
+  # ────────────────────────────────────────────────────────
+  build-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build & push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}-backend:latest
+            ${{ env.IMAGE_PREFIX }}-backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build & push frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}-frontend:latest
+            ${{ env.IMAGE_PREFIX }}-frontend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ────────────────────────────────────────────────────────
+  # 2) Deploy na VPS Lightsail via SSH (auto-provisionado)
+  # ────────────────────────────────────────────────────────
+  deploy:
+    needs: build-push
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+
+      # Envia à VPS apenas o que ela precisa (compose + traefik + bootstrap);
+      # as imagens vêm do ghcr. Nada de código-fonte na VPS.
+      - name: Copiar arquivos de deploy para a VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: "docker-compose.prod.yml,traefik,deploy/bootstrap.sh"
+          target: ${{ secrets.DEPLOY_PATH }}
+
+      - name: Provisionar + deploy
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          command_timeout: 20m
+          envs: IMAGE_TAG,FORCE_SEED,GHCR_USER,GHCR_TOKEN,DEPLOY_PATH,DATABASE_URL,ALEMBIC_DATABASE_URL,SECRET_KEY,DOMAIN,ACME_EMAIL,OPENAI_API_KEY,OPENAI_MODEL,TELEGRAM_BOT_TOKEN,EVOLUTION_DATABASE_URL,EVOLUTION_API_KEY,EVOLUTION_INSTANCE_NAME,FIRM_TIMEZONE,FIRM_SLA_HOURS,LEADS_WEBHOOK_API_KEY,ENCRYPTION_KEY,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET
+          env:
+            IMAGE_TAG: ${{ github.sha }}
+            FORCE_SEED: ${{ github.event.inputs.force_seed }}
+            GHCR_USER: ${{ github.actor }}
+            GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+            DATABASE_URL: ${{ secrets.DATABASE_URL }}
+            ALEMBIC_DATABASE_URL: ${{ secrets.ALEMBIC_DATABASE_URL }}
+            SECRET_KEY: ${{ secrets.SECRET_KEY }}
+            DOMAIN: ${{ secrets.DOMAIN }}
+            ACME_EMAIL: ${{ secrets.ACME_EMAIL }}
+            OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+            OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
+            TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+            EVOLUTION_DATABASE_URL: ${{ secrets.EVOLUTION_DATABASE_URL }}
+            EVOLUTION_API_KEY: ${{ secrets.EVOLUTION_API_KEY }}
+            EVOLUTION_INSTANCE_NAME: ${{ secrets.EVOLUTION_INSTANCE_NAME }}
+            FIRM_TIMEZONE: ${{ secrets.FIRM_TIMEZONE }}
+            FIRM_SLA_HOURS: ${{ secrets.FIRM_SLA_HOURS }}
+            LEADS_WEBHOOK_API_KEY: ${{ secrets.LEADS_WEBHOOK_API_KEY }}
+            ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+            GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          script: |
+            set -euo pipefail
+            APP_DIR="${DEPLOY_PATH:-/home/ubuntu/advocacia-crm}"
+            cd "$APP_DIR"
+            COMPOSE="sudo docker compose -f docker-compose.prod.yml"
+
+            echo "==> 1/7 bootstrap idempotente da máquina"
+            chmod +x deploy/bootstrap.sh
+            DEPLOY_PATH="$APP_DIR" bash deploy/bootstrap.sh
+
+            echo "==> 2/7 gerando .env a partir dos secrets"
+            umask 077
+            {
+              printf '%s\n' "DATABASE_URL=${DATABASE_URL}"
+              printf '%s\n' "ALEMBIC_DATABASE_URL=${ALEMBIC_DATABASE_URL}"
+              printf '%s\n' "SECRET_KEY=${SECRET_KEY}"
+              printf '%s\n' "DOMAIN=${DOMAIN}"
+              printf '%s\n' "ACME_EMAIL=${ACME_EMAIL}"
+              printf '%s\n' "OPENAI_API_KEY=${OPENAI_API_KEY}"
+              printf '%s\n' "OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}"
+              printf '%s\n' "TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}"
+              printf '%s\n' "EVOLUTION_DATABASE_URL=${EVOLUTION_DATABASE_URL}"
+              printf '%s\n' "EVOLUTION_API_KEY=${EVOLUTION_API_KEY:-advocacia-crm-evo-key}"
+              printf '%s\n' "EVOLUTION_INSTANCE_NAME=${EVOLUTION_INSTANCE_NAME:-advocacia-crm}"
+              printf '%s\n' "FIRM_TIMEZONE=${FIRM_TIMEZONE:-America/Sao_Paulo}"
+              printf '%s\n' "FIRM_SLA_HOURS=${FIRM_SLA_HOURS:-2}"
+              printf '%s\n' "LEADS_WEBHOOK_API_KEY=${LEADS_WEBHOOK_API_KEY}"
+              printf '%s\n' "ENCRYPTION_KEY=${ENCRYPTION_KEY}"
+              printf '%s\n' "GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}"
+              printf '%s\n' "GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}"
+              printf '%s\n' "IMAGE_TAG=${IMAGE_TAG}"
+            } > .env
+
+            echo "==> 3/7 login no ghcr e pull das imagens (tag ${IMAGE_TAG})"
+            echo "${GHCR_TOKEN}" | sudo docker login ghcr.io -u "${GHCR_USER}" --password-stdin
+            # guarda a tag atual para rollback antes de sobrescrever
+            [ -f .image_tag ] && cp .image_tag .image_tag.prev || true
+            echo "${IMAGE_TAG}" > .image_tag
+            $COMPOSE pull
+
+            echo "==> 4/7 subindo containers"
+            $COMPOSE up -d --remove-orphans
+
+            echo "==> 5/7 migrations (alembic upgrade head)"
+            $COMPOSE run --rm backend alembic upgrade head
+
+            echo "==> 6/7 seed (apenas 1x, salvo force_seed)"
+            if [ ! -f .seeded ] || [ "${FORCE_SEED:-false}" = "true" ]; then
+              $COMPOSE run --rm backend python seed.py || true
+              $COMPOSE run --rm backend python seed_rules.py || true
+              touch .seeded
+              echo "    seed aplicado."
+            else
+              echo "    seed pulado (já existe .seeded)."
+            fi
+
+            echo "==> 7/7 limpeza de imagens antigas"
+            sudo docker image prune -f
+            echo "deploy concluído na VPS."
+
+      - name: Healthcheck público (com retry)
+        run: |
+          echo "Aguardando SSL/serviço subir..."
+          sleep 25
+          for i in $(seq 1 12); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "https://${{ secrets.DOMAIN }}/health" || true)
+            if [ "$code" = "200" ]; then echo "Saudável (HTTP 200)."; exit 0; fi
+            echo "Tentativa $i: HTTP $code — aguardando 10s..."
+            sleep 10
+          done
+          echo "::error::Healthcheck falhou após o deploy"
+          exit 1
+
+      - name: Rollback em caso de falha
+        if: failure()
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          envs: DEPLOY_PATH
+          env:
+            DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          script: |
+            set -euo pipefail
+            cd "${DEPLOY_PATH:-/home/ubuntu/advocacia-crm}"
+            COMPOSE="sudo docker compose -f docker-compose.prod.yml"
+            if [ -f .image_tag.prev ]; then
+              PREV="$(cat .image_tag.prev)"
+              echo "==> rollback para ${PREV}"
+              sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${PREV}/" .env
+              echo "${PREV}" > .image_tag
+              $COMPOSE pull
+              $COMPOSE up -d --remove-orphans
+              echo "rollback concluído."
+            else
+              echo "sem .image_tag.prev — este é o primeiro deploy; rollback não aplicável. Verifique logs: sudo docker compose -f docker-compose.prod.yml logs"
+            fi
